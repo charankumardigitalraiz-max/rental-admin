@@ -1,26 +1,38 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRentalStore } from '@/store/useRentalStore';
 import { ActiveTab } from '@/types';
 import {
   LayoutDashboard,
   Car,
-  Layers,
   CalendarCheck,
+  Search,
   Users,
   CreditCard,
-  RotateCcw,
-  Boxes,
-  Tag,
-  Ticket,
-  Star,
-  BarChart3,
-  Bell,
-  ShieldCheck,
-  Settings,
   Crown,
   Sparkles,
+  Ticket,
+  BadgePercent,
+  TrendingUp,
+  Award,
+  DollarSign,
+  Radio,
+  Clock,
+  UserCheck,
+  Building2,
+  Receipt,
+  RotateCcw,
+  Star,
+  Bell,
+  BarChart3,
+  ShieldCheck,
+  Lock,
+  Settings,
+  SlidersHorizontal,
+  Compass,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -31,102 +43,240 @@ interface MenuItem {
 }
 
 export default function Sidebar() {
-  const { activeTab, setActiveTab, bookings, notifications } = useRentalStore();
+  const {
+    activeTab,
+    setActiveTab,
+    driverBookings,
+    valetBookings,
+    drivers,
+    notifications,
+    driverStatusFilter,
+    setDriverStatusFilter,
+    customers,
+  } = useRentalStore();
 
-  const pendingBookingsCount = bookings.filter((b) => b.status === 'Pending').length;
+  const [isDriversExpanded, setIsDriversExpanded] = useState(true);
+
+  const pendingDriverBookings = driverBookings.filter((b) => b.status === 'Searching Driver' || b.status === 'Pending').length;
+  const pendingValetBookings = valetBookings.filter((v) => v.status === 'New Request' || v.status === 'Pending Assignment').length;
   const unreadNotifsCount = notifications.filter((n) => !n.read).length;
+
+  const pendingDriversCount = drivers.filter((d) => d.status === 'Pending Approval').length;
+  const approvedDriversCount = drivers.filter((d) => d.status === 'Approved').length;
+  const onlineDriversCount = drivers.filter((d) => d.dutyStatus === 'Online').length;
+  const suspendedDriversCount = drivers.filter((d) => d.status === 'Suspended').length;
+
+  const driverSubItems: { id: ActiveTab; label: string; count: number; badgeColor?: string }[] = [
+    { id: 'drivers', label: 'All Drivers', count: drivers.length },
+    {
+      id: 'drivers-pending',
+      label: 'Pending Approval',
+      count: pendingDriversCount,
+      badgeColor: 'bg-amber-100 text-amber-900 border border-amber-200',
+    },
+    {
+      id: 'drivers-approved',
+      label: 'Approved',
+      count: approvedDriversCount,
+      badgeColor: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+    },
+    {
+      id: 'drivers-online',
+      label: 'Online Duty',
+      count: onlineDriversCount,
+      badgeColor: 'bg-sky-100 text-sky-800 border border-sky-200',
+    },
+    {
+      id: 'drivers-suspended',
+      label: 'Suspended',
+      count: suspendedDriversCount,
+      badgeColor: 'bg-rose-100 text-rose-800 border border-rose-200',
+    },
+  ];
 
   const menuGroups: { groupTitle: string; items: MenuItem[] }[] = [
     {
-      groupTitle: 'MAIN DASHBOARD',
+      groupTitle: 'OVERVIEW & LIVE OPERATORS',
       items: [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'products', label: 'Products / Vehicles', icon: Car },
-        { id: 'categories', label: 'Categories', icon: Layers },
+        { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
+        { id: 'live-operations', label: 'Live Operations Center', icon: Radio },
+        // { id: 'assignments', label: 'Central Assignments', icon: Compass },
+      ],
+    },
+    {
+      groupTitle: 'CUSTOMER MANAGEMENT',
+      items: [
         {
-          id: 'bookings',
-          label: 'Rental Orders',
+          id: 'customers',
+          label: 'Customers',
+          icon: Users,
+          badge: customers?.length > 0 ? customers.length : undefined,
+        },
+      ],
+    },
+    {
+      groupTitle: 'DRIVER-ON-DEMAND SERVICE',
+      items: [
+        {
+          id: 'driver-bookings',
+          label: 'Driver Bookings',
           icon: CalendarCheck,
-          badge: pendingBookingsCount > 0 ? pendingBookingsCount : undefined,
+          badge: pendingDriverBookings > 0 ? pendingDriverBookings : undefined,
         },
-        { id: 'customers', label: 'Customers', icon: Users },
+        // { id: 'driver-requests', label: 'Searching Requests', icon: Search },
+        { id: 'drivers', label: 'Driver Management', icon: Car },
+        { id: 'driver-subscription-plans', label: 'Subscription Plans', icon: Ticket },
+        { id: 'driver-subscriptions', label: 'Subscribed Drivers', icon: Award },
+        { id: 'subscription-payments', label: 'Subscription Payments', icon: CreditCard },
       ],
     },
+
     {
-      groupTitle: 'OPERATIONS',
+      groupTitle: 'ADMINISTRATIVE',
       items: [
-        { id: 'payments', label: 'Payments', icon: CreditCard },
-        { id: 'returns', label: 'Returns & Inspection', icon: RotateCcw },
-        { id: 'inventory', label: 'Inventory Matrix', icon: Boxes },
-        { id: 'pricing', label: 'Pricing Plans', icon: Tag },
-        // { id: 'coupons', label: 'Coupons & Promo', icon: Ticket },
-        // { id: 'reviews', label: 'Reviews & Feedback', icon: Star },
-      ],
-    },
-    {
-      groupTitle: 'ADMIN & SYSTEM',
-      items: [
-        // { id: 'analytics', label: 'Reports & Analytics', icon: BarChart3 },
-        {
-          id: 'notifications',
-          label: 'Notifications',
-          icon: Bell,
-          badge: unreadNotifsCount > 0 ? unreadNotifsCount : undefined,
-        },
-        { id: 'admin-users', label: 'Admin Users & Roles', icon: ShieldCheck },
-        { id: 'settings', label: 'Settings', icon: Settings },
+        { id: 'admin-users', label: 'Admin Team', icon: ShieldCheck },
+        { id: 'roles-permissions', label: 'Roles & Permissions', icon: Lock },
+        { id: 'settings', label: 'System Configurations', icon: Settings },
       ],
     },
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col h-screen sticky top-0 z-30 select-none shadow-xs">
+    <aside className="w-64 bg-white border-r border-stone-200/80 flex flex-col h-screen sticky top-0 z-30 select-none shadow-xs">
       {/* Brand Header */}
-      <div className="h-20 border-b border-slate-100 flex items-center px-5 gap-3 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
-        <div className="w-10 h-10 rounded-md bg-gradient-to-tr from-blue-600 via-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-blue-400/20 shrink-0">
-          <Crown className="w-5 h-5 text-amber-300 fill-amber-300 animate-pulse" />
+      <div className="h-16 border-b border-stone-100 flex items-center px-5 gap-3 bg-gradient-to-r from-emerald-50/60 to-white">
+        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-white shadow-sm shrink-0">
+          <Crown className="w-5 h-5 text-amber-300 fill-amber-300" />
         </div>
         <div>
-          <h1 className="font-extrabold text-slate-900 text-base leading-tight tracking-tight flex items-center gap-1">
-            Royal Wheels <Sparkles className="w-3 h-3 text-amber-500 inline-block" />
+          <h1 className="font-bold text-[#064e3b] text-sm leading-tight tracking-tight">
+            DrivePulse <span className="text-primary">& Valet</span>
           </h1>
-          <span className="text-[10px] font-extrabold text-blue-700 uppercase tracking-widest bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md inline-block mt-0.5">
-            Car Rental Admin
-          </span>
+          <p className="text-[10px] font-semibold text-emerald-800/60">Admin Control Portal</p>
         </div>
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {menuGroups.map((group, groupIdx) => (
           <div key={groupIdx} className="space-y-1">
-            <h2 className="px-3 text-[10.5px] font-extrabold tracking-widest text-slate-400 uppercase mb-2">
+            <h2 className="px-3 text-[10px] font-bold tracking-widest text-[#064e3b]/70 uppercase mb-1.5">
               {group.groupTitle}
             </h2>
             {group.items.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+
+              if (item.id === 'drivers') {
+                const isDriversGroupActive =
+                  activeTab === 'drivers' ||
+                  activeTab === 'drivers-pending' ||
+                  activeTab === 'drivers-approved' ||
+                  activeTab === 'drivers-online' ||
+                  activeTab === 'drivers-suspended';
+
+                return (
+                  <div key={item.id} className="space-y-1">
+                    <button
+                      onClick={() => {
+                        if (isDriversGroupActive) {
+                          setIsDriversExpanded((prev) => !prev);
+                        } else {
+                          setActiveTab('drivers');
+                          setIsDriversExpanded(true);
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${isDriversGroupActive
+                        ? 'bg-primary text-white font-bold shadow-xs'
+                        : 'text-slate-700 hover:text-[#064e3b] hover:bg-emerald-50/60'
+                        }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon
+                          className={`w-4 h-4 transition-transform group-hover:scale-105 ${isDriversGroupActive ? 'text-white' : 'text-slate-400 group-hover:text-primary'
+                            }`}
+                        />
+                        <span className="tracking-tight">{item.label}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {pendingDriversCount > 0 && !isDriversExpanded && (
+                          <span
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${isDriversGroupActive ? 'bg-white text-primary shadow-xs' : 'bg-amber-100 text-amber-900 border border-amber-200'
+                              }`}
+                          >
+                            {pendingDriversCount}
+                          </span>
+                        )}
+                        {isDriversExpanded ? (
+                          <ChevronDown className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-white' : 'text-slate-400'}`} />
+                        ) : (
+                          <ChevronRight className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-white' : 'text-slate-400'}`} />
+                        )}
+                      </div>
+                    </button>
+
+                    {isDriversExpanded && (
+                      <div className="pl-3 py-1 space-y-1 border-l-2 border-emerald-500/30 ml-4 my-1">
+                        {driverSubItems.map((sub) => {
+                          const isSubActive = activeTab === sub.id;
+                          return (
+                            <button
+                              key={sub.id}
+                              onClick={() => {
+                                setActiveTab(sub.id);
+                              }}
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${isSubActive
+                                ? 'bg-emerald-100/90 text-primary font-bold shadow-2xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                                }`}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${isSubActive ? 'bg-primary' : 'bg-slate-300'
+                                    }`}
+                                ></span>
+                                {sub.label}
+                              </span>
+                              {sub.count > 0 && (
+                                <span
+                                  className={`px-1.5 py-0.2 text-[9.5px] font-bold rounded ${isSubActive
+                                    ? 'bg-primary text-white'
+                                    : sub.badgeColor || 'bg-slate-100 text-slate-600'
+                                    }`}
+                                >
+                                  {sub.count}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[12.5px] transition-all group ${isActive
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-500/20'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-semibold'
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${isActive
+                    ? 'bg-primary text-white font-bold shadow-xs'
+                    : 'text-slate-700 hover:text-[#064e3b] hover:bg-emerald-50/60'
                     }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon
-                      className={`w-4 h-4 transition-transform group-hover:scale-105 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-600'
+                      className={`w-4 h-4 transition-transform group-hover:scale-105 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary'
                         }`}
                     />
                     <span className="tracking-tight">{item.label}</span>
                   </div>
                   {item.badge !== undefined && (
                     <span
-                      className={`px-1.5 py-0.5 text-[10px] font-extrabold rounded-md ${isActive
-                        ? 'bg-white text-blue-700 shadow-xs'
-                        : 'bg-amber-100 text-amber-800 border border-amber-200'
+                      className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${isActive
+                        ? 'bg-white text-primary shadow-xs'
+                        : 'bg-orange-100 text-orange-900 border border-orange-200'
                         }`}
                     >
                       {item.badge}
@@ -139,17 +289,13 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {/* Quick Footer / Currency Badge */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/60">
-        <div className="flex items-center justify-between px-3 py-2 bg-white border border-slate-200/80 rounded-md shadow-2xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-slate-600 font-semibold text-xs">Currency:</span>
-          </div>
-          <span className="font-extrabold text-slate-900 bg-slate-100/90 px-2 py-0.5 rounded-md text-[11px] border border-slate-200">
-            INR (₹)
-          </span>
+      {/* Footer System Status */}
+      <div className="p-3 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-500 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span className="font-semibold text-slate-700">Services Online</span>
         </div>
+        <span className="text-[10px] text-slate-400 font-mono">v3.4.0</span>
       </div>
     </aside>
   );

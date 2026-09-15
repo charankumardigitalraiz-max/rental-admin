@@ -14,7 +14,7 @@ export default function PricingView() {
           <h3 className="font-bold text-slate-900 text-sm">Rental Tariff Plans & Rules</h3>
           <p className="text-xs text-slate-500">Configure base rates, free daily km limits, extra mileage charges, and weekend surge rates in ₹</p>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all">
+        <button className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all">
           <Plus className="w-4 h-4" /> Create Pricing Tariff
         </button>
       </div>
@@ -23,7 +23,7 @@ export default function PricingView() {
         {pricingPlans.map((plan) => (
           <div key={plan.id} className="card-white card-white-hover p-5 flex flex-col justify-between space-y-4">
             <div>
-              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase">
+              <span className="text-[10px] font-bold text-primary bg-primary-light px-2 py-0.5 rounded uppercase">
                 {plan.category}
               </span>
               <h4 className="font-bold text-slate-900 text-base mt-2">{plan.title}</h4>

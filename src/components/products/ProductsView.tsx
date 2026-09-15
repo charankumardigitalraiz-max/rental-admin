@@ -131,7 +131,7 @@ export default function ProductsView() {
               placeholder="Search car model, brand, plate #..."
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
             />
           </div>
 
@@ -141,7 +141,7 @@ export default function ProductsView() {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {categories.map((cat) => (
               <option key={cat} value={cat}>
@@ -156,7 +156,7 @@ export default function ProductsView() {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {statuses.map((st) => (
               <option key={st} value={st}>
@@ -172,7 +172,7 @@ export default function ProductsView() {
             <button
               onClick={() => setViewMode('grid')}
               className={`p-1.5 rounded text-xs transition-colors ${
-                viewMode === 'grid' ? 'bg-white shadow-xs text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-900'
+                viewMode === 'grid' ? 'bg-white shadow-xs text-primary font-bold' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               <Grid className="w-4 h-4" />
@@ -180,7 +180,7 @@ export default function ProductsView() {
             <button
               onClick={() => setViewMode('table')}
               className={`p-1.5 rounded text-xs transition-colors ${
-                viewMode === 'table' ? 'bg-white shadow-xs text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-900'
+                viewMode === 'table' ? 'bg-white shadow-xs text-primary font-bold' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               <List className="w-4 h-4" />
@@ -189,7 +189,7 @@ export default function ProductsView() {
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all shrink-0"
+            className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all shrink-0"
           >
             <Plus className="w-4 h-4" /> Add Vehicle
           </button>
@@ -214,7 +214,7 @@ export default function ProductsView() {
                         car.status === 'Available'
                           ? 'bg-emerald-500 text-white'
                           : car.status === 'Rented'
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-primary text-white'
                           : car.status === 'Maintenance'
                           ? 'bg-amber-500 text-white'
                           : 'bg-slate-700 text-white'
@@ -229,7 +229,7 @@ export default function ProductsView() {
 
                   <div className="p-4 space-y-3">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary-light px-2 py-0.5 rounded">
                         {car.category}
                       </span>
                       <h3 className="font-bold text-slate-900 text-sm mt-1">{car.name}</h3>
@@ -262,7 +262,7 @@ export default function ProductsView() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setEditingCar(car)}
-                      className="p-1.5 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
+                      className="p-1.5 text-primary hover:text-primary-hover bg-primary-light hover:bg-primary-light/80 rounded-lg border border-primary/20 transition-colors"
                       title="Edit Product Details"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -326,7 +326,7 @@ export default function ProductsView() {
                           car.status === 'Available'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : car.status === 'Rented'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            ? 'bg-primary-light text-primary border border-primary/20'
                             : 'bg-amber-50 text-amber-700 border border-amber-200'
                         }`}
                       >
@@ -337,7 +337,7 @@ export default function ProductsView() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setEditingCar(car)}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-xs underline"
+                          className="text-primary hover:text-primary-hover font-medium text-xs underline"
                         >
                           Edit
                         </button>
@@ -369,36 +369,36 @@ export default function ProductsView() {
         <form onSubmit={handleCreateCar} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Car Model Name</label>
+              <label className="block text-slate-600 text-xs font-semibold mb-1">Car Model Name</label>
               <input
                 type="text"
                 required
                 placeholder="e.g. Mahindra Thar LX"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Brand / Manufacturer</label>
+              <label className="block text-slate-600 text-xs font-semibold mb-1">Brand / Manufacturer</label>
               <input
                 type="text"
                 required
                 placeholder="e.g. Mahindra"
                 value={formData.brand}
                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Category</label>
+              <label className="block text-slate-600 text-xs font-semibold mb-1">Category</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 {categories.filter((c) => c !== 'All').map((cat) => (
                   <option key={cat} value={cat}>
@@ -408,37 +408,37 @@ export default function ProductsView() {
               </select>
             </div>
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">License Plate Number</label>
+              <label className="block text-slate-600 text-xs font-semibold mb-1">License Plate Number</label>
               <input
                 type="text"
                 required
                 placeholder="KA-01-AB-1234"
                 value={formData.licensePlate}
                 onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
-                className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Daily Rate (₹)</label>
+              <label className="block text-slate-600 text-xs font-semibold mb-1">Daily Rate (₹)</label>
               <input
                 type="number"
                 required
                 value={formData.dailyRate}
                 onChange={(e) => setFormData({ ...formData, dailyRate: Number(e.target.value) })}
-                className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Fuel Type</label>
+              <label className="block text-slate-600 text-xs font-semibold mb-1">Fuel Type</label>
               <select
                 value={formData.fuelType}
                 onChange={(e) =>
                   setFormData({ ...formData, fuelType: e.target.value as CarProduct['fuelType'] })
                 }
-                className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="Petrol">Petrol</option>
                 <option value="Diesel">Diesel</option>
@@ -447,7 +447,7 @@ export default function ProductsView() {
               </select>
             </div>
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Transmission</label>
+              <label className="block text-slate-600 text-xs font-semibold mb-1">Transmission</label>
               <select
                 value={formData.transmission}
                 onChange={(e) =>
@@ -456,44 +456,44 @@ export default function ProductsView() {
                     transmission: e.target.value as CarProduct['transmission'],
                   })
                 }
-                className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="Automatic">Automatic</option>
                 <option value="Manual">Manual</option>
               </select>
             </div>
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Seats</label>
+              <label className="block text-slate-600 text-xs font-semibold mb-1">Seats</label>
               <input
                 type="number"
                 value={formData.seats}
                 onChange={(e) => setFormData({ ...formData, seats: Number(e.target.value) })}
-                className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-slate-700 font-semibold mb-1">Image URL</label>
+            <label className="block text-slate-600 text-xs font-semibold mb-1">Image URL</label>
             <input
               type="url"
               value={formData.image}
               onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+              className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={() => setIsAddModalOpen(false)}
-              className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-semibold hover:bg-slate-50"
+              className="px-4 py-2 border border-slate-200 rounded-md text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm"
+              className="px-4.5 py-2 bg-primary hover:bg-primary-hover text-white rounded-md font-semibold text-xs shadow-xs transition-colors"
             >
               Save & Add Vehicle
             </button>
@@ -514,34 +514,34 @@ export default function ProductsView() {
           <form onSubmit={handleUpdateCar} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Car Model Name</label>
+                <label className="block text-slate-600 text-xs font-semibold mb-1">Car Model Name</label>
                 <input
                   type="text"
                   required
                   value={editingCar.name}
                   onChange={(e) => setEditingCar({ ...editingCar, name: e.target.value })}
-                  className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                  className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Brand</label>
+                <label className="block text-slate-600 text-xs font-semibold mb-1">Brand</label>
                 <input
                   type="text"
                   required
                   value={editingCar.brand}
                   onChange={(e) => setEditingCar({ ...editingCar, brand: e.target.value })}
-                  className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                  className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Category</label>
+                <label className="block text-slate-600 text-xs font-semibold mb-1">Category</label>
                 <select
                   value={editingCar.category}
                   onChange={(e) => setEditingCar({ ...editingCar, category: e.target.value })}
-                  className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                  className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 >
                   {categories.filter((c) => c !== 'All').map((cat) => (
                     <option key={cat} value={cat}>
@@ -551,36 +551,36 @@ export default function ProductsView() {
                 </select>
               </div>
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">License Plate</label>
+                <label className="block text-slate-600 text-xs font-semibold mb-1">License Plate</label>
                 <input
                   type="text"
                   required
                   value={editingCar.licensePlate}
                   onChange={(e) => setEditingCar({ ...editingCar, licensePlate: e.target.value })}
-                  className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                  className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Daily Rate (₹)</label>
+                <label className="block text-slate-600 text-xs font-semibold mb-1">Daily Rate (₹)</label>
                 <input
                   type="number"
                   required
                   value={editingCar.dailyRate}
                   onChange={(e) => setEditingCar({ ...editingCar, dailyRate: Number(e.target.value) })}
-                  className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                  className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Status</label>
+                <label className="block text-slate-600 text-xs font-semibold mb-1">Status</label>
                 <select
                   value={editingCar.status}
                   onChange={(e) =>
                     setEditingCar({ ...editingCar, status: e.target.value as CarProduct['status'] })
                   }
-                  className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none font-bold"
+                  className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
                 >
                   <option value="Available">Available</option>
                   <option value="Rented">Rented</option>
@@ -589,7 +589,7 @@ export default function ProductsView() {
                 </select>
               </div>
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Fuel Type</label>
+                <label className="block text-slate-600 text-xs font-semibold mb-1">Fuel Type</label>
                 <select
                   value={editingCar.fuelType}
                   onChange={(e) =>
@@ -598,7 +598,7 @@ export default function ProductsView() {
                       fuelType: e.target.value as CarProduct['fuelType'],
                     })
                   }
-                  className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                  className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 >
                   <option value="Petrol">Petrol</option>
                   <option value="Diesel">Diesel</option>
@@ -607,7 +607,7 @@ export default function ProductsView() {
                 </select>
               </div>
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Transmission</label>
+                <label className="block text-slate-600 text-xs font-semibold mb-1">Transmission</label>
                 <select
                   value={editingCar.transmission}
                   onChange={(e) =>
@@ -616,7 +616,7 @@ export default function ProductsView() {
                       transmission: e.target.value as CarProduct['transmission'],
                     })
                   }
-                  className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                  className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 >
                   <option value="Automatic">Automatic</option>
                   <option value="Manual">Manual</option>
@@ -625,26 +625,26 @@ export default function ProductsView() {
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Image URL</label>
+              <label className="block text-slate-600 text-xs font-semibold mb-1">Image URL</label>
               <input
                 type="url"
                 value={editingCar.image}
                 onChange={(e) => setEditingCar({ ...editingCar, image: e.target.value })}
-                className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2 border border-slate-200 rounded-md text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setEditingCar(null)}
-                className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-semibold hover:bg-slate-50"
+                className="px-4 py-2 border border-slate-200 rounded-md text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm"
+                className="px-4.5 py-2 bg-primary hover:bg-primary-hover text-white rounded-md font-semibold text-xs shadow-xs transition-colors"
               >
                 Update Product Changes
               </button>

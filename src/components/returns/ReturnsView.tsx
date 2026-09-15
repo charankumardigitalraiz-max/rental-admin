@@ -54,7 +54,7 @@ export default function ReturnsView() {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
+          className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
         >
           <Plus className="w-4 h-4" /> New Return Inspection
         </button>
@@ -66,7 +66,7 @@ export default function ReturnsView() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-blue-600 text-xs bg-blue-50 px-2 py-0.5 rounded">
+                  <span className="font-mono font-bold text-primary text-xs bg-primary-light px-2 py-0.5 rounded">
                     {record.returnId}
                   </span>
                   <span className="font-bold text-slate-900 text-sm">{record.carName}</span>
@@ -186,7 +186,7 @@ export default function ReturnsView() {
               id="dmg"
               checked={damageReported}
               onChange={(e) => setDamageReported(e.target.checked)}
-              className="rounded text-blue-600"
+              className="rounded text-primary accent-primary"
             />
             <label htmlFor="dmg" className="font-semibold text-slate-800">
               Damage reported during inspection
@@ -224,7 +224,7 @@ export default function ReturnsView() {
             >
               Cancel
             </button>
-            <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white rounded-lg font-semibold shadow-xs">
+            <button type="submit" className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-semibold shadow-xs">
               Save Return Record
             </button>
           </div>

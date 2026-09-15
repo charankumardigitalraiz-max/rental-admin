@@ -45,7 +45,7 @@ export default function CategoriesView() {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
+          className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
         >
           <Plus className="w-4 h-4" /> Add Category
         </button>
@@ -58,7 +58,7 @@ export default function CategoriesView() {
             <div key={cat.id} className="card-white card-white-hover p-5 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                  <div className="w-10 h-10 rounded-xl bg-primary-light text-primary flex items-center justify-center border border-primary-light">
                     <IconComp className="w-5 h-5" />
                   </div>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -76,7 +76,7 @@ export default function CategoriesView() {
                 </div>
                 <div className="text-right">
                   <span className="text-slate-400 block text-[10px] font-medium">Starting Rate</span>
-                  <span className="font-bold text-blue-600">₹{cat.startingPrice.toLocaleString('en-IN')}/day</span>
+                  <span className="font-bold text-primary">₹{cat.startingPrice.toLocaleString('en-IN')}/day</span>
                 </div>
               </div>
             </div>
@@ -101,7 +101,7 @@ export default function CategoriesView() {
               placeholder="e.g. Convertible Sports"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div>
@@ -111,7 +111,7 @@ export default function CategoriesView() {
               placeholder="Short category summary..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary"
             ></textarea>
           </div>
           <div>
@@ -120,7 +120,7 @@ export default function CategoriesView() {
               type="number"
               value={startingPrice}
               onChange={(e) => setStartingPrice(Number(e.target.value))}
-              className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
@@ -131,7 +131,7 @@ export default function CategoriesView() {
             >
               Cancel
             </button>
-            <button type="submit" className="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-semibold shadow-xs">
+            <button type="submit" className="px-3 py-1.5 bg-primary text-white rounded-lg font-semibold shadow-xs">
               Create Category
             </button>
           </div>

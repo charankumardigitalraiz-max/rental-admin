@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Pagination from './Pagination';
 import TableLoader from './TableLoader';
-import { Search } from 'lucide-react';
+import { Search, FolderSearch } from 'lucide-react';
 
 export interface Column<T> {
   key: string;
@@ -17,11 +17,12 @@ interface DataTableProps<T> {
   data: T[];
   keyExtractor: (row: T) => string;
   pageSize?: number;
-  emptyMessage?: string;
+  emptyMessage?: React.ReactNode;
   isLoading?: boolean;
   searchPlaceholder?: string;
   searchFilterKeys?: (keyof T)[];
   headerActions?: React.ReactNode;
+  rowClassName?: (row: T) => string;
 }
 
 export default function DataTable<T>({
@@ -34,6 +35,7 @@ export default function DataTable<T>({
   searchPlaceholder,
   searchFilterKeys,
   headerActions,
+  rowClassName,
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,40 +87,38 @@ export default function DataTable<T>({
   const showLoader = externalLoading || localLoading;
 
   return (
-    <div className="card-white p-4 space-y-4 relative overflow-hidden">
+    <div className="card-white relative overflow-hidden">
       {/* Table Header Bar with Search & Actions */}
       {(searchPlaceholder !== undefined || headerActions) && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          {searchPlaceholder !== undefined ? (
-            <div className="relative w-full sm:w-72">
+        <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-100 w-full bg-white">
+          {searchPlaceholder !== undefined && (
+            <div className="relative w-full sm:w-72 shrink-0">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={handleSearch}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
               />
             </div>
-          ) : (
-            <div></div>
           )}
 
-          {headerActions && <div className="flex items-center gap-2">{headerActions}</div>}
+          {headerActions && <div className="flex-1 w-full flex items-center justify-end">{headerActions}</div>}
         </div>
       )}
 
       {/* Scoped Table Loader Overlay */}
       {showLoader && <TableLoader message="Updating records..." />}
 
-      <div className="overflow-x-auto min-h-[220px]">
+      <div className="overflow-x-auto w-full">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
+          <thead className="bg-primary text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-emerald-900/40">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`py-3 px-3 ${
+                  className={`py-3 px-4 ${
                     col.align === 'right'
                       ? 'text-right'
                       : col.align === 'center'
@@ -134,46 +134,74 @@ export default function DataTable<T>({
           <tbody className="divide-y divide-slate-100">
             {currentData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="py-8 text-center text-slate-400 font-medium">
-                  {emptyMessage}
+                <td colSpan={columns.length} className="py-12 px-4 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-3 py-4 max-w-md mx-auto select-none">
+                    <div className="w-14 h-14 rounded-full bg-emerald-50/80 border border-emerald-200/60 flex items-center justify-center text-primary shadow-xs">
+                      <FolderSearch className="w-7 h-7 text-primary" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-slate-800 tracking-tight">
+                        No Matching Data Records Found
+                      </h4>
+                      <div className="text-xs text-slate-500 font-medium leading-relaxed">
+                        {emptyMessage}
+                      </div>
+                    </div>
+                    {searchTerm.trim() && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors border border-slate-200 mt-1 shadow-2xs"
+                      >
+                        Clear Search Query
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : (
-              currentData.map((row) => (
-                <tr key={keyExtractor(row)} className="hover:bg-slate-50 transition-colors">
-                  {columns.map((col) => (
-                    <td
-                      key={col.key}
-                      className={`py-3 px-3 ${
-                        col.align === 'right'
-                          ? 'text-right'
-                          : col.align === 'center'
-                          ? 'text-center'
-                          : 'text-left'
-                      }`}
-                    >
-                      {col.render
-                        ? col.render(row)
-                        : (row as Record<string, unknown>)[col.key] !== undefined
-                        ? String((row as Record<string, unknown>)[col.key])
-                        : null}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              currentData.map((row) => {
+                const customRowClass = rowClassName ? rowClassName(row) : '';
+                return (
+                  <tr
+                    key={keyExtractor(row)}
+                    className={`${customRowClass || 'hover:bg-slate-50'} transition-colors`}
+                  >
+                    {columns.map((col) => (
+                      <td
+                        key={col.key}
+                        className={`py-3 px-4 ${
+                          col.align === 'right'
+                            ? 'text-right'
+                            : col.align === 'center'
+                            ? 'text-center'
+                            : 'text-left'
+                        }`}
+                      >
+                        {col.render
+                          ? col.render(row)
+                          : (row as Record<string, unknown>)[col.key] !== undefined
+                          ? String((row as Record<string, unknown>)[col.key])
+                          : null}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
       {totalItems > pageSize && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={pageSize}
-          onPageChange={handlePageChange}
-        />
+        <div className="p-4 border-t border-slate-100 bg-white">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={pageSize}
+            onPageChange={handlePageChange}
+          />
+        </div>
       )}
     </div>
   );

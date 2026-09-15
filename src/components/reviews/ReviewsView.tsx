@@ -32,7 +32,7 @@ export default function ReviewsView() {
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">{rev.customerName}</h4>
                   <p className="text-xs text-slate-500">
-                    Reviewed: <span className="font-semibold text-blue-600">{rev.carName}</span> • {rev.date}
+                    Reviewed: <span className="font-semibold text-primary">{rev.carName}</span> • {rev.date}
                   </p>
                 </div>
               </div>

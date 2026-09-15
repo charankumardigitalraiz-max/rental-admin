@@ -1,79 +1,262 @@
 export type ActiveTab =
   | 'dashboard'
-  | 'products'
-  | 'categories'
-  | 'bookings'
+  | 'driver-bookings'
+  | 'driver-booking-details'
+  | 'driver-requests'
+  | 'drivers'
+  | 'drivers-pending'
+  | 'drivers-approved'
+  | 'drivers-online'
+  | 'drivers-suspended'
+  | 'driver-details'
+  | 'driver-subscription-plans'
+  | 'driver-subscriptions'
+  | 'subscription-payments'
   | 'customers'
+  | 'customer-details'
+  | 'valet-bookings'
+  | 'valet-booking-details'
+  | 'valet-staff'
+  | 'valet-staff-details'
+  | 'assignments'
+  | 'live-operations'
+  | 'local-pricing'
+  | 'outstation-pricing'
+  | 'valet-pricing'
+  | 'pricing-rules'
   | 'payments'
-  | 'returns'
-  | 'inventory'
-  | 'pricing'
-  | 'coupons'
+  | 'driver-earnings'
+  | 'platform-revenue'
+  | 'refunds'
   | 'reviews'
-  | 'analytics'
   | 'notifications'
+  | 'reports'
   | 'admin-users'
+  | 'roles-permissions'
   | 'settings';
 
-export interface CarProduct {
-  id: string;
-  name: string;
-  brand: string;
-  category: string;
-  year: number;
-  licensePlate: string;
-  dailyRate: number;
-  weeklyRate: number;
-  monthlyRate: number;
-  fuelType: 'Petrol' | 'Diesel' | 'Electric' | 'Hybrid';
-  transmission: 'Automatic' | 'Manual';
-  seats: number;
-  color: string;
-  status: 'Available' | 'Rented' | 'Maintenance' | 'Reserved';
-  mileage: number; // in km
-  location: string;
-  image: string;
-  rating: number;
-  reviewsCount: number;
-  features: string[];
-}
+export type DriverBookingStatus =
+  | 'Pending'
+  | 'Active'
+  | 'Searching Driver'
+  | 'Driver Assigned'
+  | 'Driver Arriving'
+  | 'Service Started'
+  | 'Completed'
+  | 'Cancelled'
+  | 'No Driver Found';
 
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  carCount: number;
-  startingPrice: number;
-  icon: string;
-  status: 'Active' | 'Inactive';
-}
+export type Booking = DriverBooking;
 
-export interface Booking {
+export interface DriverBooking {
   id: string;
   bookingNumber: string;
-  carId: string;
-  carName: string;
-  carImage: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  aadhaarNumber?: string;
+  customerAvatar: string;
+  bookingType: 'Local' | 'Outstation';
+  pickupLocation: string;
+  destinationLocation: string;
+  bookingDate: string;
+  bookingTime: string;
+  durationHours: number;
+  vehicleInfo: {
+    type: string;
+    model: string;
+    plateNumber: string;
+    fuelType: string;
+    transmission: string;
+  };
+  status: DriverBookingStatus;
+  carId?: string;
+  carName?: string;
+  carImage?: string;
   driverLicenseNumber?: string;
   licenseExpiryDate?: string;
-  emergencyContact?: string;
+  driverLicenseImage?: string;
   idProofType?: string;
+  idProofImage?: string;
+  aadhaarNumber?: string;
+  emergencyContact?: string;
+  startDate?: string;
+  endDate?: string;
+  totalDays?: number;
+  totalAmount?: number;
+  paymentStatus?: string;
+  driverId?: string;
+  driverName?: string;
+  driverPhone?: string;
+  driverRating?: number;
+  driverAvatar?: string;
+  pricing: {
+    baseAmount: number;
+    durationCharge: number;
+    typeCharge: number;
+    extraCharges: number;
+    discount: number;
+    tax: number;
+    totalCustomerAmount: number;
+    driverEarnings: number;
+    platformCommission: number;
+  };
+  timeline: {
+    created: string;
+    searching?: string;
+    accepted?: string;
+    assigned?: string;
+    arrived?: string;
+    started?: string;
+    completed?: string;
+  };
+}
+
+export interface Driver {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  avatar: string;
+  rating: number;
+  totalBookings: number;
+  completedBookings: number;
+  cancelledBookings: number;
+  status: 'Pending Approval' | 'Approved' | 'Rejected' | 'Suspended';
+  dutyStatus: 'Online' | 'Offline';
+  availability: 'Available' | 'Busy';
+  subscription: {
+    planId: string;
+    planName: string;
+    status: 'Active' | 'Expiring Soon' | 'Expired' | 'None';
+    startDate: string;
+    expiryDate: string;
+    daysRemaining: number;
+    localEligible: boolean;
+    outstationEligible: boolean;
+  };
+  verification: {
+    status: 'Verified' | 'Pending' | 'Rejected';
+    licenseNumber: string;
+    licenseExpiry: string;
+    licenseImage: string;
+    idProofType: string;
+    idProofNumber: string;
+    idProofImage: string;
+  };
+  earnings: {
+    total: number;
+    pending: number;
+    paid: number;
+  };
+  currentLocation: string;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
+  durationDays: number;
+  localEligible: boolean;
+  outstationEligible: boolean;
+  maxRequestsPerDay: number;
+  features: string[];
+  status: 'Active' | 'Inactive';
+}
+
+export interface DriverSubscription {
+  id: string;
+  driverId: string;
+  driverName: string;
+  driverAvatar: string;
+  planId: string;
+  planName: string;
   startDate: string;
-  endDate: string;
-  totalDays: number;
-  dailyRate: number;
-  securityDeposit: number;
-  totalAmount: number;
-  status: 'Pending' | 'Active' | 'Completed' | 'Cancelled';
-  paymentStatus: 'Paid' | 'Pending' | 'Refunded' | 'Failed';
-  pickupLocation: string;
-  dropoffLocation: string;
-  createdAt: string;
+  expiryDate: string;
+  amount: number;
+  paymentStatus: 'Successful' | 'Pending' | 'Failed';
+  subscriptionStatus: 'Active' | 'Expiring Soon' | 'Expired' | 'Cancelled' | 'Suspended';
+  bookingsReceived: number;
+  completedBookings: number;
+}
+
+export interface SubscriptionPayment {
+  id: string;
+  transactionId: string;
+  driverId: string;
+  driverName: string;
+  planName: string;
+  amount: number;
+  paymentMethod: string;
+  paymentDate: string;
+  status: 'Successful' | 'Pending' | 'Failed' | 'Refunded';
+}
+
+export type ValetBookingStatus =
+  | 'New Request'
+  | 'Pending Assignment'
+  | 'Partially Assigned'
+  | 'Fully Assigned'
+  | 'In Progress'
+  | 'Completed'
+  | 'Cancelled';
+
+export interface ValetBooking {
+  id: string;
+  bookingNumber: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  eventName: string;
+  eventType: string;
+  venue: string;
+  venueAddress: string;
+  eventDate: string;
+  startTime: string;
+  endTime: string;
+  durationHours: number;
+  requiredStaffCount: number;
+  assignedStaffIds: string[];
+  assignedStaffNames: string[];
+  status: ValetBookingStatus;
+  pricing: {
+    pricePerStaff: number;
+    totalBaseAmount: number;
+    surgeAmount: number;
+    tax: number;
+    totalAmount: number;
+    staffPayoutTotal: number;
+    platformCommission: number;
+  };
+  timeline: {
+    created: string;
+    assignmentStarted?: string;
+    fullyAssigned?: string;
+    eventStarted?: string;
+    completed?: string;
+  };
+}
+
+export interface ValetStaff {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  avatar: string;
+  rating: number;
+  experienceYears: number;
+  location: string;
+  assignedEventsCount: number;
+  status: 'Available' | 'Assigned' | 'On Duty' | 'Offline' | 'Suspended';
+  currentAssignment?: {
+    bookingId: string;
+    eventName: string;
+    venue: string;
+  };
+  earnings: {
+    total: number;
+    pending: number;
+    paid: number;
+  };
 }
 
 export interface Customer {
@@ -83,107 +266,123 @@ export interface Customer {
   phone: string;
   avatar: string;
   address: string;
-  licenseNumber: string;
-  licenseStatus: 'Verified' | 'Pending' | 'Rejected';
   totalBookings: number;
+  completedBookings: number;
+  cancelledBookings: number;
   totalSpent: number;
-  rating: number;
+  currentBooking?: string;
+  status: 'Active' | 'Suspended';
   joinedDate: string;
-  status: 'Active' | 'Blocked';
 }
 
-export interface Payment {
+export interface LocalPricingConfig {
+  basePrice: number;
+  minDurationHours: number;
+  perHourPrice: number;
+  additionalHourPrice: number;
+  waitingChargePerHour: number;
+  nightCharge: number;
+  peakSurgePercent: number;
+  platformCommissionPercent: number;
+  driverSharePercent: number;
+  taxPercent: number;
+}
+
+export interface OutstationPricingConfig {
+  basePrice: number;
+  minDurationDays: number;
+  perDayRate: number;
+  perKmRate: number;
+  waitingChargePerHour: number;
+  nightAllowancePerNight: number;
+  driverFoodAllowancePerDay: number;
+  platformCommissionPercent: number;
+  driverSharePercent: number;
+  taxPercent: number;
+}
+
+export interface ValetPricingConfig {
+  pricePerStaffPerHour: number;
+  minStaffRequirement: number;
+  minDurationHours: number;
+  additionalHourRatePerStaff: number;
+  weekendSurgePercent: number;
+  peakEventSurgePercent: number;
+  platformCommissionPercent: number;
+  staffPayoutPercent: number;
+  taxPercent: number;
+}
+
+export interface PricingRule {
+  id: string;
+  ruleName: string;
+  service: 'Local Driver' | 'Outstation Driver' | 'Valet Staff' | 'All';
+  condition: string;
+  type: 'Percentage' | 'Fixed';
+  value: number;
+  priority: 'High' | 'Medium' | 'Low';
+  status: 'Active' | 'Inactive';
+}
+
+export interface Transaction {
   id: string;
   transactionId: string;
   bookingId: string;
-  customerName: string;
+  serviceType: 'Driver Local' | 'Driver Outstation' | 'Valet Staff' | 'Subscription';
+  customerOrDriverName: string;
   amount: number;
-  method: 'UPI' | 'NetBanking' | 'Credit Card' | 'Debit Card' | 'Razorpay' | 'Cash';
+  method: string;
+  payoutAmount: number;
+  platformCommission: number;
+  refundAmount: number;
   status: 'Success' | 'Pending' | 'Failed' | 'Refunded';
   date: string;
-  invoiceUrl: string;
 }
 
-export interface ReturnRecord {
+export interface DriverEarningRecord {
+  driverId: string;
+  driverName: string;
+  completedBookings: number;
+  grossEarnings: number;
+  platformCommission: number;
+  adjustments: number;
+  netEarnings: number;
+  pendingPayout: number;
+  paidAmount: number;
+}
+
+export interface RefundRecord {
   id: string;
-  returnId: string;
   bookingId: string;
-  carId: string;
-  carName: string;
+  serviceType: string;
   customerName: string;
-  expectedReturnDate: string;
-  actualReturnDate: string;
-  startingOdometer: number;
-  endingOdometer: number;
-  distanceDriven: number;
-  fuelLevelBefore: string;
-  fuelLevelAfter: string;
-  damageReported: boolean;
-  damageNotes?: string;
-  extraCharges: number;
-  inspectorName: string;
-  status: 'Inspected' | 'Pending Inspection' | 'Disputed';
+  originalAmount: number;
+  refundAmount: number;
+  reason: string;
+  requestedDate: string;
+  status: 'Requested' | 'Under Review' | 'Approved' | 'Processing' | 'Completed' | 'Rejected';
 }
 
-export interface InventoryItem {
+export interface ReviewRecord {
   id: string;
-  carId: string;
-  carName: string;
-  licensePlate: string;
-  currentStatus: 'On Road' | 'In Garage' | 'Scheduled Maintenance' | 'Available at Yard';
-  yardLocation: string;
-  lastServiceDate: string;
-  nextServiceDueDate: string;
-  healthScore: number;
-  fuelLevelPercent: number;
-}
-
-export interface PricingPlan {
-  id: string;
-  title: string;
-  category: string;
-  dailyRate: number;
-  weeklyRate: number;
-  monthlyRate: number;
-  weekendSurgePercent: number;
-  freeKmPerDay: number;
-  extraKmRate: number;
-  securityDeposit: number;
-  status: 'Active' | 'Draft';
-}
-
-export interface Coupon {
-  id: string;
-  code: string;
-  discountType: 'Percentage' | 'Fixed';
-  discountValue: number;
-  minRentalAmount: number;
-  maxDiscount?: number;
-  usageCount: number;
-  maxUsage: number;
-  validFrom: string;
-  validUntil: string;
-  status: 'Active' | 'Expired' | 'Scheduled';
-}
-
-export interface Review {
-  id: string;
+  reviewType: 'Driver' | 'Valet Staff';
   customerName: string;
-  customerAvatar: string;
-  carName: string;
+  bookingNumber: string;
+  targetName: string;
   rating: number;
-  comment: string;
+  reviewText: string;
   date: string;
-  status: 'Approved' | 'Pending' | 'Hidden';
+  status: 'Approved' | 'Flagged' | 'Hidden';
 }
 
-export interface NotificationItem {
+export interface NotificationRecord {
   id: string;
+  targetAudience: 'Customers' | 'Drivers' | 'Valet Staff' | 'All';
+  type: 'Booking' | 'Subscription' | 'Payment' | 'Cancellation' | 'Assignment' | 'General';
   title: string;
   message: string;
-  timestamp: string;
-  type: 'booking' | 'payment' | 'maintenance' | 'system' | 'return';
-  read: boolean;
+  sentAt: string;
+  read?: boolean;
 }
 
 export interface AdminUser {
@@ -192,20 +391,21 @@ export interface AdminUser {
   email: string;
   phone: string;
   avatar: string;
-  role: 'Super Admin' | 'Fleet Manager' | 'Booking Manager' | 'Support Agent';
-  status: 'Active' | 'Inactive';
+  role: 'Super Admin' | 'Operations Admin' | 'Finance Admin' | 'Driver Manager' | 'Valet Manager' | 'Support Staff';
   lastLogin: string;
+  status: 'Active' | 'Inactive';
 }
 
 export interface SystemSettings {
-  storeName: string;
+  platformName: string;
+  contactEmail: string;
+  contactPhone: string;
   currencySymbol: string;
-  currencyCode: string;
-  taxRatePercent: number;
-  supportPhone: string;
-  supportEmail: string;
-  address: string;
-  autoApproveBookings: boolean;
-  emailNotifications: boolean;
-  smsNotifications: boolean;
+  autoDriverMatching: boolean;
+  driverSubscriptionMandatory: boolean;
+  minDriverRatingRequired: number;
+  valetMinNoticeHours: number;
+  cancellationFreeWindowMins: number;
+  cancellationFeePercent: number;
+  gstTaxPercent: number;
 }

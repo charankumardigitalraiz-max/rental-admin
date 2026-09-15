@@ -14,7 +14,7 @@ export default function AdminUsersView() {
           <h3 className="font-bold text-slate-900 text-sm">Admin Team & Access Control</h3>
           <p className="text-xs text-slate-500">Manage administrator roles, fleet manager privileges, and system access</p>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all">
+        <button className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all">
           <Plus className="w-4 h-4" /> Add Admin User
         </button>
       </div>
@@ -26,11 +26,11 @@ export default function AdminUsersView() {
               <img
                 src={admin.avatar}
                 alt={admin.name}
-                className="w-12 h-12 rounded-full object-cover ring-2 ring-blue-100"
+                className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-light"
               />
               <div>
                 <h4 className="font-bold text-slate-900 text-sm">{admin.name}</h4>
-                <span className="inline-block text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                <span className="inline-block text-[10px] font-bold text-primary bg-primary-light border border-primary/20 px-2 py-0.5 rounded">
                   {admin.role}
                 </span>
               </div>

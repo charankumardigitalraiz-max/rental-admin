@@ -33,7 +33,7 @@ export default function AnalyticsView() {
         </div>
         <div className="card-white p-5">
           <span className="text-[11px] font-semibold text-slate-400 uppercase">Avg Rental Ticket Size</span>
-          <h3 className="text-2xl font-bold text-blue-600 mt-1">₹24,800</h3>
+          <h3 className="text-2xl font-bold text-primary mt-1">₹24,800</h3>
           <p className="text-xs text-slate-400 mt-1">Average trip duration: 4.2 days</p>
         </div>
         <div className="card-white p-5">
@@ -58,11 +58,11 @@ export default function AnalyticsView() {
                 <span className="font-bold text-slate-900">
                   {item.name} <span className="text-slate-400 font-normal">({item.category})</span>
                 </span>
-                <span className="font-bold text-blue-600">₹{item.revenue.toLocaleString('en-IN')}</span>
+                <span className="font-bold text-primary">₹{item.revenue.toLocaleString('en-IN')}</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                  className="bg-primary h-2 rounded-full transition-all duration-500"
                   style={{ width: `${item.percentage}%` }}
                 ></div>
               </div>

@@ -68,7 +68,7 @@ export default function PaymentsView() {
       header: 'Invoice',
       align: 'right',
       render: () => (
-        <button className="text-blue-600 hover:text-blue-700 font-semibold flex items-center justify-end gap-1 ml-auto">
+        <button className="text-primary hover:text-primary-hover font-semibold flex items-center justify-end gap-1 ml-auto">
           <Download className="w-3.5 h-3.5" /> Receipt
         </button>
       ),
@@ -86,7 +86,7 @@ export default function PaymentsView() {
         </div>
         <div className="card-white p-4">
           <span className="text-[11px] font-semibold text-slate-400 uppercase">Primary Gateway</span>
-          <h3 className="text-xl font-bold text-blue-600 mt-1">Razorpay UPI / Cards</h3>
+          <h3 className="text-xl font-bold text-primary mt-1">Razorpay UPI / Cards</h3>
         </div>
         <div className="card-white p-4">
           <span className="text-[11px] font-semibold text-slate-400 uppercase">Success Rate</span>

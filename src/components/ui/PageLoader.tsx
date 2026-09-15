@@ -13,9 +13,9 @@ export default function PageLoader({ message = 'Loading page data...' }: PageLoa
       {/* Centered Clean Card */}
       <div className="card-white p-7 max-w-xs w-full flex flex-col items-center text-center space-y-4 shadow-sm border border-slate-200 bg-white rounded-xl">
         {/* Icon & Smooth Spinner Container */}
-        <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center relative border border-blue-100">
-          <Car className="w-5 h-5 text-blue-600" />
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin absolute -inset-0 m-auto" />
+        <div className="w-12 h-12 rounded-xl bg-primary-light text-primary flex items-center justify-center relative border border-primary-light">
+          <Car className="w-5 h-5 text-primary" />
+          <Loader2 className="w-12 h-12 text-primary animate-spin absolute -inset-0 m-auto" />
         </div>
 
         {/* Text */}
@@ -26,7 +26,7 @@ export default function PageLoader({ message = 'Loading page data...' }: PageLoa
 
         {/* Smooth Progress Bar */}
         <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
-          <div className="bg-blue-600 h-full rounded-full animate-pulse w-3/4"></div>
+          <div className="bg-primary h-full rounded-full animate-pulse w-3/4"></div>
         </div>
       </div>
     </div>

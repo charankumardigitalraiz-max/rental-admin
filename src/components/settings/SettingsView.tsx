@@ -111,7 +111,7 @@ export default function SettingsView() {
                 id="autoApprove"
                 checked={form.autoApproveBookings}
                 onChange={(e) => setForm({ ...form, autoApproveBookings: e.target.checked })}
-                className="rounded text-blue-600"
+                className="rounded text-primary accent-primary"
               />
               <label htmlFor="autoApprove" className="font-semibold text-slate-800">
                 Auto-approve verified customer booking orders
@@ -124,7 +124,7 @@ export default function SettingsView() {
                 id="smsNotif"
                 checked={form.smsNotifications}
                 onChange={(e) => setForm({ ...form, smsNotifications: e.target.checked })}
-                className="rounded text-blue-600"
+                className="rounded text-primary accent-primary"
               />
               <label htmlFor="smsNotif" className="font-semibold text-slate-800">
                 Send SMS notifications & trip updates to drivers
@@ -136,7 +136,7 @@ export default function SettingsView() {
         <div className="pt-4 border-t border-slate-100 flex justify-end">
           <button
             type="submit"
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex items-center gap-2 shadow-sm transition-all"
+            className="px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-semibold flex items-center gap-2 shadow-sm transition-all"
           >
             <Save className="w-4 h-4" /> Save Configuration
           </button>

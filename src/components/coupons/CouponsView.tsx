@@ -42,7 +42,7 @@ export default function CouponsView() {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
+          className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
         >
           <Plus className="w-4 h-4" /> Create Coupon Code
         </button>
@@ -53,7 +53,7 @@ export default function CouponsView() {
           <div key={c.id} className="card-white card-white-hover p-5 flex flex-col justify-between space-y-4">
             <div>
               <div className="flex items-center justify-between">
-                <span className="font-mono font-bold text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-lg">
+                <span className="font-mono font-bold text-sm bg-primary-light text-primary border border-primary/20 px-3 py-1 rounded-lg">
                   {c.code}
                 </span>
                 <span
@@ -80,7 +80,7 @@ export default function CouponsView() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Redeemed:</span>
-                  <span className="font-bold text-blue-600">
+                  <span className="font-bold text-primary">
                     {c.usageCount} / {c.maxUsage} times
                   </span>
                 </div>
@@ -166,7 +166,7 @@ export default function CouponsView() {
             >
               Cancel
             </button>
-            <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white rounded-lg font-semibold shadow-xs">
+            <button type="submit" className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-semibold shadow-xs">
               Create Coupon
             </button>
           </div>

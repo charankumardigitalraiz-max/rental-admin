@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={plusJakartaSans.className}>
-      <body className="antialiased bg-slate-50 text-slate-900 min-h-screen">
+      <body className="antialiased bg-white text-slate-900 min-h-screen">
         <QueryProvider>{children}</QueryProvider>
       </body>
     </html>

@@ -23,7 +23,7 @@ export default function NotificationsView() {
         </div>
         <button
           onClick={markAllNotificationsAsRead}
-          className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
+          className="text-xs font-semibold text-primary hover:text-primary-hover flex items-center gap-1.5"
         >
           <CheckCheck className="w-4 h-4" /> Mark All as Read
         </button>
@@ -37,13 +37,13 @@ export default function NotificationsView() {
               key={n.id}
               onClick={() => markNotificationAsRead(n.id)}
               className={`card-white p-4 flex items-start gap-4 cursor-pointer transition-all ${
-                !n.read ? 'bg-blue-50/40 border-blue-200' : 'hover:bg-slate-50'
+                !n.read ? 'bg-primary-light/40 border-primary/20' : 'hover:bg-slate-50'
               }`}
             >
               <div
                 className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                   n.type === 'booking'
-                    ? 'bg-blue-100 text-blue-700'
+                    ? 'bg-primary-light text-primary'
                     : n.type === 'payment'
                     ? 'bg-emerald-100 text-emerald-700'
                     : n.type === 'maintenance'
@@ -62,7 +62,7 @@ export default function NotificationsView() {
                 <p className="text-xs text-slate-600 mt-1">{n.message}</p>
               </div>
 
-              {!n.read && <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 mt-1"></span>}
+              {!n.read && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1"></span>}
             </div>
           );
         })}

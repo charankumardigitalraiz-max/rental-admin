@@ -38,7 +38,7 @@ export default function InventoryView() {
             item.currentStatus === 'Available at Yard'
               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
               : item.currentStatus === 'On Road'
-              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+              ? 'bg-primary-light text-primary border border-primary/20'
               : 'bg-amber-50 text-amber-700 border border-amber-200'
           }`}
         >
@@ -53,7 +53,7 @@ export default function InventoryView() {
         <div className="flex items-center gap-2">
           <div className="w-16 bg-slate-100 rounded-full h-2 overflow-hidden">
             <div
-              className="bg-blue-600 h-2 rounded-full"
+              className="bg-primary h-2 rounded-full"
               style={{ width: `${item.fuelLevelPercent}%` }}
             ></div>
           </div>

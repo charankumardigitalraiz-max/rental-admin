@@ -58,13 +58,13 @@ export default function Modal({
 
       {/* Responsive Modal Dialog Container */}
       <div
-        className={`relative bg-white rounded-xl ${maxWidthClasses} w-full shadow-xl border border-slate-200 flex flex-col max-h-[92vh] sm:max-h-[90vh] z-10 animate-in zoom-in-95 duration-200 overflow-hidden mx-auto`}
+        className={`relative bg-white rounded-md ${maxWidthClasses} w-full shadow-xl border border-slate-200 flex flex-col max-h-[92vh] sm:max-h-[90vh] z-10 animate-in zoom-in-95 duration-200 overflow-hidden mx-auto`}
       >
         {/* Modal Header */}
         <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
           <div className="flex items-center gap-2.5">
             {Icon && (
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+              <div className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
                 <Icon className="w-4 h-4" />
               </div>
             )}
@@ -76,7 +76,7 @@ export default function Modal({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors shrink-0"
             title="Close dialog"
           >
             <X className="w-4 h-4" />

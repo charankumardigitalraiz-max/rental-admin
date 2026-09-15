@@ -58,6 +58,11 @@ export interface Booking {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  aadhaarNumber?: string;
+  driverLicenseNumber?: string;
+  licenseExpiryDate?: string;
+  emergencyContact?: string;
+  idProofType?: string;
   startDate: string;
   endDate: string;
   totalDays: number;
@@ -129,7 +134,7 @@ export interface InventoryItem {
   yardLocation: string;
   lastServiceDate: string;
   nextServiceDueDate: string;
-  healthScore: number; // percentage
+  healthScore: number;
   fuelLevelPercent: number;
 }
 
@@ -151,7 +156,7 @@ export interface Coupon {
   id: string;
   code: string;
   discountType: 'Percentage' | 'Fixed';
-  discountValue: number; // e.g. 15 for 15% or 1000 for ₹1000
+  discountValue: number;
   minRentalAmount: number;
   maxDiscount?: number;
   usageCount: number;
@@ -166,7 +171,7 @@ export interface Review {
   customerName: string;
   customerAvatar: string;
   carName: string;
-  rating: number; // 1 to 5
+  rating: number;
   comment: string;
   date: string;
   status: 'Approved' | 'Pending' | 'Hidden';

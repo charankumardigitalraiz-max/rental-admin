@@ -76,10 +76,10 @@ export default function Modal({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors shrink-0 focus:outline-none"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200/70 hover:border-rose-200 flex items-center justify-center transition-all shrink-0 focus:outline-none shadow-2xs active:scale-95"
             title="Close dialog"
           >
-            <X className="w-4.5 h-4.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 

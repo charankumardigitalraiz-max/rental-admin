@@ -405,6 +405,9 @@ export interface SystemSettings {
   driverSubscriptionMandatory: boolean;
   minDriverRatingRequired: number;
   valetMinNoticeHours: number;
+  valetHourlyRate: number;
+  localDriverHourlyRate: number;
+  outstationDriverHourlyRate: number;
   cancellationFreeWindowMins: number;
   cancellationFeePercent: number;
   gstTaxPercent: number;

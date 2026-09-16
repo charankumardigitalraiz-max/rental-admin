@@ -10,6 +10,7 @@ export interface Column<T> {
   header: string;
   render?: (row: T) => React.ReactNode;
   align?: 'left' | 'center' | 'right';
+  className?: string;
 }
 
 interface DataTableProps<T> {
@@ -93,13 +94,13 @@ export default function DataTable<T>({
         <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-100 w-full bg-white">
           {searchPlaceholder !== undefined && (
             <div className="relative w-full sm:w-72 shrink-0">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={handleSearch}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                className="w-full pl-9.5 pr-3.5 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0 focus:border-slate-300 transition-all shadow-2xs"
               />
             </div>
           )}
@@ -113,18 +114,17 @@ export default function DataTable<T>({
 
       <div className="overflow-x-auto w-full">
         <table className="w-full text-left text-xs">
-          <thead className="bg-primary text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-emerald-900/40">
+          <thead className="bg-[#023526] text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-[#012319]">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`py-3 px-4 ${
-                    col.align === 'right'
+                  className={`py-3 px-4 ${col.className || ''} ${col.align === 'right'
                       ? 'text-right'
                       : col.align === 'center'
-                      ? 'text-center'
-                      : 'text-left'
-                  }`}
+                        ? 'text-center'
+                        : 'text-left'
+                    }`}
                 >
                   {col.header}
                 </th>
@@ -169,19 +169,18 @@ export default function DataTable<T>({
                     {columns.map((col) => (
                       <td
                         key={col.key}
-                        className={`py-3 px-4 ${
-                          col.align === 'right'
+                        className={`py-3 px-4 ${col.className || ''} ${col.align === 'right'
                             ? 'text-right'
                             : col.align === 'center'
-                            ? 'text-center'
-                            : 'text-left'
-                        }`}
+                              ? 'text-center'
+                              : 'text-left'
+                          }`}
                       >
                         {col.render
                           ? col.render(row)
                           : (row as Record<string, unknown>)[col.key] !== undefined
-                          ? String((row as Record<string, unknown>)[col.key])
-                          : null}
+                            ? String((row as Record<string, unknown>)[col.key])
+                            : null}
                       </td>
                     ))}
                   </tr>
@@ -192,8 +191,8 @@ export default function DataTable<T>({
         </table>
       </div>
 
-      {totalItems > pageSize && (
-        <div className="p-4 border-t border-slate-100 bg-white">
+      {totalItems > 0 && (
+        <div className="px-4 py-3 border-t border-slate-100 bg-white">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

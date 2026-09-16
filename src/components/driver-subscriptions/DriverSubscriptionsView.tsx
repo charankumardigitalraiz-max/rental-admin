@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRentalStore } from '@/store/useRentalStore';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { DriverSubscription } from '@/types';
@@ -110,18 +111,16 @@ export default function DriverSubscriptionsView() {
     {
       key: 'actions',
       header: 'Actions',
-      align: 'right',
+      align: 'center',
       render: (sub) => (
-        <div className="flex items-center justify-end gap-1.5">
-          <button
-            onClick={() => {
-              setSelectedDriverId(sub.driverId);
-              setActiveTab('driver-details');
-            }}
-            className="px-2.5 py-1 bg-primary hover:bg-primary-hover text-white text-[11px] font-bold rounded flex items-center gap-1.5 transition-colors"
+        <div className="flex justify-center">
+          <Link
+            href={`/drivers/${sub.driverId}`}
+            className="px-2.5 py-1 bg-primary hover:bg-primary-hover text-white text-[11px] font-bold rounded-md shadow-2xs transition-all inline-flex items-center gap-1"
+            title="View Driver Profile"
           >
-            <Eye className="w-3.5 h-3.5" />
-          </button>
+            <Eye className="w-3.5 h-3.5 text-gold-300" /> Profile
+          </Link>
         </div>
       ),
     },

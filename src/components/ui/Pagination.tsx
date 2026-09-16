@@ -18,13 +18,13 @@ export default function Pagination({
   itemsPerPage,
   onPageChange,
 }: PaginationProps) {
-  if (totalPages <= 1) return null;
+  if (totalItems === 0) return null;
 
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 text-xs text-slate-500">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
       <div>
         Showing <span className="font-semibold text-slate-900">{startItem}</span> to{' '}
         <span className="font-semibold text-slate-900">{endItem}</span> of{' '}

@@ -7,8 +7,10 @@ import { Search, Eye, Phone, Mail, UserX, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { Customer } from '@/types';
+import { useToast } from '@/context/ToastContext';
 
 export default function CustomersView() {
+  const { toast } = useToast();
   const { customers, toggleCustomerStatus, setActiveTab, setSelectedCustomerId } = useRentalStore();
 
   const totalCustomers = customers.length;
@@ -25,6 +27,7 @@ export default function CustomersView() {
     {
       key: 'name',
       header: 'Name & Phone',
+      className: 'min-w-[180px]',
       render: (c) => (
         <div className="flex items-center gap-2.5">
           <img src={c.avatar} alt={c.name} className="w-8 h-8 rounded-full object-cover shrink-0 ring-2 ring-emerald-100" />
@@ -76,8 +79,8 @@ export default function CustomersView() {
       render: (c) => (
         <span
           className={`px-2 py-0.5 rounded text-[10px] font-bold ${c.status === 'Active'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : 'bg-rose-50 text-rose-700 border border-rose-200'
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : 'bg-rose-50 text-rose-700 border border-rose-200'
             }`}
         >
           {c.status}
@@ -87,21 +90,29 @@ export default function CustomersView() {
     {
       key: 'actions',
       header: 'Actions',
-      align: 'right',
+      align: 'center',
       render: (c) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-center gap-1.5">
           <Link
             href={`/customers/${c.id}`}
-            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors inline-block"
+            className="px-2.5 py-1 bg-primary-light hover:bg-primary text-primary hover:text-white text-[11px] font-bold rounded-md border border-primary/20 hover:border-primary transition-all inline-flex items-center gap-1 shadow-2xs"
             title="View Customer Profile & History"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-3.5 h-3.5" />
           </Link>
           <button
-            onClick={() => toggleCustomerStatus(c.id)}
+            onClick={() => {
+              toggleCustomerStatus(c.id);
+              const nextStatus = c.status === 'Active' ? 'Suspended' : 'Active';
+              if (nextStatus === 'Active') {
+                toast.success('Customer Activated', `Account for ${c.name} is now active.`);
+              } else {
+                toast.warning('Customer Suspended', `Account for ${c.name} has been suspended.`);
+              }
+            }}
             className={`px-2.5 py-1 text-[10px] font-bold rounded border transition-colors ${c.status === 'Active'
-                ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+              ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+              : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
               }`}
           >
             {c.status === 'Active' ? 'Suspend' : 'Activate'}
@@ -119,7 +130,7 @@ export default function CustomersView() {
           <div className="sm:px-4 space-y-1">
             <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">Total Customers</span>
             <div className="text-xl font-bold text-slate-900">{totalCustomers}</div>
-            <span className="text-[10px] text-slate-400 font-medium">Registered Accounts</span>
+            <span className="text-[10px] font-medium text-slate-400 ">Registered Accounts</span>
           </div>
 
           <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">

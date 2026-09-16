@@ -192,15 +192,15 @@ export default function DriverBookingsView() {
     {
       key: 'actions',
       header: 'Actions',
-      align: 'right',
+      align: 'center',
       render: (b) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-center gap-1.5">
           <Link
             href={`/driver-bookings/${b.id}`}
-            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors inline-block"
+            className="p-1.5 bg-primary-light hover:bg-primary text-primary hover:text-white rounded-md border border-primary/20 hover:border-primary transition-all inline-flex items-center justify-center shadow-2xs"
             title="View Full Booking Details"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-3.5 h-3.5" />
           </Link>
 
           {b.status !== 'Completed' && b.status !== 'Cancelled' && (

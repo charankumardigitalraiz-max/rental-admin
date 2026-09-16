@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRentalStore } from '@/store/useRentalStore';
 import Link from 'next/link';
 import DataTable, { Column } from '@/components/ui/DataTable';
@@ -19,6 +19,9 @@ import {
   Lock,
   Unlock,
   Users,
+  Clock,
+  AlertCircle,
+  Star,
 } from 'lucide-react';
 
 interface DriversViewProps {
@@ -38,6 +41,25 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
   } = useRentalStore();
 
   const [activeTabFilter, setActiveTabFilter] = useState<string>('All');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Trigger smooth loading state on filter or tab change
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [filter, activeTab]);
+
+  const handleTabFilterChange = (tab: string) => {
+    if (tab === activeTabFilter) return;
+    setIsLoading(true);
+    setActiveTabFilter(tab);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 250);
+  };
 
   // Determine effective filter status
   let effectiveStatus = activeTabFilter;
@@ -87,6 +109,7 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
     {
       key: 'name',
       header: 'Driver Profile',
+      className: 'min-w-[180px]',
       render: (d) => (
         <div className="flex items-center gap-3">
           <img src={d.avatar} alt={d.name} className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 shrink-0" />
@@ -100,17 +123,17 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
     {
       key: 'status',
       header: 'Status',
+      className: 'min-w-[150px]',
       render: (d) => (
         <span
-          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-            d.status === 'Approved'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : d.status === 'Pending Approval'
+          className={`inline-block whitespace-nowrap px-2.5 py-1 rounded text-[10px] font-bold ${d.status === 'Approved'
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : d.status === 'Pending Approval'
               ? 'bg-amber-50 text-amber-700 border border-amber-200'
               : d.status === 'Suspended'
-              ? 'bg-rose-50 text-rose-700 border border-rose-200'
-              : 'bg-slate-100 text-slate-600'
-          }`}
+                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                : 'bg-slate-100 text-slate-600'
+            }`}
         >
           {d.status}
         </span>
@@ -119,12 +142,12 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
     {
       key: 'dutyStatus',
       header: 'Duty / Availability',
+      className: 'min-w-[170px]',
       render: (d) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
           <span
-            className={`w-2 h-2 rounded-full ${
-              d.dutyStatus === 'Online' ? 'bg-emerald-500' : 'bg-slate-300'
-            }`}
+            className={`w-2 h-2 rounded-full ${d.dutyStatus === 'Online' ? 'bg-emerald-500' : 'bg-slate-300'
+              }`}
           ></span>
           <span className="font-semibold text-slate-800">{d.dutyStatus}</span>
           <span className="text-[10px] text-slate-400">({d.availability})</span>
@@ -134,26 +157,26 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
     {
       key: 'subscription',
       header: 'Subscription Pass',
+      className: 'min-w-[220px]',
       render: (d) =>
         d.subscription.status !== 'None' ? (
-          <div>
+          <div className="whitespace-nowrap">
             <span className="font-bold text-slate-900 flex items-center gap-1">
-              <Award className="w-3.5 h-3.5 text-amber-500" /> {d.subscription.planName}
+              <Award className="w-3.5 h-3.5 text-amber-500 shrink-0" /> {d.subscription.planName}
             </span>
             <span
-              className={`text-[10px] font-semibold ${
-                d.subscription.status === 'Active'
-                  ? 'text-emerald-600'
-                  : d.subscription.status === 'Expiring Soon'
+              className={`text-[10px] font-semibold ${d.subscription.status === 'Active'
+                ? 'text-emerald-600'
+                : d.subscription.status === 'Expiring Soon'
                   ? 'text-amber-600 font-bold'
                   : 'text-rose-600'
-              }`}
+                }`}
             >
               {d.subscription.status} (Exp: {d.subscription.expiryDate})
             </span>
           </div>
         ) : (
-          <span className="text-rose-600 font-bold text-[10px] bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+          <span className="inline-block whitespace-nowrap text-rose-600 font-bold text-[10px] bg-rose-50 px-2.5 py-1 rounded border border-rose-200">
             No Subscription Pass
           </span>
         ),
@@ -161,13 +184,13 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
     {
       key: 'verification',
       header: 'DL Verification',
+      className: 'min-w-[170px]',
       render: (d) => (
         <span
-          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-            d.verification.status === 'Verified'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : 'bg-amber-50 text-amber-700 border border-amber-200'
-          }`}
+          className={`inline-block whitespace-nowrap px-2.5 py-1 rounded text-[10px] font-bold ${d.verification.status === 'Verified'
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : 'bg-amber-50 text-amber-700 border border-amber-200'
+            }`}
         >
           {d.verification.status} ({d.verification.licenseNumber})
         </span>
@@ -190,15 +213,15 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
     {
       key: 'actions',
       header: 'Actions',
-      align: 'right',
+      align: 'center',
       render: (d) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-center gap-1.5">
           <Link
             href={`/drivers/${d.id}`}
-            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors inline-block"
+            className="p-1.5 bg-primary-light hover:bg-primary text-primary hover:text-white rounded-md border border-primary/20 hover:border-primary transition-all inline-flex items-center justify-center shadow-2xs"
             title="View Driver Details"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-3.5 h-3.5" />
           </Link>
 
           {d.status === 'Pending Approval' && (
@@ -276,26 +299,44 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
   const renderTopStats = () => {
     if (filter === 'pending' || activeTab === 'drivers-pending') {
       return (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Pending Applications</span>
-            <h3 className="text-xl font-bold mt-1 text-amber-700">{pendingDrivers.length}</h3>
-            <p className="text-[10px] text-amber-600 mt-0.5">Awaiting verification</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">DL Verified</span>
-            <h3 className="text-xl font-bold mt-1 text-emerald-700">{pendingDrivers.filter(d => d.verification.status === 'Verified').length}</h3>
-            <p className="text-[10px] text-emerald-600 mt-0.5">Ready for final approval</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">DL Review Pending</span>
-            <h3 className="text-xl font-bold mt-1 text-sky-700">{pendingDrivers.filter(d => d.verification.status === 'Pending').length}</h3>
-            <p className="text-[10px] text-sky-600 mt-0.5">Documents under review</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Required Action</span>
-            <h3 className="text-xl font-bold mt-1 text-rose-700">{pendingDrivers.length} Drivers</h3>
-            <p className="text-[10px] text-rose-600 mt-0.5">Approve or Reject</p>
+        <div className="card-white p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
+            <div className="sm:px-3 space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Pending Applications</span>
+                <UserCheck className="w-4 h-4 text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-amber-700">{pendingDrivers.length}</h3>
+              <p className="text-[10px] text-amber-600 mt-0.5">Awaiting verification</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">DL Verified</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-emerald-700">
+                {pendingDrivers.filter((d) => d.verification.status === 'Verified').length}
+              </h3>
+              <p className="text-[10px] text-emerald-600 mt-0.5">Ready for final approval</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">DL Review Pending</span>
+                <Clock className="w-4 h-4 text-sky-600" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-sky-700">
+                {pendingDrivers.filter((d) => d.verification.status === 'Pending').length}
+              </h3>
+              <p className="text-[10px] text-sky-600 mt-0.5">Documents under review</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Required Action</span>
+                <AlertCircle className="w-4 h-4 text-rose-500" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-rose-700">{pendingDrivers.length} Drivers</h3>
+              <p className="text-[10px] text-rose-600 mt-0.5">Approve or Reject</p>
+            </div>
           </div>
         </div>
       );
@@ -303,54 +344,95 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
 
     if (filter === 'approved' || activeTab === 'drivers-approved') {
       return (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Approved Fleet</span>
-            <h3 className="text-xl font-bold mt-1 text-emerald-700">{approvedDrivers.length}</h3>
-            <p className="text-[10px] text-emerald-600 mt-0.5">Fully verified drivers</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Active Subscriptions</span>
-            <h3 className="text-xl font-bold mt-1 text-emerald-700">{approvedDrivers.filter(d => d.subscription.status === 'Active').length}</h3>
-            <p className="text-[10px] text-emerald-600 mt-0.5">Eligible for bookings</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Expiring Passes</span>
-            <h3 className="text-xl font-bold mt-1 text-amber-700">{approvedDrivers.filter(d => d.subscription.status === 'Expiring Soon').length}</h3>
-            <p className="text-[10px] text-amber-600 mt-0.5">Requires pass renewal</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Completed Trips</span>
-            <h3 className="text-xl font-bold mt-1 text-slate-900">{approvedDrivers.reduce((acc, d) => acc + d.completedBookings, 0)} Trips</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Lifetime fulfilled</p>
+        <div className="card-white p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
+            <div className="sm:px-3 space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Approved Fleet</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-emerald-700">{approvedDrivers.length}</h3>
+              <p className="text-[10px] text-emerald-600 mt-0.5">Fully verified drivers</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Active Subscriptions</span>
+                <Award className="w-4 h-4 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-emerald-700">
+                {approvedDrivers.filter((d) => d.subscription.status === 'Active').length}
+              </h3>
+              <p className="text-[10px] text-emerald-600 mt-0.5">Eligible for bookings</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Expiring Passes</span>
+                <Clock className="w-4 h-4 text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-amber-700">
+                {approvedDrivers.filter((d) => d.subscription.status === 'Expiring Soon').length}
+              </h3>
+              <p className="text-[10px] text-amber-600 mt-0.5">Requires pass renewal</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Total Completed Trips</span>
+                <CheckCircle2 className="w-4 h-4 text-slate-600" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-slate-900">
+                {approvedDrivers.reduce((acc, d) => acc + d.completedBookings, 0)} Trips
+              </h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Lifetime fulfilled</p>
+            </div>
           </div>
         </div>
       );
     }
 
     if (filter === 'online' || activeTab === 'drivers-online') {
-      const avgRating = onlineDrivers.length > 0 ? (onlineDrivers.reduce((a, b) => a + b.rating, 0) / onlineDrivers.length).toFixed(1) : '5.0';
+      const avgRating =
+        onlineDrivers.length > 0
+          ? (onlineDrivers.reduce((a, b) => a + b.rating, 0) / onlineDrivers.length).toFixed(1)
+          : '5.0';
       return (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Online Duty Fleet</span>
-            <h3 className="text-xl font-bold mt-1 text-sky-700">{onlineDrivers.length}</h3>
-            <p className="text-[10px] text-sky-600 mt-0.5">Currently active online</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Available Drivers</span>
-            <h3 className="text-xl font-bold mt-1 text-emerald-700">{onlineDrivers.filter(d => d.availability === 'Available').length}</h3>
-            <p className="text-[10px] text-emerald-600 mt-0.5">Ready for immediate dispatch</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">On Trip / Busy</span>
-            <h3 className="text-xl font-bold mt-1 text-amber-700">{onlineDrivers.filter(d => d.availability === 'Busy').length}</h3>
-            <p className="text-[10px] text-amber-600 mt-0.5">Fulfilling active booking</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Avg Duty Rating</span>
-            <h3 className="text-xl font-bold mt-1 text-amber-600">⭐ {avgRating}</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Active fleet rating</p>
+        <div className="card-white p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
+            <div className="sm:px-3 space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Online Duty Fleet</span>
+                <Car className="w-4 h-4 text-sky-600 animate-pulse" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-sky-700">{onlineDrivers.length}</h3>
+              <p className="text-[10px] text-sky-600 mt-0.5">Currently active online</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Available Drivers</span>
+                <UserCheck className="w-4 h-4 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-emerald-700">
+                {onlineDrivers.filter((d) => d.availability === 'Available').length}
+              </h3>
+              <p className="text-[10px] text-emerald-600 mt-0.5">Ready for immediate dispatch</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">On Trip / Busy</span>
+                <Clock className="w-4 h-4 text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-amber-700">
+                {onlineDrivers.filter((d) => d.availability === 'Busy').length}
+              </h3>
+              <p className="text-[10px] text-amber-600 mt-0.5">Fulfilling active booking</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Avg Duty Rating</span>
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-amber-600">⭐ {avgRating}</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Active fleet rating</p>
+            </div>
           </div>
         </div>
       );
@@ -358,21 +440,36 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
 
     if (filter === 'suspended' || activeTab === 'drivers-suspended') {
       return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Suspended Accounts</span>
-            <h3 className="text-xl font-bold mt-1 text-amber-700">{drivers.filter(d => d.status === 'Suspended').length}</h3>
-            <p className="text-[10px] text-amber-600 mt-0.5">Temporarily blocked</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Rejected Applications</span>
-            <h3 className="text-xl font-bold mt-1 text-rose-700">{drivers.filter(d => d.status === 'Rejected').length}</h3>
-            <p className="text-[10px] text-rose-600 mt-0.5">Failed DL verification</p>
-          </div>
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Blocked Drivers</span>
-            <h3 className="text-xl font-bold mt-1 text-slate-900">{suspendedDrivers.length}</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Not eligible for duty</p>
+        <div className="card-white p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
+            <div className="sm:px-3 space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Suspended Accounts</span>
+                <UserX className="w-4 h-4 text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-amber-700">
+                {drivers.filter((d) => d.status === 'Suspended').length}
+              </h3>
+              <p className="text-[10px] text-amber-600 mt-0.5">Temporarily blocked</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Rejected Applications</span>
+                <AlertCircle className="w-4 h-4 text-rose-500" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-rose-700">
+                {drivers.filter((d) => d.status === 'Rejected').length}
+              </h3>
+              <p className="text-[10px] text-rose-600 mt-0.5">Failed DL verification</p>
+            </div>
+            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Total Blocked Drivers</span>
+                <UserX className="w-4 h-4 text-slate-700" />
+              </div>
+              <h3 className="text-xl font-bold mt-1 text-slate-900">{suspendedDrivers.length}</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Not eligible for duty</p>
+            </div>
           </div>
         </div>
       );
@@ -441,6 +538,7 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
         data={filteredDrivers}
         keyExtractor={(d) => d.id}
         pageSize={8}
+        isLoading={isLoading}
         searchPlaceholder="Search driver name, phone, email..."
         searchFilterKeys={['name', 'phone', 'email']}
         emptyMessage={`No drivers found for ${effectiveStatus === 'All' ? 'the current list' : effectiveStatus}.`}
@@ -450,12 +548,11 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
               {filterTabs.map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTabFilter(tab)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition-all ${
-                    activeTabFilter === tab
-                      ? 'bg-white text-primary shadow-xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  onClick={() => handleTabFilterChange(tab)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition-all ${activeTabFilter === tab
+                    ? 'bg-white text-primary shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                    }`}
                 >
                   {tab}
                 </button>

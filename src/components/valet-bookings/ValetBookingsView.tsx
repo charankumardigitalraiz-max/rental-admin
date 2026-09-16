@@ -163,22 +163,22 @@ export default function ValetBookingsView() {
     {
       key: 'actions',
       header: 'Actions',
-      align: 'right',
+      align: 'center',
       render: (v) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-center gap-1.5">
           <button
             onClick={() => {
               setSelectedValetBookingId(v.id);
               setActiveTab('valet-booking-details');
             }}
-            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors"
+            className="p-1.5 bg-primary-light hover:bg-primary text-primary hover:text-white rounded-md border border-primary/20 hover:border-primary transition-all inline-flex items-center justify-center shadow-2xs"
             title="View Event & Staff Details"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setAssigningBooking(v)}
-            className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded shadow-xs"
+            className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-md shadow-xs"
             title="Assign Staff to Event"
           >
             Assign Staff

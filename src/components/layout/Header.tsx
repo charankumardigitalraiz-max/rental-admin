@@ -1,14 +1,44 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
-import { Search, Bell, Plus, ShieldCheck, ChevronDown, UserCheck, Car } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
+import {
+  Search,
+  Bell,
+  Plus,
+  ShieldCheck,
+  ChevronDown,
+  UserCheck,
+  Car,
+  User,
+  Settings,
+  LogOut,
+} from 'lucide-react';
 
 export default function Header() {
   const pathname = usePathname();
   const { notifications, adminUsers } = useRentalStore();
+  const { toast } = useToast();
+
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    if (isProfileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileMenuOpen]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const currentAdmin = adminUsers[0] || {
@@ -87,8 +117,12 @@ export default function Header() {
       subtitle: 'Broadcast alerts to Customers, Drivers, and Valet Staff',
     },
     '/admin-users': {
-      title: 'Admin Team & Access Management',
-      subtitle: 'Manage administrative users, operational roles, and team permissions',
+      title: 'Staff & Admin Team Management',
+      subtitle: 'Manage administrative staff, operational roles, and team permissions',
+    },
+    '/profile': {
+      title: 'Admin User Profile & Account Settings',
+      subtitle: 'Personal information, security credentials, 2FA, and audit logs',
     },
     '/roles-permissions': {
       title: 'Roles & Permission Matrix',
@@ -129,10 +163,10 @@ export default function Header() {
   const currentHeaderInfo = getHeaderInfo();
 
   return (
-    <header className="h-16 bg-white border-b border-stone-200 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+    <header className="h-16 bg-white border-b border-[#e7dbc5]/80 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
       {/* Page Title & Subtitle */}
       <div>
-        <h2 className="text-base font-bold text-[#064e3b] tracking-tight flex items-center gap-2">
+        <h2 className="text-base font-bold text-[#023526] tracking-tight flex items-center gap-2">
           {currentHeaderInfo.title}
         </h2>
         <p className="text-[11px] text-slate-500 hidden sm:block">{currentHeaderInfo.subtitle}</p>
@@ -143,7 +177,7 @@ export default function Header() {
         {/* Notifications Icon Button */}
         <Link
           href="/notifications"
-          className="relative p-2 text-slate-600 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
+          className="relative p-2 text-slate-600 hover:text-[#023526] hover:bg-[#faf8f5] rounded-lg transition-colors border border-transparent hover:border-[#e7dbc5]"
           title="Notifications"
         >
           <Bell className="w-4 h-4" />
@@ -154,22 +188,96 @@ export default function Header() {
 
         <div className="h-6 w-[1px] bg-slate-200 mx-1 hidden sm:block"></div>
 
-        {/* Admin Profile */}
-        <Link
-          href="/admin-users"
-          className="flex items-center gap-2.5 p-1 hover:bg-slate-50 rounded-lg transition-colors"
-        >
-          <img
-            src={currentAdmin.avatar}
-            alt={currentAdmin.name}
-            className="w-8 h-8 rounded-full object-cover ring-2 ring-primary-light"
-          />
-          <div className="hidden lg:block text-left">
-            <h3 className="text-xs font-semibold text-slate-900 leading-none">{currentAdmin.name}</h3>
-            <span className="text-[10px] text-primary font-medium">{currentAdmin.role}</span>
-          </div>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden lg:block" />
-        </Link>
+        {/* Admin Profile Smart Adjusting Popover */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="flex items-center gap-2.5 p-1.5 hover:bg-[#faf8f5] rounded-lg transition-colors border border-transparent hover:border-[#e7dbc5] focus:outline-none"
+            title="My Profile & Options"
+          >
+            <img
+              src={currentAdmin.avatar}
+              alt={currentAdmin.name}
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-[#c5a880] shadow-xs"
+            />
+            <div className="hidden lg:block text-left">
+              <h3 className="text-xs font-semibold text-slate-900 leading-none">{currentAdmin.name}</h3>
+              <span className="text-[10px] text-[#9c7f56] font-bold">{currentAdmin.role}</span>
+            </div>
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-slate-400 hidden lg:block transition-transform duration-200 ${
+                isProfileMenuOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {/* Popover Dropdown Menu */}
+          {isProfileMenuOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200/90 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              {/* Header Info */}
+              <div className="p-3.5 bg-gradient-to-r from-emerald-950 to-[#023526] text-white border-b border-emerald-800">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={currentAdmin.avatar}
+                    alt={currentAdmin.name}
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-[#fcd34d] shadow-sm shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-white tracking-tight truncate">{currentAdmin.name}</h4>
+                    <p className="text-[10px] text-emerald-200 truncate">
+                      {currentAdmin.email || 'rajesh.admin@drivervalet.com'}
+                    </p>
+                    <span className="inline-block mt-1 px-2 py-0.5 bg-[#fcd34d] text-[#011f16] text-[9px] font-extrabold uppercase rounded">
+                      {currentAdmin.role}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Options */}
+              <div className="p-1 space-y-0.5">
+                <Link
+                  href="/profile"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-primary hover:bg-emerald-50/70 rounded-lg transition-colors"
+                >
+                  <User className="w-4 h-4 text-primary" /> My Profile & Security
+                </Link>
+
+                <Link
+                  href="/admin-users"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-primary hover:bg-emerald-50/70 rounded-lg transition-colors"
+                >
+                  <ShieldCheck className="w-4 h-4 text-[#9c7f56]" /> Staff & Admin Team
+                </Link>
+
+                <Link
+                  href="/settings"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-primary hover:bg-emerald-50/70 rounded-lg transition-colors"
+                >
+                  <Settings className="w-4 h-4 text-slate-500" /> System Configurations
+                </Link>
+              </div>
+
+              <div className="my-1 border-t border-slate-100" />
+
+              {/* Logout Option */}
+              <div className="p-1">
+                <button
+                  onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    toast.info('Logged Out Successfully', 'You have been signed out of the admin portal.');
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4 text-rose-600" /> Log Out Account
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

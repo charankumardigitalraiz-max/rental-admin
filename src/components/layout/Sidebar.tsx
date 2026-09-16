@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Lock,
   Settings,
+  User,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
@@ -113,7 +114,8 @@ export default function Sidebar() {
     {
       groupTitle: 'ADMINISTRATIVE',
       items: [
-        { href: '/admin-users', label: 'Admin Team', icon: ShieldCheck },
+        { href: '/profile', label: 'My Admin Profile', icon: User },
+        { href: '/admin-users', label: 'Staff & Admin Team', icon: ShieldCheck },
         { href: '/roles-permissions', label: 'Roles & Permissions', icon: Lock },
         { href: '/settings', label: 'System Configurations', icon: Settings },
       ],
@@ -123,23 +125,23 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-stone-200/80 flex flex-col h-screen sticky top-0 z-30 select-none shadow-xs">
       {/* Brand Header */}
-      <div className="h-16 border-b border-stone-100 flex items-center px-5 gap-3 bg-gradient-to-r from-emerald-50/60 to-white">
-        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-white shadow-sm shrink-0">
-          <Crown className="w-5 h-5 text-amber-300 fill-amber-300" />
+      <div className="h-16 border-b border-[#e7dbc5]/60 flex items-center px-5 gap-3 bg-gradient-to-r from-emerald-950 to-[#023526]">
+        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#c5a880] via-[#b4966c] to-[#7e6542] flex items-center justify-center text-white shadow-md ring-2 ring-[#c5a880]/30 shrink-0">
+          <Crown className="w-5 h-5 text-amber-100 fill-amber-100" />
         </div>
         <div>
-          <h1 className="font-bold text-[#064e3b] text-sm leading-tight tracking-tight">
-            DrivePulse <span className="text-primary">& Valet</span>
+          <h1 className="font-bold text-white text-sm leading-tight tracking-tight">
+            DrivePulse <span className="text-[#c5a880] font-extrabold">& Valet</span>
           </h1>
-          <p className="text-[10px] font-semibold text-emerald-800/60">Admin Control Portal</p>
+          <p className="text-[10px] font-semibold text-[#c5a880]/80">Admin Control Portal</p>
         </div>
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] px-3 py-4 space-y-5">
         {menuGroups.map((group, groupIdx) => (
           <div key={groupIdx} className="space-y-1">
-            <h2 className="px-3 text-[10px] font-bold tracking-widest text-[#064e3b]/70 uppercase mb-1.5">
+            <h2 className="px-3 text-[10px] font-bold tracking-widest text-[#9c7f56] uppercase mb-1.5">
               {group.groupTitle}
             </h2>
             {group.items.map((item) => {
@@ -156,14 +158,14 @@ export default function Sidebar() {
                       onClick={() => setIsDriversExpanded(true)}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
                         isDriversGroupActive
-                          ? 'bg-primary text-white font-bold shadow-xs'
-                          : 'text-slate-700 hover:text-[#064e3b] hover:bg-emerald-50/60'
+                          ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
+                          : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Icon
                           className={`w-4 h-4 transition-transform group-hover:scale-105 ${
-                            isDriversGroupActive ? 'text-white' : 'text-slate-400 group-hover:text-primary'
+                            isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
                           }`}
                         />
                         <span className="tracking-tight">{item.label}</span>
@@ -173,7 +175,7 @@ export default function Sidebar() {
                           <span
                             className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${
                               isDriversGroupActive
-                                ? 'bg-white text-primary shadow-xs'
+                                ? 'bg-[#c5a880] text-slate-900 shadow-xs'
                                 : 'bg-amber-100 text-amber-900 border border-amber-200'
                             }`}
                           >
@@ -192,11 +194,11 @@ export default function Sidebar() {
                         >
                           {isDriversExpanded ? (
                             <ChevronDown
-                              className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-white' : 'text-slate-400'}`}
+                              className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400'}`}
                             />
                           ) : (
                             <ChevronRight
-                              className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-white' : 'text-slate-400'}`}
+                              className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400'}`}
                             />
                           )}
                         </span>
@@ -204,7 +206,7 @@ export default function Sidebar() {
                     </Link>
 
                     {isDriversExpanded && (
-                      <div className="pl-3 py-1 space-y-1 border-l-2 border-emerald-500/30 ml-4 my-1">
+                      <div className="pl-3 py-1 space-y-1 border-l-2 border-[#c5a880]/40 ml-4 my-1">
                         {driverSubItems.map((sub) => {
                           const isSubActive = pathname === sub.href;
                           return (
@@ -213,14 +215,14 @@ export default function Sidebar() {
                               href={sub.href}
                               className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
                                 isSubActive
-                                  ? 'bg-emerald-100/90 text-primary font-bold shadow-2xs'
+                                  ? 'bg-[#faf8f5] text-[#023526] font-bold border-l-2 border-[#c5a880] shadow-2xs'
                                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                               }`}
                             >
                               <span className="flex items-center gap-1.5">
                                 <span
                                   className={`w-1.5 h-1.5 rounded-full ${
-                                    isSubActive ? 'bg-primary' : 'bg-slate-300'
+                                    isSubActive ? 'bg-[#c5a880]' : 'bg-slate-300'
                                   }`}
                                 ></span>
                                 {sub.label}
@@ -229,7 +231,7 @@ export default function Sidebar() {
                                 <span
                                   className={`px-1.5 py-0.2 text-[9.5px] font-bold rounded ${
                                     isSubActive
-                                      ? 'bg-primary text-white'
+                                      ? 'bg-[#023526] text-[#c5a880]'
                                       : sub.badgeColor || 'bg-slate-100 text-slate-600'
                                   }`}
                                 >
@@ -251,14 +253,14 @@ export default function Sidebar() {
                   href={item.href}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
                     isActive
-                      ? 'bg-primary text-white font-bold shadow-xs'
-                      : 'text-slate-700 hover:text-[#064e3b] hover:bg-emerald-50/60'
+                      ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
+                      : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon
                       className={`w-4 h-4 transition-transform group-hover:scale-105 ${
-                        isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary'
+                        isActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
                       }`}
                     />
                     <span className="tracking-tight">{item.label}</span>
@@ -267,7 +269,7 @@ export default function Sidebar() {
                     <span
                       className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${
                         isActive
-                          ? 'bg-white text-primary shadow-xs'
+                          ? 'bg-[#c5a880] text-slate-900 shadow-xs'
                           : 'bg-orange-100 text-orange-900 border border-orange-200'
                       }`}
                     >

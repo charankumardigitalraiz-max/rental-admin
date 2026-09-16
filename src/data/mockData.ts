@@ -396,22 +396,22 @@ export const initialDrivers: Driver[] = [
 ];
 
 export const initialSubscriptionPlans: SubscriptionPlan[] = [
-  {
-    id: 'plan-monthly-unlimited',
-    name: 'Driver Monthly Pass',
-    price: 999,
-    durationDays: 30,
-    localEligible: true,
-    outstationEligible: true,
-    maxRequestsPerDay: 999,
-    features: [
-      'Unlimited Local & Outstation Ride Dispatches',
-      'Instant Priority Dispatch Matching',
-      'Zero Commission Surcharge on Completed Trips',
-      '24/7 Driver Support & Helpline',
-    ],
-    status: 'Active',
-  },
+  // {
+  //   id: 'plan-monthly-unlimited',
+  //   name: 'Driver Monthly Pass',
+  //   price: 999,
+  //   durationDays: 30,
+  //   localEligible: true,
+  //   outstationEligible: true,
+  //   maxRequestsPerDay: 999,
+  //   features: [
+  //     'Unlimited Local & Outstation Ride Dispatches',
+  //     'Instant Priority Dispatch Matching',
+  //     'Zero Commission Surcharge on Completed Trips',
+  //     '24/7 Driver Support & Helpline',
+  //   ],
+  //   status: 'Active',
+  // },
 ];
 
 export const initialDriverSubscriptions: DriverSubscription[] = [
@@ -983,6 +983,9 @@ export const initialSystemSettings: SystemSettings = {
   driverSubscriptionMandatory: true,
   minDriverRatingRequired: 4.0,
   valetMinNoticeHours: 4,
+  valetHourlyRate: 250,
+  localDriverHourlyRate: 150,
+  outstationDriverHourlyRate: 220,
   cancellationFreeWindowMins: 10,
   cancellationFeePercent: 15,
   gstTaxPercent: 18,

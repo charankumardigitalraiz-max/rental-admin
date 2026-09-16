@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '@/providers/QueryProvider';
 import AdminLayout from '@/components/layout/AdminLayout';
+import { ToastProvider } from '@/context/ToastContext';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -24,7 +25,9 @@ export default function RootLayout({
     <html lang="en" className={plusJakartaSans.className}>
       <body className="antialiased bg-white text-slate-900 min-h-screen">
         <QueryProvider>
-          <AdminLayout>{children}</AdminLayout>
+          <ToastProvider>
+            <AdminLayout>{children}</AdminLayout>
+          </ToastProvider>
         </QueryProvider>
       </body>
     </html>

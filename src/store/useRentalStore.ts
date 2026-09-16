@@ -126,6 +126,10 @@ interface DriverAppStoreState {
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   updateSettings: (settings: Partial<SystemSettings>) => void;
+
+  addAdminUser: (admin: Omit<AdminUser, 'id' | 'lastLogin'>) => void;
+  updateAdminUser: (id: string, admin: Partial<AdminUser>) => void;
+  toggleAdminUserStatus: (id: string) => void;
 }
 
 export const useRentalStore = create<DriverAppStoreState>((set) => ({
@@ -408,5 +412,28 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
   updateSettings: (newSettings) =>
     set((state) => ({
       settings: { ...state.settings, ...newSettings },
+    })),
+
+  addAdminUser: (newAdmin) =>
+    set((state) => {
+      const id = `admin-${state.adminUsers.length + 1}`;
+      const created: AdminUser = {
+        ...newAdmin,
+        id,
+        lastLogin: 'Just now',
+      };
+      return { adminUsers: [...state.adminUsers, created] };
+    }),
+
+  updateAdminUser: (id, updatedFields) =>
+    set((state) => ({
+      adminUsers: state.adminUsers.map((a) => (a.id === id ? { ...a, ...updatedFields } : a)),
+    })),
+
+  toggleAdminUserStatus: (id) =>
+    set((state) => ({
+      adminUsers: state.adminUsers.map((a) =>
+        a.id === id ? { ...a, status: a.status === 'Active' ? 'Inactive' : 'Active' } : a
+      ),
     })),
 }));

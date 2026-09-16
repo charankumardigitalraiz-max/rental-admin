@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '@/providers/QueryProvider';
+import AdminLayout from '@/components/layout/AdminLayout';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -22,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={plusJakartaSans.className}>
       <body className="antialiased bg-white text-slate-900 min-h-screen">
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <AdminLayout>{children}</AdminLayout>
+        </QueryProvider>
       </body>
     </html>
   );

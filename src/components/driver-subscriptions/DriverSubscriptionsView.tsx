@@ -16,6 +16,14 @@ export default function DriverSubscriptionsView() {
   const expiringSoonPasses = driverSubscriptions.filter((s) => s.subscriptionStatus === 'Expiring Soon').length;
   const expiredPasses = driverSubscriptions.filter((s) => s.subscriptionStatus === 'Expired').length;
 
+  const totalPassRevenue = driverSubscriptions
+    .filter((s) => s.paymentStatus === 'Successful')
+    .reduce((acc, s) => acc + (s.amount || 0), 0);
+
+  const activePassRevenue = driverSubscriptions
+    .filter((s) => s.subscriptionStatus === 'Active' && s.paymentStatus === 'Successful')
+    .reduce((acc, s) => acc + (s.amount || 0), 0);
+
   const statuses = ['All', 'Active', 'Expiring Soon', 'Expired', 'Cancelled', 'Suspended'];
 
   const filteredSubscriptions = driverSubscriptions.filter((sub) => {
@@ -127,9 +135,9 @@ export default function DriverSubscriptionsView() {
           {/* Total Subscriptions */}
           <div className="sm:px-4 flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Subscriptions</p>
-              <h4 className="text-xl font-bold text-slate-900 mt-1">{totalSubscriptions}</h4>
-              <p className="text-[11px] text-slate-500 font-medium mt-0.5">Enrolled driver passes</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Pass Revenue</p>
+              <h4 className="text-xl font-bold text-slate-900 mt-1">₹{totalPassRevenue.toLocaleString('en-IN')}</h4>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">{totalSubscriptions} Enrolled Passes</p>
             </div>
             <div className="w-9 h-9 rounded-lg bg-primary-light flex items-center justify-center text-primary shrink-0">
               <Award className="w-4 h-4" />
@@ -140,8 +148,8 @@ export default function DriverSubscriptionsView() {
           <div className="sm:px-4 pt-3 sm:pt-0 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Passes</p>
-              <h4 className="text-xl font-bold text-emerald-700 mt-1">{activePasses}</h4>
-              <p className="text-[11px] text-emerald-600 font-medium mt-0.5">Eligible for dispatches</p>
+              <h4 className="text-xl font-bold text-emerald-700 mt-1">{activePasses} Active</h4>
+              <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">₹{activePassRevenue.toLocaleString('en-IN')} Active Revenue</p>
             </div>
             <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
               <CheckCircle2 className="w-4 h-4" />

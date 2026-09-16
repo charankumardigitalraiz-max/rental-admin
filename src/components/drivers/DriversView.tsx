@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRentalStore } from '@/store/useRentalStore';
+import Link from 'next/link';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { Driver } from '@/types';
 import {
@@ -20,7 +21,11 @@ import {
   Users,
 } from 'lucide-react';
 
-export default function DriversView() {
+interface DriversViewProps {
+  filter?: string;
+}
+
+export default function DriversView({ filter }: DriversViewProps = {}) {
   const {
     activeTab,
     drivers,
@@ -36,12 +41,12 @@ export default function DriversView() {
 
   // Determine effective filter status
   let effectiveStatus = activeTabFilter;
-  if (activeTab === 'drivers-pending') effectiveStatus = 'Pending Approval';
-  else if (activeTab === 'drivers-approved') effectiveStatus = 'Approved';
-  else if (activeTab === 'drivers-online') effectiveStatus = 'Online';
-  else if (activeTab === 'drivers-suspended') effectiveStatus = 'Suspended';
+  if (filter === 'pending' || activeTab === 'drivers-pending') effectiveStatus = 'Pending Approval';
+  else if (filter === 'approved' || activeTab === 'drivers-approved') effectiveStatus = 'Approved';
+  else if (filter === 'online' || activeTab === 'drivers-online') effectiveStatus = 'Online';
+  else if (filter === 'suspended' || activeTab === 'drivers-suspended') effectiveStatus = 'Suspended';
 
-  const isDedicatedScreen = activeTab !== 'drivers';
+  const isDedicatedScreen = !!filter || activeTab !== 'drivers';
 
   const filterTabs = [
     'All',
@@ -188,16 +193,13 @@ export default function DriversView() {
       align: 'right',
       render: (d) => (
         <div className="flex items-center justify-end gap-1.5">
-          <button
-            onClick={() => {
-              setSelectedDriverId(d.id);
-              setActiveTab('driver-details');
-            }}
-            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors"
+          <Link
+            href={`/drivers/${d.id}`}
+            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors inline-block"
             title="View Driver Details"
           >
             <Eye className="w-4 h-4" />
-          </button>
+          </Link>
 
           {d.status === 'Pending Approval' && (
             <>
@@ -247,19 +249,19 @@ export default function DriversView() {
   let headerTitle = 'All Driver Profiles & Fleet Roster';
   let headerSubtitle = 'Manage driver accounts, background verification status, duty availability, and pass subscriptions.';
 
-  if (activeTab === 'drivers-pending') {
+  if (filter === 'pending' || activeTab === 'drivers-pending') {
     headerTag = 'Driver Onboarding • Verification Queue';
     headerTitle = 'Pending Driver Applications';
     headerSubtitle = 'Review driving license documents, ID proofs, and approve or reject driver onboarding requests.';
-  } else if (activeTab === 'drivers-approved') {
+  } else if (filter === 'approved' || activeTab === 'drivers-approved') {
     headerTag = 'Active Fleet • Verified Drivers';
     headerTitle = 'Approved & Active Driver Directory';
     headerSubtitle = 'Monitor active subscription passes, completed trips, and driver profile details.';
-  } else if (activeTab === 'drivers-online') {
+  } else if (filter === 'online' || activeTab === 'drivers-online') {
     headerTag = 'Live Duty • Dispatch Roster';
     headerTitle = 'Online Duty Drivers';
     headerSubtitle = 'Real-time duty availability, GPS locations, and current trip assignment status.';
-  } else if (activeTab === 'drivers-suspended') {
+  } else if (filter === 'suspended' || activeTab === 'drivers-suspended') {
     headerTag = 'Account Security • Blocked Fleet';
     headerTitle = 'Suspended & Rejected Driver Accounts';
     headerSubtitle = 'Manage blocked drivers, failed DL verifications, and reactivate accounts.';
@@ -272,7 +274,7 @@ export default function DriversView() {
   const suspendedDrivers = drivers.filter((d) => d.status === 'Suspended' || d.status === 'Rejected');
 
   const renderTopStats = () => {
-    if (activeTab === 'drivers-pending') {
+    if (filter === 'pending' || activeTab === 'drivers-pending') {
       return (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
@@ -299,7 +301,7 @@ export default function DriversView() {
       );
     }
 
-    if (activeTab === 'drivers-approved') {
+    if (filter === 'approved' || activeTab === 'drivers-approved') {
       return (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
@@ -326,7 +328,7 @@ export default function DriversView() {
       );
     }
 
-    if (activeTab === 'drivers-online') {
+    if (filter === 'online' || activeTab === 'drivers-online') {
       const avgRating = onlineDrivers.length > 0 ? (onlineDrivers.reduce((a, b) => a + b.rating, 0) / onlineDrivers.length).toFixed(1) : '5.0';
       return (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -354,7 +356,7 @@ export default function DriversView() {
       );
     }
 
-    if (activeTab === 'drivers-suspended') {
+    if (filter === 'suspended' || activeTab === 'drivers-suspended') {
       return (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg">

@@ -1,93 +1,74 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
-import { ActiveTab } from '@/types';
 import {
   LayoutDashboard,
   Car,
   CalendarCheck,
-  Search,
   Users,
   CreditCard,
   Crown,
-  Sparkles,
   Ticket,
-  BadgePercent,
-  TrendingUp,
   Award,
-  DollarSign,
   Radio,
-  Clock,
-  UserCheck,
-  Building2,
-  Receipt,
-  RotateCcw,
-  Star,
-  Bell,
-  BarChart3,
   ShieldCheck,
   Lock,
   Settings,
-  SlidersHorizontal,
-  Compass,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
 
 interface MenuItem {
-  id: ActiveTab;
+  href: string;
   label: string;
   icon: React.ElementType;
   badge?: number | string;
+  id?: string;
 }
 
 export default function Sidebar() {
+  const pathname = usePathname();
   const {
-    activeTab,
-    setActiveTab,
     driverBookings,
     valetBookings,
     drivers,
     notifications,
-    driverStatusFilter,
-    setDriverStatusFilter,
     customers,
   } = useRentalStore();
 
   const [isDriversExpanded, setIsDriversExpanded] = useState(true);
 
   const pendingDriverBookings = driverBookings.filter((b) => b.status === 'Searching Driver' || b.status === 'Pending').length;
-  const pendingValetBookings = valetBookings.filter((v) => v.status === 'New Request' || v.status === 'Pending Assignment').length;
-  const unreadNotifsCount = notifications.filter((n) => !n.read).length;
-
   const pendingDriversCount = drivers.filter((d) => d.status === 'Pending Approval').length;
   const approvedDriversCount = drivers.filter((d) => d.status === 'Approved').length;
   const onlineDriversCount = drivers.filter((d) => d.dutyStatus === 'Online').length;
   const suspendedDriversCount = drivers.filter((d) => d.status === 'Suspended').length;
 
-  const driverSubItems: { id: ActiveTab; label: string; count: number; badgeColor?: string }[] = [
-    { id: 'drivers', label: 'All Drivers', count: drivers.length },
+  const driverSubItems: { href: string; label: string; count: number; badgeColor?: string }[] = [
+    { href: '/drivers', label: 'All Drivers', count: drivers.length },
     {
-      id: 'drivers-pending',
+      href: '/drivers/pending',
       label: 'Pending Approval',
       count: pendingDriversCount,
       badgeColor: 'bg-amber-100 text-amber-900 border border-amber-200',
     },
     {
-      id: 'drivers-approved',
+      href: '/drivers/approved',
       label: 'Approved',
       count: approvedDriversCount,
       badgeColor: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
     },
     {
-      id: 'drivers-online',
+      href: '/drivers/online',
       label: 'Online Duty',
       count: onlineDriversCount,
       badgeColor: 'bg-sky-100 text-sky-800 border border-sky-200',
     },
     {
-      id: 'drivers-suspended',
+      href: '/drivers/suspended',
       label: 'Suspended',
       count: suspendedDriversCount,
       badgeColor: 'bg-rose-100 text-rose-800 border border-rose-200',
@@ -98,16 +79,15 @@ export default function Sidebar() {
     {
       groupTitle: 'OVERVIEW & LIVE OPERATORS',
       items: [
-        { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
-        { id: 'live-operations', label: 'Live Operations Center', icon: Radio },
-        // { id: 'assignments', label: 'Central Assignments', icon: Compass },
+        { href: '/dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
+        { href: '/live-operations', label: 'Live Operations Center', icon: Radio },
       ],
     },
     {
       groupTitle: 'CUSTOMER MANAGEMENT',
       items: [
         {
-          id: 'customers',
+          href: '/customers',
           label: 'Customers',
           icon: Users,
           badge: customers?.length > 0 ? customers.length : undefined,
@@ -118,25 +98,24 @@ export default function Sidebar() {
       groupTitle: 'DRIVER-ON-DEMAND SERVICE',
       items: [
         {
-          id: 'driver-bookings',
+          href: '/driver-bookings',
           label: 'Driver Bookings',
           icon: CalendarCheck,
           badge: pendingDriverBookings > 0 ? pendingDriverBookings : undefined,
         },
-        // { id: 'driver-requests', label: 'Searching Requests', icon: Search },
-        { id: 'drivers', label: 'Driver Management', icon: Car },
-        { id: 'driver-subscription-plans', label: 'Subscription Plans', icon: Ticket },
-        { id: 'driver-subscriptions', label: 'Subscribed Drivers', icon: Award },
-        { id: 'subscription-payments', label: 'Subscription Payments', icon: CreditCard },
+        { href: '/drivers', label: 'Driver Management', icon: Car, id: 'drivers' },
+        { href: '/driver-subscription-plans', label: 'Subscription Plans', icon: Ticket },
+        { href: '/driver-subscriptions', label: 'Subscribed Drivers', icon: Award },
+        { href: '/subscription-payments', label: 'Subscription Payments', icon: CreditCard },
       ],
     },
 
     {
       groupTitle: 'ADMINISTRATIVE',
       items: [
-        { id: 'admin-users', label: 'Admin Team', icon: ShieldCheck },
-        { id: 'roles-permissions', label: 'Roles & Permissions', icon: Lock },
-        { id: 'settings', label: 'System Configurations', icon: Settings },
+        { href: '/admin-users', label: 'Admin Team', icon: ShieldCheck },
+        { href: '/roles-permissions', label: 'Roles & Permissions', icon: Lock },
+        { href: '/settings', label: 'System Configurations', icon: Settings },
       ],
     },
   ];
@@ -165,89 +144,99 @@ export default function Sidebar() {
             </h2>
             {group.items.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = pathname === item.href;
 
               if (item.id === 'drivers') {
-                const isDriversGroupActive =
-                  activeTab === 'drivers' ||
-                  activeTab === 'drivers-pending' ||
-                  activeTab === 'drivers-approved' ||
-                  activeTab === 'drivers-online' ||
-                  activeTab === 'drivers-suspended';
+                const isDriversGroupActive = pathname.startsWith('/drivers');
 
                 return (
-                  <div key={item.id} className="space-y-1">
-                    <button
-                      onClick={() => {
-                        if (isDriversGroupActive) {
-                          setIsDriversExpanded((prev) => !prev);
-                        } else {
-                          setActiveTab('drivers');
-                          setIsDriversExpanded(true);
-                        }
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${isDriversGroupActive
-                        ? 'bg-primary text-white font-bold shadow-xs'
-                        : 'text-slate-700 hover:text-[#064e3b] hover:bg-emerald-50/60'
-                        }`}
+                  <div key={item.href} className="space-y-1">
+                    <Link
+                      href="/drivers"
+                      onClick={() => setIsDriversExpanded(true)}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
+                        isDriversGroupActive
+                          ? 'bg-primary text-white font-bold shadow-xs'
+                          : 'text-slate-700 hover:text-[#064e3b] hover:bg-emerald-50/60'
+                      }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Icon
-                          className={`w-4 h-4 transition-transform group-hover:scale-105 ${isDriversGroupActive ? 'text-white' : 'text-slate-400 group-hover:text-primary'
-                            }`}
+                          className={`w-4 h-4 transition-transform group-hover:scale-105 ${
+                            isDriversGroupActive ? 'text-white' : 'text-slate-400 group-hover:text-primary'
+                          }`}
                         />
                         <span className="tracking-tight">{item.label}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         {pendingDriversCount > 0 && !isDriversExpanded && (
                           <span
-                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${isDriversGroupActive ? 'bg-white text-primary shadow-xs' : 'bg-amber-100 text-amber-900 border border-amber-200'
-                              }`}
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${
+                              isDriversGroupActive
+                                ? 'bg-white text-primary shadow-xs'
+                                : 'bg-amber-100 text-amber-900 border border-amber-200'
+                            }`}
                           >
                             {pendingDriversCount}
                           </span>
                         )}
-                        {isDriversExpanded ? (
-                          <ChevronDown className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-white' : 'text-slate-400'}`} />
-                        ) : (
-                          <ChevronRight className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-white' : 'text-slate-400'}`} />
-                        )}
+                        <span
+                          onClick={(e) => {
+                            if (isDriversGroupActive) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsDriversExpanded((prev) => !prev);
+                            }
+                          }}
+                          className="p-0.5 hover:opacity-80 transition-opacity cursor-pointer"
+                        >
+                          {isDriversExpanded ? (
+                            <ChevronDown
+                              className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-white' : 'text-slate-400'}`}
+                            />
+                          ) : (
+                            <ChevronRight
+                              className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-white' : 'text-slate-400'}`}
+                            />
+                          )}
+                        </span>
                       </div>
-                    </button>
+                    </Link>
 
                     {isDriversExpanded && (
                       <div className="pl-3 py-1 space-y-1 border-l-2 border-emerald-500/30 ml-4 my-1">
                         {driverSubItems.map((sub) => {
-                          const isSubActive = activeTab === sub.id;
+                          const isSubActive = pathname === sub.href;
                           return (
-                            <button
-                              key={sub.id}
-                              onClick={() => {
-                                setActiveTab(sub.id);
-                              }}
-                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${isSubActive
-                                ? 'bg-emerald-100/90 text-primary font-bold shadow-2xs'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                                }`}
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                                isSubActive
+                                  ? 'bg-emerald-100/90 text-primary font-bold shadow-2xs'
+                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                              }`}
                             >
                               <span className="flex items-center gap-1.5">
                                 <span
-                                  className={`w-1.5 h-1.5 rounded-full ${isSubActive ? 'bg-primary' : 'bg-slate-300'
-                                    }`}
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    isSubActive ? 'bg-primary' : 'bg-slate-300'
+                                  }`}
                                 ></span>
                                 {sub.label}
                               </span>
                               {sub.count > 0 && (
                                 <span
-                                  className={`px-1.5 py-0.2 text-[9.5px] font-bold rounded ${isSubActive
-                                    ? 'bg-primary text-white'
-                                    : sub.badgeColor || 'bg-slate-100 text-slate-600'
-                                    }`}
+                                  className={`px-1.5 py-0.2 text-[9.5px] font-bold rounded ${
+                                    isSubActive
+                                      ? 'bg-primary text-white'
+                                      : sub.badgeColor || 'bg-slate-100 text-slate-600'
+                                  }`}
                                 >
                                   {sub.count}
                                 </span>
                               )}
-                            </button>
+                            </Link>
                           );
                         })}
                       </div>
@@ -257,32 +246,35 @@ export default function Sidebar() {
               }
 
               return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${isActive
-                    ? 'bg-primary text-white font-bold shadow-xs'
-                    : 'text-slate-700 hover:text-[#064e3b] hover:bg-emerald-50/60'
-                    }`}
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
+                    isActive
+                      ? 'bg-primary text-white font-bold shadow-xs'
+                      : 'text-slate-700 hover:text-[#064e3b] hover:bg-emerald-50/60'
+                  }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon
-                      className={`w-4 h-4 transition-transform group-hover:scale-105 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary'
-                        }`}
+                      className={`w-4 h-4 transition-transform group-hover:scale-105 ${
+                        isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary'
+                      }`}
                     />
                     <span className="tracking-tight">{item.label}</span>
                   </div>
                   {item.badge !== undefined && (
                     <span
-                      className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${isActive
-                        ? 'bg-white text-primary shadow-xs'
-                        : 'bg-orange-100 text-orange-900 border border-orange-200'
-                        }`}
+                      className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${
+                        isActive
+                          ? 'bg-white text-primary shadow-xs'
+                          : 'bg-orange-100 text-orange-900 border border-orange-200'
+                      }`}
                     >
                       {item.badge}
                     </span>
                   )}
-                </button>
+                </Link>
               );
             })}
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useRentalStore } from '@/store/useRentalStore';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { DriverBooking, DriverSubscription } from '@/types';
@@ -191,12 +192,12 @@ export default function DashboardView() {
       render: (b) => (
         <span
           className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap inline-block ${b.status === 'Completed'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : b.status === 'Searching Driver' || b.status === 'Pending'
-                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                : b.status === 'Cancelled'
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                  : 'bg-sky-50 text-sky-700 border border-sky-200'
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : b.status === 'Searching Driver' || b.status === 'Pending'
+              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+              : b.status === 'Cancelled'
+                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                : 'bg-sky-50 text-sky-700 border border-sky-200'
             }`}
         >
           ● {b.status}
@@ -208,15 +209,12 @@ export default function DashboardView() {
       header: 'Action',
       align: 'right',
       render: (b) => (
-        <button
-          onClick={() => {
-            setSelectedDriverBookingId(b.id);
-            setActiveTab('driver-booking-details');
-          }}
-          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold rounded transition-colors"
+        <Link
+          href={`/driver-bookings/${b.id}`}
+          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold rounded transition-colors inline-block"
         >
           Details
-        </button>
+        </Link>
       ),
     },
   ];
@@ -260,8 +258,8 @@ export default function DashboardView() {
       render: (sub) => (
         <span
           className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap inline-block ${sub.subscriptionStatus === 'Expired'
-              ? 'bg-rose-50 text-rose-700 border border-rose-200'
-              : 'bg-amber-50 text-amber-800 border border-amber-200'
+            ? 'bg-rose-50 text-rose-700 border border-rose-200'
+            : 'bg-amber-50 text-amber-800 border border-amber-200'
             }`}
         >
           {sub.subscriptionStatus}
@@ -273,15 +271,12 @@ export default function DashboardView() {
       header: 'Action',
       align: 'right',
       render: (sub) => (
-        <button
-          onClick={() => {
-            setSelectedDriverId(sub.driverId);
-            setActiveTab('driver-details');
-          }}
-          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold rounded transition-colors"
+        <Link
+          href={`/drivers/${sub.driverId}`}
+          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold rounded transition-colors inline-block"
         >
           Profile
-        </button>
+        </Link>
       ),
     },
   ];
@@ -336,9 +331,9 @@ export default function DashboardView() {
       </div>
 
       {/* Grid 2: Service Breakdown & Subscription Health */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
         {/* Service Split & Driver Subscription Status */}
-        <div className="card-white p-5 space-y-4">
+        {/* <div className="card-white p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
               <Award className="w-4 h-4 text-amber-500" /> Driver Subscription Eligibility
@@ -379,7 +374,7 @@ export default function DashboardView() {
               <span className="font-bold text-primary">{totalValetBookings} events</span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Expiring & Expired Driver Passes Table */}
         <DataTable<DriverSubscription>
@@ -392,23 +387,23 @@ export default function DashboardView() {
             sub.subscriptionStatus === 'Expiring Soon'
               ? 'bg-amber-50/70 hover:bg-amber-100/80 border-l-4 border-l-amber-500'
               : sub.subscriptionStatus === 'Expired'
-              ? 'bg-rose-50/70 hover:bg-rose-100/80 border-l-4 border-l-rose-500'
-              : sub.subscriptionStatus === 'Active'
-              ? 'bg-emerald-50/40 hover:bg-emerald-100/60 border-l-4 border-l-emerald-500'
-              : 'bg-slate-100/70 hover:bg-slate-200/70 border-l-4 border-l-slate-400'
+                ? 'bg-rose-50/70 hover:bg-rose-100/80 border-l-4 border-l-rose-500'
+                : sub.subscriptionStatus === 'Active'
+                  ? 'bg-emerald-50/40 hover:bg-emerald-100/60 border-l-4 border-l-emerald-500'
+                  : 'bg-slate-100/70 hover:bg-slate-200/70 border-l-4 border-l-slate-400'
           }
           headerActions={
             <div className="flex items-center justify-between w-full">
               <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-amber-500" /> Expiring & Expired Driver Passes
               </h3>
-              <button
-                onClick={() => setActiveTab('driver-subscriptions')}
+              <Link
+                href="/driver-subscriptions"
                 className="text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1.5 hover:underline transition-colors"
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span>View All Subscriptions ({driverSubscriptions.length})</span>
-              </button>
+              </Link>
             </div>
           }
         />
@@ -427,13 +422,13 @@ export default function DashboardView() {
               <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                 <CalendarCheck className="w-4 h-4 text-primary" /> Recent Driver Bookings
               </h3>
-              <button
-                onClick={() => setActiveTab('driver-bookings')}
+              <Link
+                href="/driver-bookings"
                 className="text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1.5 hover:underline transition-colors"
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span>View All Driver Bookings ({driverBookings.length})</span>
-              </button>
+              </Link>
             </div>
           }
         />

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
+import Link from 'next/link';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { DriverBooking, Transaction, RefundRecord } from '@/types';
 import {
@@ -17,7 +19,12 @@ import {
   Eye,
 } from 'lucide-react';
 
-export default function CustomerDetailsView() {
+interface CustomerDetailsViewProps {
+  customerId?: string;
+}
+
+export default function CustomerDetailsView({ customerId }: CustomerDetailsViewProps = {}) {
+  const router = useRouter();
   const {
     customers,
     selectedCustomerId,
@@ -31,14 +38,15 @@ export default function CustomerDetailsView() {
 
   const [tripFilter, setTripFilter] = useState<'all' | 'completed' | 'in-progress' | 'cancelled'>('all');
 
-  const customer = customers.find((c) => c.id === selectedCustomerId) || customers[0];
+  const targetId = customerId || selectedCustomerId;
+  const customer = customers.find((c) => c.id === targetId) || customers[0];
 
   if (!customer) {
     return (
       <div className="card-white p-8 text-center text-slate-500">
         Customer profile not found.{' '}
-        <button onClick={() => setActiveTab('customers')} className="text-primary font-bold underline">
-          Back to Directory
+        <button onClick={() => router.back()} className="text-primary font-bold underline">
+          Back
         </button>
       </div>
     );
@@ -71,15 +79,12 @@ export default function CustomerDetailsView() {
       key: 'bookingNumber',
       header: 'Booking Ref',
       render: (b) => (
-        <button
-          onClick={() => {
-            setSelectedDriverBookingId(b.id);
-            setActiveTab('driver-booking-details');
-          }}
-          className="font-mono font-bold text-slate-900 hover:text-emerald-700 hover:underline text-left"
+        <Link
+          href={`/driver-bookings/${b.id}`}
+          className="font-mono font-bold text-slate-900 hover:text-emerald-700 hover:underline text-left inline-block"
         >
           {b.bookingNumber}
-        </button>
+        </Link>
       ),
     },
     {
@@ -175,17 +180,14 @@ export default function CustomerDetailsView() {
       header: 'Action',
       align: 'right',
       render: (b) => (
-        <button
-          onClick={() => {
-            setSelectedDriverBookingId(b.id);
-            setActiveTab('driver-booking-details');
-          }}
-          className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors flex items-center gap-1 ml-auto"
+        <Link
+          href={`/driver-bookings/${b.id}`}
+          className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors flex items-center gap-1 ml-auto w-fit"
           title="View Booking Details"
         >
           <Eye className="w-3 h-3" />
           <span>View</span>
-        </button>
+        </Link>
       ),
     },
   ];
@@ -278,10 +280,10 @@ export default function CustomerDetailsView() {
       {/* Top Header Navigation & Status Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
-          onClick={() => setActiveTab('customers')}
-          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs w-fit"
+          onClick={() => router.back()}
+          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs w-fit cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Customers
+          <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
         <div className="flex items-center gap-2">

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRentalStore } from '@/store/useRentalStore';
 import { Search, Eye, Phone, Mail, UserX, UserCheck } from 'lucide-react';
 
+import Link from 'next/link';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { Customer } from '@/types';
 
@@ -89,16 +90,13 @@ export default function CustomersView() {
       align: 'right',
       render: (c) => (
         <div className="flex items-center justify-end gap-1.5">
-          <button
-            onClick={() => {
-              setSelectedCustomerId(c.id);
-              setActiveTab('customer-details');
-            }}
-            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors"
+          <Link
+            href={`/customers/${c.id}`}
+            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors inline-block"
             title="View Customer Profile & History"
           >
             <Eye className="w-4 h-4" />
-          </button>
+          </Link>
           <button
             onClick={() => toggleCustomerStatus(c.id)}
             className={`px-2.5 py-1 text-[10px] font-bold rounded border transition-colors ${c.status === 'Active'

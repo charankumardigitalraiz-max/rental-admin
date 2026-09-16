@@ -33,6 +33,18 @@ export default function DriverSubscriptionPlansView() {
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [statusFilter, setStatusFilter] = useState('All');
 
+  const activeSubscribedDrivers = driverSubscriptions.filter((s) => s.subscriptionStatus === 'Active');
+  const expiringSoonSubscribedDrivers = driverSubscriptions.filter((s) => s.subscriptionStatus === 'Expiring Soon');
+  const expiredSubscribedDrivers = driverSubscriptions.filter((s) => s.subscriptionStatus === 'Expired');
+
+  const totalSubscriptionRevenue = driverSubscriptions
+    .filter((s) => s.paymentStatus === 'Successful')
+    .reduce((acc, s) => acc + (s.amount || 0), 0);
+
+  const activeSubscriptionRevenue = activeSubscribedDrivers
+    .filter((s) => s.paymentStatus === 'Successful')
+    .reduce((acc, s) => acc + (s.amount || 0), 0);
+
   const hasPlanLimitReached = subscriptionPlans.length >= 1;
 
   const [formData, setFormData] = useState({
@@ -286,8 +298,8 @@ export default function DriverSubscriptionPlansView() {
       })()}
 
       {/* Subscribed Drivers List Below */}
-      <div className="space-y-4 pt-6 border-t border-slate-200">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 pt-6">
+        <div className="flex items-center justify-between ml-2">
           <div>
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Award className="w-5 h-5 text-primary" /> Subscribed Drivers ({driverSubscriptions.length})
@@ -295,6 +307,39 @@ export default function DriverSubscriptionPlansView() {
             <p className="text-xs text-slate-500 font-medium">
               List of all drivers with active, expiring, or expired subscription passes.
             </p>
+          </div>
+        </div>
+
+        {/* Member Subscription Stats Band */}
+        <div className="card-white p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
+            {/* Active Members & Active Pass Revenue */}
+            <div className="sm:px-4 space-y-1">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">Active Subscriptions</span>
+              <div className="text-xl font-bold text-emerald-700">{activeSubscribedDrivers.length} Active Drivers</div>
+              <span className="text-[10px] text-emerald-600 font-semibold block">₹{activeSubscriptionRevenue.toLocaleString('en-IN')} Active Pass Revenue</span>
+            </div>
+
+            {/* Expiring Soon Members */}
+            <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700 block">Expiring Soon</span>
+              <div className="text-xl font-bold text-amber-700">{expiringSoonSubscribedDrivers.length} Drivers</div>
+              <span className="text-[10px] text-amber-600 font-medium block">Requires pass renewal</span>
+            </div>
+
+            {/* Expired Members */}
+            <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-rose-700 block">Expired Passes</span>
+              <div className="text-xl font-bold text-rose-700">{expiredSubscribedDrivers.length} Drivers</div>
+              <span className="text-[10px] text-rose-600 font-medium block">Blocked from dispatches</span>
+            </div>
+
+            {/* Total Subscription Revenue */}
+            <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-primary block">Total Pass Revenue</span>
+              <div className="text-xl font-bold text-primary">₹{totalSubscriptionRevenue.toLocaleString('en-IN')}</div>
+              <span className="text-[10px] text-slate-500 font-medium block">Total Subscription Payouts</span>
+            </div>
           </div>
         </div>
 

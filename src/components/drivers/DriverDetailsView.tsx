@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
+import Link from 'next/link';
 import Modal from '@/components/ui/Modal';
 import {
   ArrowLeft,
@@ -26,7 +28,12 @@ import {
   Check,
 } from 'lucide-react';
 
-export default function DriverDetailsView() {
+interface DriverDetailsViewProps {
+  driverId?: string;
+}
+
+export default function DriverDetailsView({ driverId }: DriverDetailsViewProps = {}) {
+  const router = useRouter();
   const {
     drivers,
     selectedDriverId,
@@ -41,14 +48,15 @@ export default function DriverDetailsView() {
   const [tripFilter, setTripFilter] = useState<'all' | 'completed' | 'active' | 'cancelled'>('all');
   const [selectedDocImage, setSelectedDocImage] = useState<{ title: string; url: string } | null>(null);
 
-  const driver = drivers.find((d) => d.id === selectedDriverId) || drivers[0];
+  const targetId = driverId || selectedDriverId;
+  const driver = drivers.find((d) => d.id === targetId) || drivers[0];
 
   if (!driver) {
     return (
       <div className="card-white p-8 text-center text-slate-500">
         Driver profile not found.{' '}
-        <button onClick={() => setActiveTab('drivers')} className="text-primary font-bold underline">
-          Back to Drivers List
+        <button onClick={() => router.back()} className="text-primary font-bold underline">
+          Back
         </button>
       </div>
     );
@@ -72,10 +80,10 @@ export default function DriverDetailsView() {
       {/* Top Header Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
-          onClick={() => setActiveTab('drivers')}
-          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white border border-stone-200 px-3 py-1.5 rounded-lg shadow-xs w-fit"
+          onClick={() => router.back()}
+          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white border border-stone-200 px-3 py-1.5 rounded-lg shadow-xs w-fit cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Driver Directory
+          <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
         <div className="flex items-center gap-2">

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRentalStore } from '@/store/useRentalStore';
 import { DriverBooking, DriverBookingStatus } from '@/types';
+import Link from 'next/link';
 import Modal from '@/components/ui/Modal';
 import {
   CalendarCheck,
@@ -87,15 +88,12 @@ export default function DriverBookingsView() {
       key: 'bookingNumber',
       header: 'Booking ID',
       render: (b) => (
-        <button
-          onClick={() => {
-            setSelectedDriverBookingId(b.id);
-            setActiveTab('driver-booking-details');
-          }}
-          className="font-mono font-bold text-slate-900 hover:text-emerald-700 hover:underline text-left"
+        <Link
+          href={`/driver-bookings/${b.id}`}
+          className="font-mono font-bold text-slate-900 hover:text-emerald-700 hover:underline text-left inline-block"
         >
           {b.bookingNumber}
-        </button>
+        </Link>
       ),
     },
     {
@@ -197,16 +195,13 @@ export default function DriverBookingsView() {
       align: 'right',
       render: (b) => (
         <div className="flex items-center justify-end gap-1.5">
-          <button
-            onClick={() => {
-              setSelectedDriverBookingId(b.id);
-              setActiveTab('driver-booking-details');
-            }}
-            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors"
+          <Link
+            href={`/driver-bookings/${b.id}`}
+            className="p-1.5 text-primary hover:bg-primary-light rounded transition-colors inline-block"
             title="View Full Booking Details"
           >
             <Eye className="w-4 h-4" />
-          </button>
+          </Link>
 
           {b.status !== 'Completed' && b.status !== 'Cancelled' && (
             <button

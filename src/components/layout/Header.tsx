@@ -1,12 +1,14 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
 import { Search, Bell, Plus, ShieldCheck, ChevronDown, UserCheck, Car } from 'lucide-react';
 
 export default function Header() {
-  const { activeTab, setActiveTab, searchQuery, setSearchQuery, notifications, adminUsers } =
-    useRentalStore();
+  const pathname = usePathname();
+  const { notifications, adminUsers } = useRentalStore();
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const currentAdmin = adminUsers[0] || {
@@ -16,136 +18,115 @@ export default function Header() {
   };
 
   const pageTitles: Record<string, { title: string; subtitle: string }> = {
-    dashboard: {
+    '/dashboard': {
       title: 'Platform Overview & Performance',
       subtitle: 'Real-time driver bookings, valet events, active subscriptions, and revenue metrics',
     },
-    'driver-bookings': {
+    '/driver-bookings': {
       title: 'Driver Bookings Lifecycle',
       subtitle: 'Monitor and manage local and outstation driver bookings for customer vehicles',
     },
-    'driver-booking-details': {
-      title: 'Driver Booking Details',
-      subtitle: 'Vehicle information, customer info, driver assignment, timeline, and pricing split',
-    },
-    'driver-requests': {
+    '/driver-requests': {
       title: 'Driver Search & Dispatch Requests',
       subtitle: 'Live bookings searching for eligible nearby subscription-active drivers',
     },
-    drivers: {
+    '/drivers': {
       title: 'Driver Directory & Verification',
       subtitle: 'Approve, reject, manage online/duty status, and monitor driver subscriptions',
     },
-    'driver-details': {
-      title: 'Driver Full Profile',
-      subtitle: 'DL verification documents, subscription status, earnings payout, and ratings',
+    '/drivers/pending': {
+      title: 'Pending Driver Onboarding',
+      subtitle: 'Review license documents and verify driver background applications',
     },
-    'driver-subscription-plans': {
+    '/drivers/approved': {
+      title: 'Approved Active Drivers',
+      subtitle: 'Active fleet roster with verified credentials and duty status',
+    },
+    '/drivers/online': {
+      title: 'Online Duty Fleet',
+      subtitle: 'Real-time active duty drivers ready for dispatch',
+    },
+    '/drivers/suspended': {
+      title: 'Suspended Account Roster',
+      subtitle: 'Blocked or suspended driver profiles requiring administrative review',
+    },
+    '/driver-subscription-plans': {
       title: 'Driver Subscription Plans',
       subtitle: 'Create and configure subscription passes (Basic, Premium, Professional)',
     },
-    'driver-subscriptions': {
+    '/driver-subscriptions': {
       title: 'Driver Subscription Passes',
       subtitle: 'Track driver active passes, upcoming expirations, and subscription validity',
     },
-    'subscription-payments': {
+    '/subscription-payments': {
       title: 'Subscription Payment Transactions',
       subtitle: 'Driver pass purchase transactions and payment gateway logs',
     },
-    customers: {
-      title: 'Customer Directory',
+    '/customers': {
+      title: 'Customers',
       subtitle: 'Customer profiles, total spent, booking history, and account statuses',
     },
-    'customer-details': {
-      title: 'Customer Detailed Profile',
-      subtitle: 'Customer contact, active bookings, payment history, and refunds',
-    },
-    'valet-bookings': {
+    '/valet-bookings': {
       title: 'Valet Event Bookings',
       subtitle: 'Event valet parking requests, venue locations, and staff requirements',
     },
-    'valet-booking-details': {
-      title: 'Valet Event Details & Staff Duty',
-      subtitle: 'Event specs, staff quota fulfillment, and staff assignment management',
-    },
-    'valet-staff': {
-      title: 'Valet Parking Staff Roster',
-      subtitle: 'Manage valet staff availability, current event duty, and performance ratings',
-    },
-    'valet-staff-details': {
-      title: 'Valet Staff Profile & Attendance',
-      subtitle: 'Staff event duty history, ratings, and payout earnings',
-    },
-    assignments: {
+    '/assignments': {
       title: 'Centralized Assignment Hub',
       subtitle: 'Dual management for Driver-on-Demand matching and Valet Event Staff allocation',
     },
-    'live-operations': {
+    '/live-operations': {
       title: 'Live Operations Center',
       subtitle: 'Real-time monitoring of searching drivers, active trips, and ongoing valet events',
     },
-    'local-pricing': {
-      title: 'Local Driver Pricing Configuration',
-      subtitle: 'Base fare, hourly rate, waiting charges, night allowance, and fare preview',
-    },
-    'outstation-pricing': {
-      title: 'Outstation Driver Pricing Rules',
-      subtitle: 'Per-day rates, per-km charges, driver food allowance, and platform split',
-    },
-    'valet-pricing': {
-      title: 'Valet Parking Staff Pricing',
-      subtitle: 'Staff hourly rates, min staff requirements, event surge rates, and payouts',
-    },
-    'pricing-rules': {
-      title: 'Dynamic Pricing & Surge Rules',
-      subtitle: 'Configure peak hours, weekend surges, holiday rates, and event multipliers',
-    },
-    payments: {
-      title: 'Transactions & Invoices',
-      subtitle: 'Complete transaction audit logs for driver trips, valet events, and subscriptions',
-    },
-    'driver-earnings': {
-      title: 'Driver Earnings & Payout Ledger',
-      subtitle: 'Gross earnings, platform commission breakdown, and net driver payouts',
-    },
-    'platform-revenue': {
-      title: 'Platform Net Revenue',
-      subtitle: 'Financial gross booking value, driver payouts, valet payouts, and net commission',
-    },
-    refunds: {
-      title: 'Customer Refund Management',
-      subtitle: 'Process cancellation refund requests, dispute reviews, and status approvals',
-    },
-    reviews: {
+    '/reviews': {
       title: 'Reviews & Ratings Moderation',
       subtitle: 'Customer ratings and feedback for Drivers and Valet Staff',
     },
-    notifications: {
+    '/notifications': {
       title: 'Notification Center & Dispatch',
       subtitle: 'Broadcast alerts to Customers, Drivers, and Valet Staff',
     },
-    reports: {
-      title: 'Platform Analytics & Reports',
-      subtitle: 'Comprehensive performance reports, revenue exports, and utilization charts',
-    },
-    'admin-users': {
+    '/admin-users': {
       title: 'Admin Team & Access Management',
       subtitle: 'Manage administrative users, operational roles, and team permissions',
     },
-    'roles-permissions': {
+    '/roles-permissions': {
       title: 'Roles & Permission Matrix',
       subtitle: 'Fine-grained access control matrix across all platform modules',
     },
-    settings: {
+    '/settings': {
       title: 'System & Platform Settings',
       subtitle: 'General business, driver eligibility, subscription, tax, and cancellation settings',
     },
   };
 
-  const currentHeaderInfo = pageTitles[activeTab] || {
-    title: 'DrivePulse & Valet Admin',
-    subtitle: 'Manage drivers, valet staff, subscriptions, and platform bookings',
+  const getHeaderInfo = () => {
+    if (pageTitles[pathname]) return pageTitles[pathname];
+    if (pathname.startsWith('/drivers/')) {
+      return {
+        title: 'Driver Detailed Profile',
+        subtitle: 'DL verification documents, subscription status, earnings payout, and ratings',
+      };
+    }
+    if (pathname.startsWith('/customers/')) {
+      return {
+        title: 'Customer Detailed Profile',
+        subtitle: 'Customer contact, active bookings, payment history, and refunds',
+      };
+    }
+    if (pathname.startsWith('/driver-bookings/')) {
+      return {
+        title: 'Driver Booking Details',
+        subtitle: 'Vehicle information, customer info, driver assignment, timeline, and pricing split',
+      };
+    }
+    return {
+      title: 'DrivePulse & Valet Admin',
+      subtitle: 'Manage drivers, valet staff, subscriptions, and platform bookings',
+    };
   };
+
+  const currentHeaderInfo = getHeaderInfo();
 
   return (
     <header className="h-16 bg-white border-b border-stone-200 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
@@ -157,42 +138,11 @@ export default function Header() {
         <p className="text-[11px] text-slate-500 hidden sm:block">{currentHeaderInfo.subtitle}</p>
       </div>
 
-      {/* Center Search Bar */}
-      {/* <div className="flex-1 max-w-md mx-6 hidden md:block">
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search booking #, driver, valet staff, customer, location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white text-slate-800 placeholder-slate-400 transition-all"
-          />
-        </div>
-      </div> */}
-
       {/* Right Controls */}
       <div className="flex items-center gap-3">
-        {/* Quick Add Action Buttons */}
-        {/* <button
-          onClick={() => setActiveTab('driver-bookings')}
-          className="hidden sm:flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xs transition-all"
-        >
-          <Car className="w-3.5 h-3.5" />
-          <span>Driver Booking</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('valet-bookings')}
-          className="hidden md:flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xs transition-all"
-        >
-          <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-          <span>Valet Booking</span>
-        </button> */}
-
         {/* Notifications Icon Button */}
-        <button
-          onClick={() => setActiveTab('notifications')}
+        <Link
+          href="/notifications"
           className="relative p-2 text-slate-600 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
           title="Notifications"
         >
@@ -200,14 +150,14 @@ export default function Header() {
           {unreadCount > 0 && (
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
           )}
-        </button>
+        </Link>
 
         <div className="h-6 w-[1px] bg-slate-200 mx-1 hidden sm:block"></div>
 
         {/* Admin Profile */}
-        <div
-          onClick={() => setActiveTab('admin-users')}
-          className="flex items-center gap-2.5 cursor-pointer p-1 hover:bg-slate-50 rounded-lg transition-colors"
+        <Link
+          href="/admin-users"
+          className="flex items-center gap-2.5 p-1 hover:bg-slate-50 rounded-lg transition-colors"
         >
           <img
             src={currentAdmin.avatar}
@@ -219,7 +169,7 @@ export default function Header() {
             <span className="text-[10px] text-primary font-medium">{currentAdmin.role}</span>
           </div>
           <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden lg:block" />
-        </div>
+        </Link>
       </div>
     </header>
   );

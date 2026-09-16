@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
 import {
   ArrowLeft,
@@ -18,7 +20,12 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
-export default function DriverBookingDetailsView() {
+interface DriverBookingDetailsViewProps {
+  bookingId?: string;
+}
+
+export default function DriverBookingDetailsView({ bookingId }: DriverBookingDetailsViewProps = {}) {
+  const router = useRouter();
   const {
     driverBookings,
     selectedDriverBookingId,
@@ -27,15 +34,16 @@ export default function DriverBookingDetailsView() {
     setSelectedCustomerId,
   } = useRentalStore();
 
+  const targetId = bookingId || selectedDriverBookingId;
   const booking =
-    driverBookings.find((b) => b.id === selectedDriverBookingId) || driverBookings[0];
+    driverBookings.find((b) => b.id === targetId) || driverBookings[0];
 
   if (!booking) {
     return (
       <div className="card-white p-8 text-center text-slate-500">
         Booking record not found.{' '}
-        <button onClick={() => setActiveTab('driver-bookings')} className="text-primary font-bold underline">
-          Back to Bookings
+        <button onClick={() => router.back()} className="text-primary font-bold underline">
+          Back
         </button>
       </div>
     );
@@ -56,10 +64,10 @@ export default function DriverBookingDetailsView() {
       {/* Top Header Navigation */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => setActiveTab('driver-bookings')}
-          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs"
+          onClick={() => router.back()}
+          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Driver Bookings
+          <ArrowLeft className="w-4 h-4" /> Back
         </button>
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
@@ -238,17 +246,12 @@ export default function DriverBookingDetailsView() {
                     <span className="text-[10px] font-bold text-amber-600">⭐ {booking.driverRating} Driver Rating</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    if (booking.driverId) {
-                      setSelectedDriverId(booking.driverId);
-                      setActiveTab('driver-details');
-                    }
-                  }}
-                  className="w-full py-1.5 bg-primary text-white rounded font-bold text-xs transition-colors"
+                <Link
+                  href={booking.driverId ? `/drivers/${booking.driverId}` : '/drivers'}
+                  className="w-full py-1.5 bg-primary text-white rounded font-bold text-xs transition-colors block text-center"
                 >
                   View Full Driver Profile
-                </button>
+                </Link>
               </div>
             ) : (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-center space-y-2">

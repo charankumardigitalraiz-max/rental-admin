@@ -6,12 +6,14 @@ import { Search, Eye, Phone, Mail, UserX, UserCheck } from 'lucide-react';
 
 import Link from 'next/link';
 import DataTable, { Column } from '@/components/ui/DataTable';
+import Modal from '@/components/ui/Modal';
 import { Customer } from '@/types';
 import { useToast } from '@/context/ToastContext';
 
 export default function CustomersView() {
   const { toast } = useToast();
   const { customers, toggleCustomerStatus, setActiveTab, setSelectedCustomerId } = useRentalStore();
+  const [statusConfirmCustomer, setStatusConfirmCustomer] = useState<Customer | null>(null);
 
   const totalCustomers = customers.length;
   const activeCustomersCount = customers.filter((c) => c.status === 'Active').length;
@@ -101,15 +103,7 @@ export default function CustomersView() {
             <Eye className="w-3.5 h-3.5" />
           </Link>
           <button
-            onClick={() => {
-              toggleCustomerStatus(c.id);
-              const nextStatus = c.status === 'Active' ? 'Suspended' : 'Active';
-              if (nextStatus === 'Active') {
-                toast.success('Customer Activated', `Account for ${c.name} is now active.`);
-              } else {
-                toast.warning('Customer Suspended', `Account for ${c.name} has been suspended.`);
-              }
-            }}
+            onClick={() => setStatusConfirmCustomer(c)}
             className={`px-2.5 py-1 text-[10px] font-bold rounded border transition-colors ${c.status === 'Active'
               ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
               : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
@@ -162,6 +156,77 @@ export default function CustomersView() {
         searchFilterKeys={['name', 'phone', 'email']}
         emptyMessage="No customer records found matching your search."
       />
+
+      {/* Account Status Change Confirmation Modal */}
+      {statusConfirmCustomer && (
+        <Modal
+          isOpen={!!statusConfirmCustomer}
+          onClose={() => setStatusConfirmCustomer(null)}
+          title={
+            statusConfirmCustomer.status === 'Active'
+              ? 'Confirm Customer Suspension'
+              : 'Confirm Customer Activation'
+          }
+          subtitle="Account Status Management"
+          icon={statusConfirmCustomer.status === 'Active' ? UserX : UserCheck}
+          maxWidth="md"
+          footer={
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setStatusConfirmCustomer(null)}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-bold hover:bg-slate-50 transition-colors text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const c = statusConfirmCustomer;
+                  toggleCustomerStatus(c.id);
+                  const nextStatus = c.status === 'Active' ? 'Suspended' : 'Active';
+                  if (nextStatus === 'Active') {
+                    toast.success('Customer Activated', `Account for ${c.name} is now active.`);
+                  } else {
+                    toast.warning('Customer Suspended', `Account for ${c.name} has been suspended.`);
+                  }
+                  setStatusConfirmCustomer(null);
+                }}
+                className={`px-4 py-2 text-white font-bold rounded-lg text-xs shadow-xs transition-colors ${statusConfirmCustomer.status === 'Active'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
+              >
+                {statusConfirmCustomer.status === 'Active'
+                  ? 'Proceed with Suspension'
+                  : 'Proceed with Activation'}
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-3 text-xs">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-3">
+              <img
+                src={statusConfirmCustomer.avatar}
+                alt={statusConfirmCustomer.name}
+                className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-emerald-100"
+              />
+              <div>
+                <div className="font-bold text-slate-900">{statusConfirmCustomer.name}</div>
+                <div className="text-[11px] text-slate-500">
+                  {statusConfirmCustomer.email} • {statusConfirmCustomer.phone}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed">
+              {statusConfirmCustomer.status === 'Active'
+                ? `Are you sure you want to suspend the account for ${statusConfirmCustomer.name}? The customer will not be able to place new bookings while suspended.`
+                : `Are you sure you want to activate the account for ${statusConfirmCustomer.name}? The customer will be restored to active status.`}
+            </p>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

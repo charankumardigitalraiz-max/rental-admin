@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRentalStore } from '@/store/useRentalStore';
 import DataTable, { Column } from '@/components/ui/DataTable';
+import Modal from '@/components/ui/Modal';
 import {
   Lock,
   ShieldCheck,
@@ -408,6 +409,249 @@ export default function RolesPermissionsView() {
     },
   ];
 
+  // Columns definition for Matrix DataTable (Modal 1)
+  const matrixColumns: Column<ModulePermission>[] = [
+    {
+      key: 'moduleName',
+      header: 'Screen / Module',
+      render: (perm) => (
+        <div>
+          <div className="font-bold text-slate-900">{perm.moduleName}</div>
+          <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">
+            {perm.category}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'read',
+      header: 'Read / View',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleMatrixToggle(perm.id, 'read')}
+          disabled={activeMatrixRole?.isSystem}
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.read
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          } ${activeMatrixRole?.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+        >
+          {perm.read ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'write',
+      header: 'Create / Edit',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleMatrixToggle(perm.id, 'write')}
+          disabled={activeMatrixRole?.isSystem}
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.write
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          } ${activeMatrixRole?.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+        >
+          {perm.write ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'delete',
+      header: 'Delete',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleMatrixToggle(perm.id, 'delete')}
+          disabled={activeMatrixRole?.isSystem}
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.delete
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          } ${activeMatrixRole?.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+        >
+          {perm.delete ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'export',
+      header: 'Export CSV',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleMatrixToggle(perm.id, 'export')}
+          disabled={activeMatrixRole?.isSystem}
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.export
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          } ${activeMatrixRole?.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+        >
+          {perm.export ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'approve',
+      header: 'Approve',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleMatrixToggle(perm.id, 'approve')}
+          disabled={activeMatrixRole?.isSystem}
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.approve
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          } ${activeMatrixRole?.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+        >
+          {perm.approve ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+  ];
+
+  // Columns definition for Creation Matrix DataTable (Modal 2)
+  const createMatrixColumns: Column<ModulePermission>[] = [
+    {
+      key: 'moduleName',
+      header: 'Screen / Module',
+      render: (perm) => (
+        <div>
+          <div className="font-bold text-slate-900">{perm.moduleName}</div>
+          <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">
+            {perm.category}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'read',
+      header: 'View (Read)',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleModalPermissionToggle(perm.id, 'read')}
+          title="View / Read Access"
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.read
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          }`}
+        >
+          {perm.read ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'write',
+      header: 'Edit (Write)',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleModalPermissionToggle(perm.id, 'write')}
+          title="Create / Edit Access"
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.write
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          }`}
+        >
+          {perm.write ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'delete',
+      header: 'Delete',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleModalPermissionToggle(perm.id, 'delete')}
+          title="Delete Access"
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.delete
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          }`}
+        >
+          {perm.delete ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'export',
+      header: 'Export',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleModalPermissionToggle(perm.id, 'export')}
+          title="Export CSV Access"
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.export
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          }`}
+        >
+          {perm.export ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'approve',
+      header: 'Approve',
+      align: 'center',
+      render: (perm) => (
+        <button
+          type="button"
+          onClick={() => handleModalPermissionToggle(perm.id, 'approve')}
+          title="Approve Access"
+          className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${
+            perm.approve
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
+              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+          }`}
+        >
+          {perm.approve ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'quickAction',
+      header: 'Quick Action',
+      align: 'center',
+      render: (perm) => {
+        const isAllGranted = perm.read && perm.write && perm.delete && perm.export && perm.approve;
+        return (
+          <button
+            type="button"
+            onClick={() => handleModalToggleModuleAll(perm.id, !isAllGranted)}
+            className={`text-[10px] font-bold px-2 py-1 rounded transition-all ${
+              isAllGranted
+                ? 'text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200'
+                : 'text-primary bg-primary-light hover:bg-primary/20 border border-primary/20'
+            }`}
+          >
+            {isAllGranted ? 'Revoke' : 'Grant All'}
+          </button>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="space-y-6 pb-12">
       {/* Save Notification Toast */}
@@ -443,271 +687,166 @@ export default function RolesPermissionsView() {
         }
       />
 
-      {/* View / Edit Permissions Matrix Modal */}
+      {/* View / Edit Permissions Matrix Modal (Global Modal & DataTable) */}
       {activeMatrixRole && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-xl space-y-5 animate-in fade-in zoom-in-95 my-8 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                    Permissions Matrix: <span className="text-primary">{activeMatrixRole.name}</span>
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {activeMatrixRole.isSystem
-                      ? 'Built-in system role privileges (Read-Only)'
-                      : 'Granular view, edit, delete, export, and approval grants'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveMatrixRole(null)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-1">
-              <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs bg-white">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#023526] text-white text-[10.5px] uppercase font-bold tracking-wider">
-                    <tr>
-                      <th className="py-2.5 px-3">Screen / Module</th>
-                      <th className="py-2.5 px-2 text-center">Read / View</th>
-                      <th className="py-2.5 px-2 text-center">Create / Edit</th>
-                      <th className="py-2.5 px-2 text-center">Delete</th>
-                      <th className="py-2.5 px-2 text-center">Export</th>
-                      <th className="py-2.5 px-2 text-center">Approve</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {matrixPermissions.map((perm) => (
-                      <tr key={perm.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 px-3">
-                          <div className="font-bold text-slate-900">{perm.moduleName}</div>
-                          <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {perm.category}
-                          </span>
-                        </td>
-
-                        <td className="py-2.5 px-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleMatrixToggle(perm.id, 'read')}
-                            disabled={activeMatrixRole.isSystem}
-                            className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.read
-                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold'
-                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                              } ${activeMatrixRole.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                          >
-                            {perm.read ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                          </button>
-                        </td>
-
-                        <td className="py-2.5 px-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleMatrixToggle(perm.id, 'write')}
-                            disabled={activeMatrixRole.isSystem}
-                            className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.write
-                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold'
-                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                              } ${activeMatrixRole.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                          >
-                            {perm.write ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                          </button>
-                        </td>
-
-                        <td className="py-2.5 px-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleMatrixToggle(perm.id, 'delete')}
-                            disabled={activeMatrixRole.isSystem}
-                            className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.delete
-                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold'
-                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                              } ${activeMatrixRole.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                          >
-                            {perm.delete ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                          </button>
-                        </td>
-
-                        <td className="py-2.5 px-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleMatrixToggle(perm.id, 'export')}
-                            disabled={activeMatrixRole.isSystem}
-                            className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.export
-                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold'
-                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                              } ${activeMatrixRole.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                          >
-                            {perm.export ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                          </button>
-                        </td>
-
-                        <td className="py-2.5 px-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleMatrixToggle(perm.id, 'approve')}
-                            disabled={activeMatrixRole.isSystem}
-                            className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.approve
-                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold'
-                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                              } ${activeMatrixRole.isSystem ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                          >
-                            {perm.approve ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0">
+        <Modal
+          isOpen={!!activeMatrixRole}
+          onClose={() => setActiveMatrixRole(null)}
+          title={`Permissions Matrix: ${activeMatrixRole.name}`}
+          subtitle={
+            activeMatrixRole.isSystem
+              ? 'Built-in system role privileges (Read-Only)'
+              : 'Granular view, edit, delete, export, and approval grants'
+          }
+          icon={Shield}
+          maxWidth="4xl"
+          footer={
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveMatrixRole(null)}
-                className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-bold hover:bg-slate-50 transition-colors text-xs"
+                className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-bold hover:bg-slate-50 transition-colors text-xs flex items-center gap-1.5"
               >
-                Close
+                <X className="w-4 h-4" />
+                <span>Close</span>
               </button>
 
               {!activeMatrixRole.isSystem && (
                 <button
                   type="button"
                   onClick={handleSaveMatrixChanges}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-xs transition-colors text-xs flex items-center gap-1.5"
+                  className="px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold shadow-xs transition-colors text-xs flex items-center gap-1.5"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Permissions</span>
                 </button>
               )}
             </div>
-          </div>
-        </div>
+          }
+        >
+          <DataTable<ModulePermission>
+            columns={matrixColumns}
+            data={matrixPermissions}
+            keyExtractor={(perm) => perm.id}
+            pageSize={10}
+          />
+        </Modal>
       )}
 
-      {/* Enhanced Create Custom Role Modal (2-Column Split Layout) */}
+      {/* Create Custom Role Modal (Global Modal & DataTable) */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-xl space-y-5 animate-in fade-in zoom-in-95 my-6 max-h-[92vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
-                  <ShieldCheck className="w-5 h-5" />
+        <Modal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          title="Create Custom System Role"
+          subtitle="Left: Fill role & personal details • Right: Configure screen module action permissions"
+          icon={ShieldCheck}
+          maxWidth="5xl"
+          footer={
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-bold hover:bg-slate-50 transition-colors text-xs flex items-center gap-1.5"
+              >
+                <X className="w-4 h-4" />
+                <span>Cancel</span>
+              </button>
+              <button
+                type="submit"
+                form="create-role-form"
+                className="px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold shadow-xs transition-colors text-xs flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create Role with Permissions</span>
+              </button>
+            </div>
+          }
+        >
+          <form id="create-role-form" onSubmit={handleCreateRole} className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* LEFT SIDE: Personal & Role Details */}
+              <div className="lg:col-span-4 space-y-4 bg-slate-50/90 p-4 rounded-xl border border-slate-200/80">
+                <div className="flex items-center gap-2 border-b border-slate-200/60 pb-2">
+                  <UserCheck className="w-4 h-4 text-primary" />
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
+                    Role & Personal Details
+                  </h4>
                 </div>
+
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">Create Custom System Role</h3>
-                  <p className="text-xs text-slate-500">
-                    Left: Fill role & personal details • Right: Configure screen module action permissions
+                  <label className="font-bold text-slate-700 block mb-1 text-xs">Role Title / Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Regional Dispatch Officer"
+                    value={newRoleName}
+                    onChange={(e) => setNewRoleName(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 bg-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1 text-xs">Badge Theme Color</label>
+                  <select
+                    value={newRoleBadgeColor}
+                    onChange={(e) => setNewRoleBadgeColor(e.target.value as SystemRole['badgeColor'])}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 bg-white text-xs font-medium"
+                  >
+                    <option value="indigo">Indigo Blue</option>
+                    <option value="emerald">Emerald Green</option>
+                    <option value="sky">Sky Blue</option>
+                    <option value="purple">Royal Purple</option>
+                    <option value="amber">Warm Amber</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1 text-xs">Copy Preset Template</label>
+                  <select
+                    value={newRoleTemplate}
+                    onChange={(e) => handleTemplateChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 bg-white text-xs font-medium"
+                  >
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name} ({r.code})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-slate-400 mt-1">Pre-fills permission matrix from selected template</p>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1 text-xs">Role Description & Responsibilities</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Describe operational access, administrative scope, and responsibilities..."
+                    value={newRoleDesc}
+                    onChange={(e) => setNewRoleDesc(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 bg-white text-xs"
+                  />
+                </div>
+
+                <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-lg text-[11px] text-emerald-800 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                    <Info className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    Role Assignment Note
+                  </div>
+                  <p className="leading-relaxed">
+                    Custom roles can be assigned to active administrative members in the Admin Users tab once created.
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* Modal Form with 2-Column Split */}
-            <form onSubmit={handleCreateRole} className="flex-1 overflow-y-auto pr-1 flex flex-col space-y-5">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* LEFT SIDE: Personal & Role Details (4 columns) */}
-                <div className="lg:col-span-4 space-y-4 bg-slate-50/90 p-4 rounded-xl border border-slate-200/80">
-                  <div className="flex items-center gap-2 border-b border-slate-200/60 pb-2">
-                    <UserCheck className="w-4 h-4 text-primary" />
-                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                      Role & Personal Details
-                    </h4>
-                  </div>
-
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1 text-xs">Role Title / Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Regional Dispatch Officer"
-                      value={newRoleName}
-                      onChange={(e) => setNewRoleName(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 bg-white text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1 text-xs">Badge Theme Color</label>
-                    <select
-                      value={newRoleBadgeColor}
-                      onChange={(e) => setNewRoleBadgeColor(e.target.value as SystemRole['badgeColor'])}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 bg-white text-xs font-medium"
-                    >
-                      <option value="indigo">Indigo Blue</option>
-                      <option value="emerald">Emerald Green</option>
-                      <option value="sky">Sky Blue</option>
-                      <option value="purple">Royal Purple</option>
-                      <option value="amber">Warm Amber</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1 text-xs">Copy Preset Template</label>
-                    <select
-                      value={newRoleTemplate}
-                      onChange={(e) => handleTemplateChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 bg-white text-xs font-medium"
-                    >
-                      {roles.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.name} ({r.code})
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[10px] text-slate-400 mt-1">Pre-fills permission matrix from selected template</p>
-                  </div>
-
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1 text-xs">Role Description & Responsibilities</label>
-                    <textarea
-                      rows={3}
-                      placeholder="Describe operational access, administrative scope, and responsibilities..."
-                      value={newRoleDesc}
-                      onChange={(e) => setNewRoleDesc(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 bg-white text-xs"
-                    />
-                  </div>
-
-                  <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-lg text-[11px] text-emerald-800 space-y-1">
-                    <div className="font-bold flex items-center gap-1.5 text-emerald-900">
-                      <Info className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                      Role Assignment Note
-                    </div>
-                    <p className="leading-relaxed">
-                      Custom roles can be assigned to active administrative members in the Admin Users tab once created.
-                    </p>
-                  </div>
-                </div>
-
-                {/* RIGHT SIDE: Screen Module Permissions Matrix (8 columns) */}
-                <div className="lg:col-span-8 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                        <SlidersHorizontal className="w-3.5 h-3.5 text-primary" /> Screen Permissions & Action Grants
-                      </h4>
-                      <p className="text-[11px] text-slate-500">
-                        Select View, Edit, Delete, Export, and Approve permissions for each system screen
-                      </p>
-                    </div>
-
+              {/* RIGHT SIDE: Screen Module Permissions Matrix */}
+              <div className="lg:col-span-8 space-y-3">
+                <DataTable<ModulePermission>
+                  columns={createMatrixColumns}
+                  data={newRolePermissions}
+                  keyExtractor={(perm) => perm.id}
+                  pageSize={10}
+                  headerActions={
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -724,146 +863,12 @@ export default function RolesPermissionsView() {
                         Revoke All Screens
                       </button>
                     </div>
-                  </div>
-
-                  {/* Permissions Screen Action Table */}
-                  <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs bg-white">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-[#023526] text-white text-[10.5px] uppercase font-bold tracking-wider">
-                        <tr>
-                          <th className="py-2.5 px-3">Screen / Module</th>
-                          <th className="py-2.5 px-2 text-center">View (Read)</th>
-                          <th className="py-2.5 px-2 text-center">Edit (Write)</th>
-                          <th className="py-2.5 px-2 text-center">Delete</th>
-                          <th className="py-2.5 px-2 text-center">Export</th>
-                          <th className="py-2.5 px-2 text-center">Approve</th>
-                          <th className="py-2.5 px-2 text-center">Quick Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {newRolePermissions.map((perm) => {
-                          const isAllGranted =
-                            perm.read && perm.write && perm.delete && perm.export && perm.approve;
-                          return (
-                            <tr key={perm.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-2.5 px-3">
-                                <div className="font-bold text-slate-900">{perm.moduleName}</div>
-                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">
-                                  {perm.category}
-                                </span>
-                              </td>
-
-                              <td className="py-2.5 px-2 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleModalPermissionToggle(perm.id, 'read')}
-                                  title="View / Read Access"
-                                  className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.read
-                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
-                                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                                    }`}
-                                >
-                                  {perm.read ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                                </button>
-                              </td>
-
-                              <td className="py-2.5 px-2 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleModalPermissionToggle(perm.id, 'write')}
-                                  title="Create / Edit Access"
-                                  className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.write
-                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
-                                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                                    }`}
-                                >
-                                  {perm.write ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                                </button>
-                              </td>
-
-                              <td className="py-2.5 px-2 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleModalPermissionToggle(perm.id, 'delete')}
-                                  title="Delete Access"
-                                  className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.delete
-                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
-                                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                                    }`}
-                                >
-                                  {perm.delete ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                                </button>
-                              </td>
-
-                              <td className="py-2.5 px-2 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleModalPermissionToggle(perm.id, 'export')}
-                                  title="Export CSV Access"
-                                  className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.export
-                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
-                                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                                    }`}
-                                >
-                                  {perm.export ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                                </button>
-                              </td>
-
-                              <td className="py-2.5 px-2 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleModalPermissionToggle(perm.id, 'approve')}
-                                  title="Approve Access"
-                                  className={`w-6.5 h-6.5 rounded inline-flex items-center justify-center transition-all ${perm.approve
-                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold shadow-2xs'
-                                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                                    }`}
-                                >
-                                  {perm.approve ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <X className="w-3.5 h-3.5" />}
-                                </button>
-                              </td>
-
-                              <td className="py-2.5 px-2 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleModalToggleModuleAll(perm.id, !isAllGranted)}
-                                  className={`text-[10px] font-bold px-2 py-1 rounded transition-all ${isAllGranted
-                                    ? 'text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200'
-                                    : 'text-primary bg-primary-light hover:bg-primary/20 border border-primary/20'
-                                    }`}
-                                >
-                                  {isAllGranted ? 'Revoke' : 'Grant All'}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                  }
+                />
               </div>
-
-              {/* Modal Footer Controls */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-bold hover:bg-slate-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold shadow-xs transition-colors flex items-center gap-1.5"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create Role with Permissions</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

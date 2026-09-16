@@ -114,7 +114,7 @@ export default function Sidebar() {
     {
       groupTitle: 'ADMINISTRATIVE',
       items: [
-        { href: '/profile', label: 'My Admin Profile', icon: User },
+        // { href: '/profile', label: 'My Admin Profile', icon: User },
         { href: '/admin-users', label: 'Staff & Admin Team', icon: ShieldCheck },
         { href: '/roles-permissions', label: 'Roles & Permissions', icon: Lock },
         { href: '/settings', label: 'System Configurations', icon: Settings },
@@ -156,28 +156,25 @@ export default function Sidebar() {
                     <Link
                       href="/drivers"
                       onClick={() => setIsDriversExpanded(true)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
-                        isDriversGroupActive
-                          ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
-                          : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
-                      }`}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${isDriversGroupActive
+                        ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
+                        : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
+                        }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Icon
-                          className={`w-4 h-4 transition-transform group-hover:scale-105 ${
-                            isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
-                          }`}
+                          className={`w-4 h-4 transition-transform group-hover:scale-105 ${isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
+                            }`}
                         />
                         <span className="tracking-tight">{item.label}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         {pendingDriversCount > 0 && !isDriversExpanded && (
                           <span
-                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${
-                              isDriversGroupActive
-                                ? 'bg-[#c5a880] text-slate-900 shadow-xs'
-                                : 'bg-amber-100 text-amber-900 border border-amber-200'
-                            }`}
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${isDriversGroupActive
+                              ? 'bg-[#c5a880] text-slate-900 shadow-xs'
+                              : 'bg-amber-100 text-amber-900 border border-amber-200'
+                              }`}
                           >
                             {pendingDriversCount}
                           </span>
@@ -213,27 +210,24 @@ export default function Sidebar() {
                             <Link
                               key={sub.href}
                               href={sub.href}
-                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-                                isSubActive
-                                  ? 'bg-[#faf8f5] text-[#023526] font-bold border-l-2 border-[#c5a880] shadow-2xs'
-                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                              }`}
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${isSubActive
+                                ? 'bg-[#faf8f5] text-[#023526] font-bold border-l-2 border-[#c5a880] shadow-2xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                                }`}
                             >
                               <span className="flex items-center gap-1.5">
                                 <span
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    isSubActive ? 'bg-[#c5a880]' : 'bg-slate-300'
-                                  }`}
+                                  className={`w-1.5 h-1.5 rounded-full ${isSubActive ? 'bg-[#c5a880]' : 'bg-slate-300'
+                                    }`}
                                 ></span>
                                 {sub.label}
                               </span>
                               {sub.count > 0 && (
                                 <span
-                                  className={`px-1.5 py-0.2 text-[9.5px] font-bold rounded ${
-                                    isSubActive
-                                      ? 'bg-[#023526] text-[#c5a880]'
-                                      : sub.badgeColor || 'bg-slate-100 text-slate-600'
-                                  }`}
+                                  className={`px-1.5 py-0.2 text-[9.5px] font-bold rounded ${isSubActive
+                                    ? 'bg-[#023526] text-[#c5a880]'
+                                    : sub.badgeColor || 'bg-slate-100 text-slate-600'
+                                    }`}
                                 >
                                   {sub.count}
                                 </span>
@@ -251,27 +245,24 @@ export default function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
-                    isActive
-                      ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
-                      : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
-                  }`}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${isActive
+                    ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
+                    : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
+                    }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon
-                      className={`w-4 h-4 transition-transform group-hover:scale-105 ${
-                        isActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
-                      }`}
+                      className={`w-4 h-4 transition-transform group-hover:scale-105 ${isActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
+                        }`}
                     />
                     <span className="tracking-tight">{item.label}</span>
                   </div>
                   {item.badge !== undefined && (
                     <span
-                      className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${
-                        isActive
-                          ? 'bg-[#c5a880] text-slate-900 shadow-xs'
-                          : 'bg-orange-100 text-orange-900 border border-orange-200'
-                      }`}
+                      className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${isActive
+                        ? 'bg-[#c5a880] text-slate-900 shadow-xs'
+                        : 'bg-orange-100 text-orange-900 border border-orange-200'
+                        }`}
                     >
                       {item.badge}
                     </span>

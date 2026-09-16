@@ -330,7 +330,7 @@ export default function LiveOperationsView() {
               <select
                 value={driverStatusFilter}
                 onChange={(e) => setDriverStatusFilter(e.target.value)}
-                className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="All">All Live Statuses</option>
                 <option value="Service Started">Service Started</option>

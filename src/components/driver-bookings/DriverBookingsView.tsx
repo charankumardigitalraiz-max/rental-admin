@@ -277,7 +277,7 @@ export default function DriverBookingsView() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as 'All' | 'Local' | 'Outstation')}
-              className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="All">All Types</option>
               <option value="Local">Local City</option>
@@ -290,7 +290,7 @@ export default function DriverBookingsView() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {statuses.map((st) => (
                 <option key={st} value={st}>

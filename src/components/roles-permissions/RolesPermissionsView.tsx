@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRentalStore } from '@/store/useRentalStore';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import {
   Lock,
   ShieldCheck,
@@ -149,6 +150,9 @@ export default function RolesPermissionsView() {
   // View / Edit Permission Matrix Modal State
   const [activeMatrixRole, setActiveMatrixRole] = useState<SystemRole | null>(null);
   const [matrixPermissions, setMatrixPermissions] = useState<ModulePermission[]>([]);
+
+  // Delete Role Confirmation State
+  const [roleToDelete, setRoleToDelete] = useState<SystemRole | null>(null);
 
   // Create New Role Modal State (2-Column Split)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -397,7 +401,7 @@ export default function RolesPermissionsView() {
 
           {!role.isSystem && (
             <button
-              onClick={() => handleDeleteRole(role.id, role.name)}
+              onClick={() => setRoleToDelete(role)}
               className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
               title="Delete Custom Role"
             >
@@ -869,6 +873,26 @@ export default function RolesPermissionsView() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* Confirm Delete Custom Role Modal */}
+      {roleToDelete && (
+        <ConfirmDeleteModal
+          isOpen={!!roleToDelete}
+          onClose={() => setRoleToDelete(null)}
+          onConfirm={() => {
+            const target = roleToDelete;
+            setRoles((prev) => prev.filter((r) => r.id !== target.id));
+            setSaveToast(`Custom role "${target.name}" deleted.`);
+            setTimeout(() => setSaveToast(null), 3500);
+            setRoleToDelete(null);
+          }}
+          title="Confirm Custom Role Deletion"
+          itemName={roleToDelete.name}
+          itemDetails={`Code: ${roleToDelete.code} • ${roleToDelete.assignedUsersCount} Admins assigned`}
+          warningText={`Are you sure you want to delete the custom role "${roleToDelete.name}"? Active admin users assigned to this role will lose inherited permissions.`}
+          confirmText="Yes, Delete Role"
+        />
       )}
     </div>
   );

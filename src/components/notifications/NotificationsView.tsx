@@ -8,10 +8,10 @@ export default function NotificationsView() {
   const { notifications, markNotificationAsRead, markAllNotificationsAsRead } = useRentalStore();
 
   const iconTypeMap: Record<string, React.ElementType> = {
-    booking: CalendarCheck,
-    payment: CreditCard,
-    maintenance: Wrench,
-    return: RotateCcw,
+    Booking: CalendarCheck,
+    Payment: CreditCard,
+    Subscription: CreditCard,
+    General: Bell,
   };
 
   return (
@@ -19,7 +19,7 @@ export default function NotificationsView() {
       <div className="card-white p-4 flex items-center justify-between">
         <div>
           <h3 className="font-bold text-slate-900 text-sm">System Notification Center</h3>
-          <p className="text-xs text-slate-500">Live booking alerts, payment confirmations, and maintenance schedules</p>
+          <p className="text-xs text-slate-500">Live booking alerts, payment confirmations, and system dispatches</p>
         </div>
         <button
           onClick={markAllNotificationsAsRead}
@@ -42,12 +42,10 @@ export default function NotificationsView() {
             >
               <div
                 className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                  n.type === 'booking'
+                  n.type === 'Booking'
                     ? 'bg-primary-light text-primary'
-                    : n.type === 'payment'
+                    : n.type === 'Payment' || n.type === 'Subscription'
                     ? 'bg-emerald-100 text-emerald-700'
-                    : n.type === 'maintenance'
-                    ? 'bg-amber-100 text-amber-700'
                     : 'bg-indigo-100 text-indigo-700'
                 }`}
               >
@@ -57,7 +55,7 @@ export default function NotificationsView() {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-slate-900 text-xs">{n.title}</h4>
-                  <span className="text-[10px] text-slate-400">{n.timestamp}</span>
+                  <span className="text-[10px] text-slate-400">{n.sentAt}</span>
                 </div>
                 <p className="text-xs text-slate-600 mt-1">{n.message}</p>
               </div>

@@ -36,11 +36,11 @@ export default function SettingsView() {
           <h4 className="font-bold text-slate-900 text-sm border-b border-slate-100 pb-2">Business Information</h4>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Car Rental Agency Name</label>
+              <label className="block text-slate-700 font-semibold mb-1">Platform / Agency Name</label>
               <input
                 type="text"
-                value={form.storeName}
-                onChange={(e) => setForm({ ...form, storeName: e.target.value })}
+                value={form.platformName || ''}
+                onChange={(e) => setForm({ ...form, platformName: e.target.value })}
                 className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none"
               />
             </div>
@@ -50,7 +50,7 @@ export default function SettingsView() {
                 <input
                   type="text"
                   readOnly
-                  value="INR (₹)"
+                  value={`INR (${form.currencySymbol || '₹'})`}
                   className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-100 font-bold"
                 />
               </div>
@@ -62,8 +62,8 @@ export default function SettingsView() {
               <label className="block text-slate-700 font-semibold mb-1">Support Hotline Phone</label>
               <input
                 type="text"
-                value={form.supportPhone}
-                onChange={(e) => setForm({ ...form, supportPhone: e.target.value })}
+                value={form.contactPhone || ''}
+                onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
                 className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none"
               />
             </div>
@@ -71,21 +71,11 @@ export default function SettingsView() {
               <label className="block text-slate-700 font-semibold mb-1">Official Support Email</label>
               <input
                 type="email"
-                value={form.supportEmail}
-                onChange={(e) => setForm({ ...form, supportEmail: e.target.value })}
+                value={form.contactEmail || ''}
+                onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
                 className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Head Office Address</label>
-            <input
-              type="text"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-              className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none"
-            />
           </div>
         </div>
 
@@ -97,8 +87,8 @@ export default function SettingsView() {
               <label className="block text-slate-700 font-semibold mb-1">GST Tax Rate (%)</label>
               <input
                 type="number"
-                value={form.taxRatePercent}
-                onChange={(e) => setForm({ ...form, taxRatePercent: Number(e.target.value) })}
+                value={form.gstTaxPercent ?? 18}
+                onChange={(e) => setForm({ ...form, gstTaxPercent: Number(e.target.value) })}
                 className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 bg-slate-50 focus:outline-none"
               />
             </div>
@@ -108,26 +98,26 @@ export default function SettingsView() {
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
-                id="autoApprove"
-                checked={form.autoApproveBookings}
-                onChange={(e) => setForm({ ...form, autoApproveBookings: e.target.checked })}
+                id="autoDriverMatching"
+                checked={form.autoDriverMatching ?? true}
+                onChange={(e) => setForm({ ...form, autoDriverMatching: e.target.checked })}
                 className="rounded text-primary accent-primary"
               />
-              <label htmlFor="autoApprove" className="font-semibold text-slate-800">
-                Auto-approve verified customer booking orders
+              <label htmlFor="autoDriverMatching" className="font-semibold text-slate-800">
+                Auto-match nearest available drivers to incoming requests
               </label>
             </div>
 
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
-                id="smsNotif"
-                checked={form.smsNotifications}
-                onChange={(e) => setForm({ ...form, smsNotifications: e.target.checked })}
+                id="driverSubscriptionMandatory"
+                checked={form.driverSubscriptionMandatory ?? true}
+                onChange={(e) => setForm({ ...form, driverSubscriptionMandatory: e.target.checked })}
                 className="rounded text-primary accent-primary"
               />
-              <label htmlFor="smsNotif" className="font-semibold text-slate-800">
-                Send SMS notifications & trip updates to drivers
+              <label htmlFor="driverSubscriptionMandatory" className="font-semibold text-slate-800">
+                Mandatory active driver subscription plan for duty eligibility
               </label>
             </div>
           </div>

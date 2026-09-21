@@ -2,9 +2,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   Search,
   Bell,
@@ -20,8 +21,10 @@ import {
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { notifications, adminUsers } = useRentalStore();
   const { toast } = useToast();
+  const { user: authUser, logout: authLogout } = useAuth();
 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -41,10 +44,11 @@ export default function Header() {
   }, [isProfileMenuOpen]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const currentAdmin = adminUsers[0] || {
+  const currentAdmin = authUser || adminUsers[0] || {
     name: 'Rajesh K. Varma',
     role: 'Super Admin',
     avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=80',
+    email: 'admin@drivepulse.com',
   };
 
   const pageTitles: Record<string, { title: string; subtitle: string }> = {
@@ -268,9 +272,11 @@ export default function Header() {
                 <button
                   onClick={() => {
                     setIsProfileMenuOpen(false);
+                    authLogout();
                     toast.info('Logged Out Successfully', 'You have been signed out of the admin portal.');
+                    router.push('/admin/login');
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4 text-rose-600" /> Log Out Account
                 </button>

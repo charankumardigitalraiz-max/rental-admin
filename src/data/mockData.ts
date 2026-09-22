@@ -770,7 +770,7 @@ export const initialLocalPricing: LocalPricingConfig = {
 };
 
 export const initialOutstationPricing: OutstationPricingConfig = {
-  basePrice: 2000,
+  basePrice: 500,
   minDurationDays: 1,
   perDayRate: 1800,
   perKmRate: 12,

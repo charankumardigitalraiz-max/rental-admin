@@ -109,9 +109,9 @@ export default function PricingManagementView() {
               Outstation Daily Tariff
             </span>
             <div className="text-2xl font-black text-slate-900 mt-1">
-              ₹{outstationPricing.basePrice} <span className="text-xs text-slate-400 font-normal">/ day</span>
+              ₹{outstationPricing.basePrice} <span className="text-xs text-slate-400 font-normal">/ hrs</span>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">₹{outstationPricing.perKmRate}/km extra • ₹{outstationPricing.driverFoodAllowancePerDay}/day food</p>
+            <p className="text-[10px] text-slate-400 mt-1">₹{outstationPricing.perKmRate}/km extra • ₹{outstationPricing.driverFoodAllowancePerDay}/hrs food</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">

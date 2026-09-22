@@ -181,6 +181,7 @@ export default function ValetBookingsView() {
     {
       key: 'status',
       header: 'Status',
+      className: 'min-w-[140px]',
       render: (v) => (
         <span
           className={`px-2 py-0.5 rounded text-[10px] font-bold ${v.status === 'Fully Assigned' || v.status === 'In Progress'
@@ -200,6 +201,7 @@ export default function ValetBookingsView() {
       key: 'actions',
       header: 'Actions',
       align: 'center',
+      className: 'min-w-[170px]',
       render: (v) => (
         <div className="flex items-center justify-center gap-1.5">
           <button
@@ -214,7 +216,7 @@ export default function ValetBookingsView() {
           </button>
           <button
             onClick={() => setAssigningBooking(v)}
-            className="px-2.5 py-1 bg-primary hover:bg-slate-800 text-white text-[10px] font-bold rounded-md shadow-xs"
+            className="px-2 py-1 bg-primary hover:bg-slate-800 text-white text-[10px] font-bold rounded-md shadow-xs whitespace-nowrap"
             title="Assign Staff to Event"
           >
             Assign Staff

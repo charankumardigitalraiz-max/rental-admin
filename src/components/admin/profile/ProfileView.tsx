@@ -221,44 +221,40 @@ export default function ProfileView() {
       <div className="card-white p-1.5 flex items-center gap-1 overflow-x-auto">
         <button
           onClick={() => setActiveTab('info')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'info'
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'info'
               ? 'bg-primary text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
+            }`}
         >
           <User className="w-4 h-4" /> Personal Information
         </button>
 
         <button
           onClick={() => setActiveTab('security')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'security'
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'security'
               ? 'bg-primary text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
+            }`}
         >
           <Lock className="w-4 h-4" /> Password & Security
         </button>
 
         <button
           onClick={() => setActiveTab('permissions')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'permissions'
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'permissions'
               ? 'bg-primary text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
+            }`}
         >
           <ShieldCheck className="w-4 h-4" /> Role & Module Access
         </button>
 
         <button
           onClick={() => setActiveTab('activity')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'activity'
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'activity'
               ? 'bg-primary text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
+            }`}
         >
           <Activity className="w-4 h-4" /> Audit Activity Logs
         </button>
@@ -412,7 +408,7 @@ export default function ProfileView() {
           </div>
 
           {/* 2FA Toggle Card */}
-          <div className="card-white p-5 flex items-center justify-between">
+          {/* <div className="card-white p-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-200">
                 <ShieldAlert className="w-5 h-5" />
@@ -440,7 +436,7 @@ export default function ProfileView() {
             >
               {twoFactorEnabled ? 'Enabled ✓' : 'Disabled ✕'}
             </button>
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -575,11 +571,10 @@ export default function ProfileView() {
                     key={idx}
                     type="button"
                     onClick={() => setTempPhotoUrl(url)}
-                    className={`relative rounded-full overflow-hidden transition-all focus:outline-none ring-offset-2 ${
-                      tempPhotoUrl === url
+                    className={`relative rounded-full overflow-hidden transition-all focus:outline-none ring-offset-2 ${tempPhotoUrl === url
                         ? 'ring-2 ring-primary scale-105 shadow-md'
                         : 'opacity-70 hover:opacity-100 hover:scale-100'
-                    }`}
+                      }`}
                   >
                     <img src={url} alt={`Avatar ${idx + 1}`} className="w-12 h-12 rounded-full object-cover" />
                     {tempPhotoUrl === url && (

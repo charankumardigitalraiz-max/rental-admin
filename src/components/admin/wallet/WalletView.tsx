@@ -264,8 +264,8 @@ export default function WalletView() {
       render: (w) => (
         <span
           className={`px-2.5 py-1 rounded text-[10.5px] font-bold border ${w.userRole === 'Customer'
-              ? 'bg-sky-50 text-sky-800 border-sky-200'
-              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            ? 'bg-sky-50 text-sky-800 border-sky-200'
+            : 'bg-emerald-50 text-emerald-800 border-emerald-200'
             }`}
         >
           {w.userRole}
@@ -301,8 +301,8 @@ export default function WalletView() {
       render: (w) => (
         <span
           className={`px-2 py-0.5 rounded text-[10px] font-bold ${w.status === 'Active'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : 'bg-rose-50 text-rose-700 border border-rose-200'
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : 'bg-rose-50 text-rose-700 border border-rose-200'
             }`}
         >
           {w.status}
@@ -415,26 +415,26 @@ export default function WalletView() {
       <div className="bg-white p-6 rounded-xl border border-stone-200/80 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
           <div className="pt-2 md:pt-0">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total User Savings Pool</span>
-            <div className="text-2xl font-black text-slate-900 mt-1">₹{totalPoolBalance.toLocaleString('en-IN')}</div>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">Total User Savings Pool</span>
+            <div className="text-xl font-bold text-slate-900 mt-1">₹{totalPoolBalance.toLocaleString('en-IN')}</div>
             <p className="text-[10px] text-emerald-600 font-semibold mt-1">{activeWalletsCount} Active User Wallets</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Credits Disbursed</span>
-            <div className="text-2xl font-black text-slate-900 mt-1">₹{totalCreditsIssued.toLocaleString('en-IN')}</div>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">Total Credits Disbursed</span>
+            <div className="text-xl font-bold text-emerald-700 mt-1">₹{totalCreditsIssued.toLocaleString('en-IN')}</div>
             <p className="text-[10px] text-slate-400 mt-1">Lifetime Wallet Top-ups & Cashbacks</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">Promotional Cashbacks</span>
-            <div className="text-2xl font-black text-slate-900 mt-1">₹18,500</div>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-indigo-700 block">Promotional Cashbacks</span>
+            <div className="text-xl font-bold text-indigo-700 mt-1">₹18,500</div>
             <p className="text-[10px] text-slate-400 mt-1">App Promo Campaign Rewards</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">System Verification</span>
-            <div className="text-2xl font-black text-emerald-600 mt-1 flex items-center gap-1">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">System Verification</span>
+            <div className="text-xl font-bold text-emerald-600 mt-1 flex items-center gap-1">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" /> 100% Secured
             </div>
             <p className="text-[10px] text-slate-400 mt-1">Instant Razorpay Wallet Gateway</p>
@@ -458,8 +458,8 @@ export default function WalletView() {
               <button
                 onClick={() => setActiveTab('wallets')}
                 className={`px-3 py-1 rounded-md font-bold transition-all ${activeTab === 'wallets'
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
               >
                 User Wallets ({wallets.length})
@@ -467,8 +467,8 @@ export default function WalletView() {
               <button
                 onClick={() => setActiveTab('ledger')}
                 className={`px-3 py-1 rounded-md font-bold transition-all ${activeTab === 'ledger'
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
               >
                 Wallet Ledger ({ledger.length})

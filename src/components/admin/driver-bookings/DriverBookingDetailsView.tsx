@@ -193,6 +193,44 @@ export default function DriverBookingDetailsView({ bookingId }: DriverBookingDet
             </div>
           </div>
 
+          {/* Vehicle Inspection Evidence Card */}
+          <div className="card-white p-5 space-y-4">
+            <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+              <ShieldCheck className="w-4 h-4 text-primary" /> Pre & Post Trip Vehicle Inspection Evidence
+            </h4>
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                <span className="text-[10px] font-bold uppercase text-emerald-700 block">Pre-Trip Inspection Baseline</span>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-slate-500">Odometer:</span>
+                  <span className="font-bold text-slate-900">24,150 km</span>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-slate-500">Fuel Level:</span>
+                  <span className="font-bold text-emerald-700">85% Full</span>
+                </div>
+                <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded block text-center">
+                  Verified by Customer ✓
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                <span className="text-[10px] font-bold uppercase text-sky-700 block">Post-Trip Inspection Return</span>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-slate-500">Odometer:</span>
+                  <span className="font-bold text-slate-900">24,215 km (+65km)</span>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-slate-500">Fuel Level:</span>
+                  <span className="font-bold text-sky-700">70% Remaining</span>
+                </div>
+                <span className="text-[10px] text-sky-800 font-bold bg-sky-100 px-2 py-0.5 rounded block text-center">
+                  Completed Clean ✓
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Booking Timeline */}
           <div className="card-white p-5 space-y-4">
             <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">

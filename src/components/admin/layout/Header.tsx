@@ -110,8 +110,16 @@ export default function Header() {
       subtitle: 'Monitor customer & driver savings balances, promotional cashbacks, top-ups, and balance adjustments',
     },
     '/admin/customers': {
-      title: 'Customers',
-      subtitle: 'Customer profiles, total spent, booking history, and account statuses',
+      title: 'Customer Directory & Profiles',
+      subtitle: 'Manage customer accounts, lifetime spend, booking history, and account standing',
+    },
+    '/admin/customer-vehicles': {
+      title: 'Customer Vehicles Directory',
+      subtitle: 'Verified private vehicles, transmission specs, fuel types, and digital driver authorizations',
+    },
+    '/admin/damage-claims': {
+      title: 'Vehicle Damage & Incident Claims Desk',
+      subtitle: 'Pre-trip vs post-trip photo inspection comparison, repair estimates, and driver payout holds',
     },
     '/admin/valet-bookings': {
       title: 'Valet Event Bookings',

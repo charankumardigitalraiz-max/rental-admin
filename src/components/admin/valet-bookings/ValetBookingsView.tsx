@@ -244,27 +244,27 @@ export default function ValetBookingsView() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
           <div className="pt-2 md:pt-0">
-            <p className="text-xs font-semibold text-slate-500">Total Event Bookings</p>
-            <div className="text-2xl font-black text-slate-900 mt-1">{totalValetBookingsCount}</div>
-            <p className="text-[10px] text-slate-400 mt-1">All venue & corporate bookings</p>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">Total Event Bookings</span>
+            <div className="text-xl font-bold text-slate-900 mt-1">{totalValetBookingsCount}</div>
+            <span className="text-[10px] text-slate-400 font-medium">All venue & corporate bookings</span>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <p className="text-xs font-semibold text-amber-600">Active Events (In Progress)</p>
-            <div className="text-2xl font-black text-amber-800 mt-1">{activeEventsCount}</div>
-            <p className="text-[10px] text-amber-600/80 mt-1">Valet staff currently on ground</p>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700 block">Active Events (In Progress)</span>
+            <div className="text-xl font-bold text-amber-700 mt-1">{activeEventsCount}</div>
+            <span className="text-[10px] text-amber-600 font-medium">Valet staff currently on ground</span>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <p className="text-xs font-semibold text-sky-600">Upcoming / Pending Events</p>
-            <div className="text-2xl font-black text-sky-800 mt-1">{upcomingEventsCount}</div>
-            <p className="text-[10px] text-sky-600/80 mt-1">New requests & staff allocation</p>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-sky-700 block">Upcoming / Pending Events</span>
+            <div className="text-xl font-bold text-sky-700 mt-1">{upcomingEventsCount}</div>
+            <span className="text-[10px] text-sky-600 font-medium">New requests & staff allocation</span>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <p className="text-xs font-semibold text-emerald-600">Completed Events</p>
-            <div className="text-2xl font-black text-emerald-800 mt-1">{completedEventsCount}</div>
-            <p className="text-[10px] text-emerald-600/80 mt-1">Successfully fulfilled</p>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">Completed Events</span>
+            <div className="text-xl font-bold text-emerald-700 mt-1">{completedEventsCount}</div>
+            <span className="text-[10px] text-emerald-600 font-medium">Successfully fulfilled</span>
           </div>
         </div>
       </div>

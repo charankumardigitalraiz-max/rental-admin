@@ -27,6 +27,8 @@ import {
   LifeBuoy,
   Star,
   Banknote,
+  CarFront,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -47,6 +49,8 @@ export default function Sidebar() {
     customers,
     supportTickets,
     valetStaff,
+    customerVehicles,
+    damageClaims,
   } = useRentalStore();
 
   const [isDriversExpanded, setIsDriversExpanded] = useState(true);
@@ -57,6 +61,7 @@ export default function Sidebar() {
   const onlineDriversCount = drivers.filter((d) => d.dutyStatus === 'Online').length;
   const suspendedDriversCount = drivers.filter((d) => d.status === 'Suspended').length;
   const openSupportTicketsCount = supportTickets?.filter((t) => t.status === 'Open').length || 0;
+  const openDamageClaimsCount = damageClaims?.filter((c) => c.status === 'Open' || c.status === 'Under Review').length || 0;
 
   const driverSubItems: { href: string; label: string; count: number; badgeColor?: string }[] = [
     { href: '/admin/drivers', label: 'All Drivers', count: drivers.length },
@@ -103,6 +108,12 @@ export default function Sidebar() {
           icon: Users,
           badge: customers?.length > 0 ? customers.length : undefined,
         },
+        {
+          href: '/admin/customer-vehicles',
+          label: 'Customer Vehicles',
+          icon: CarFront,
+          badge: customerVehicles?.length > 0 ? customerVehicles.length : undefined,
+        },
       ],
     },
     {
@@ -144,6 +155,12 @@ export default function Sidebar() {
     {
       groupTitle: 'SUPPORT & QUALITY',
       items: [
+        {
+          href: '/admin/damage-claims',
+          label: 'Damage Claims Desk',
+          icon: ShieldAlert,
+          badge: openDamageClaimsCount > 0 ? openDamageClaimsCount : undefined,
+        },
         {
           href: '/admin/disputes',
           label: 'Support & Disputes',

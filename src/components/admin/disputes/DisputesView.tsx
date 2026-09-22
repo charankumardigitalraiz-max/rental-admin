@@ -54,34 +54,34 @@ export default function DisputesView() {
       <div className="bg-white p-6 rounded-xl border border-stone-200/80 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
           <div className="pt-2 md:pt-0">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">
               Total Support Tickets
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">{supportTickets.length}</div>
+            <div className="text-xl font-bold text-slate-900 mt-1">{supportTickets.length}</div>
             <p className="text-[10px] text-slate-400 mt-1">Reported issues & disputes</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-rose-600 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-rose-700 block">
               Open Tickets
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">{openCount}</div>
+            <div className="text-xl font-bold text-rose-700 mt-1">{openCount}</div>
             <p className="text-[10px] text-rose-600 font-semibold mt-1">Requires admin review</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700 block">
               Under Investigation
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">{investigatingCount}</div>
+            <div className="text-xl font-bold text-amber-700 mt-1">{investigatingCount}</div>
             <p className="text-[10px] text-amber-600 font-semibold mt-1">Claims currently being verified</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">
               Resolved Cases
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">{resolvedCount}</div>
+            <div className="text-xl font-bold text-emerald-700 mt-1">{resolvedCount}</div>
             <p className="text-[10px] text-emerald-600 font-semibold mt-1">Successfully closed</p>
           </div>
         </div>

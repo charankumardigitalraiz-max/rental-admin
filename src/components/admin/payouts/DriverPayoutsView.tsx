@@ -11,7 +11,7 @@ import {
 import { DriverPayoutRecord } from '@/types';
 
 export default function DriverPayoutsView() {
-  const { driverPayouts, updatePayoutStatus } = useRentalStore();
+  const { driverPayouts, damageClaims, updatePayoutStatus } = useRentalStore();
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [roleFilter, setRoleFilter] = useState<string>('All');
 
@@ -31,7 +31,19 @@ export default function DriverPayoutsView() {
     {
       key: 'payoutNumber',
       header: 'Payout ID',
-      render: (p) => <span className="font-bold text-slate-900 font-mono text-xs">{p.payoutNumber}</span>,
+      render: (p) => {
+        const hasClaimHold = damageClaims?.some((c) => c.driverName === p.driverOrStaffName && c.payoutHoldStatus);
+        return (
+          <div>
+            <span className="font-bold text-slate-900 font-mono text-xs">{p.payoutNumber}</span>
+            {hasClaimHold && (
+              <span className="block text-[9px] font-extrabold text-rose-700 uppercase bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded mt-0.5 w-fit">
+                Claim Hold Active
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'driverOrStaffName',
@@ -133,28 +145,28 @@ export default function DriverPayoutsView() {
       <div className="bg-white p-6 rounded-xl border border-stone-200/80 shadow-xs space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
           <div className="pt-2 md:pt-0">
-            <span className="text-xs font-semibold text-[#023526] uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700 block">
               Pending Approval Volume
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">₹{pendingPayoutVolume.toLocaleString()}</div>
+            <div className="text-xl font-bold text-amber-700 mt-1">₹{pendingPayoutVolume.toLocaleString()}</div>
             <p className="text-[10px] text-amber-600 font-semibold mt-1">
               {driverPayouts.filter((p) => p.status === 'Pending Approval').length} settlement batches waiting
             </p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">
               Total Payout Disbursed
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">₹{totalPayoutVolume.toLocaleString()}</div>
+            <div className="text-xl font-bold text-emerald-700 mt-1">₹{totalPayoutVolume.toLocaleString()}</div>
             <p className="text-[10px] text-emerald-600 font-semibold mt-1">{completedCount} batches completed</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">
               Platform Commission Retention
             </span>
-            <div className="text-2xl font-black text-amber-700 mt-1">
+            <div className="text-xl font-bold text-slate-900 mt-1">
               ₹{driverPayouts.reduce((sum, p) => sum + p.platformCommission, 0).toLocaleString()}
             </div>
             <p className="text-[10px] text-slate-400 mt-1">Total platform revenue cut from payouts</p>

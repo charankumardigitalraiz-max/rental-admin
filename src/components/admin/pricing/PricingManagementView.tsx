@@ -95,33 +95,33 @@ export default function PricingManagementView() {
       <div className="bg-white p-6 rounded-xl border border-stone-200/80 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
           <div className="pt-2 md:pt-0">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">
               Local Driver Rate
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
-              ₹{localPricing.basePrice} <span className="text-xs text-slate-400 font-normal">/ min {localPricing.minDurationHours} hrs</span>
+            <div className="text-xl font-bold text-emerald-700 mt-1">
+              ₹{localPricing.basePrice} <span className="text-xs text-emerald-600/80 font-normal">/ min {localPricing.minDurationHours} hrs</span>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">₹{localPricing.perHourPrice}/hr extra • {localPricing.driverSharePercent}% Driver Payout</p>
+            <p className="text-[10px] text-emerald-600 font-medium mt-1">₹{localPricing.perHourPrice}/hr extra • {localPricing.driverSharePercent}% Driver Payout</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Outstation Daily Tariff
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-sky-700 block">
+              Outstation Driver Rate
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
-              ₹{outstationPricing.basePrice} <span className="text-xs text-slate-400 font-normal">/ hrs</span>
+            <div className="text-xl font-bold text-sky-700 mt-1">
+              ₹{outstationPricing.basePrice} <span className="text-xs text-sky-600/80 font-normal">/ hr</span>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">₹{outstationPricing.perKmRate}/km extra • ₹{outstationPricing.driverFoodAllowancePerDay}/hrs food</p>
+            <p className="text-[10px] text-sky-600 font-medium mt-1">Hourly billing • ₹{outstationPricing.perKmRate}/km extra • ₹{outstationPricing.driverFoodAllowancePerDay}/hr food</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700 block">
               Valet Event Tariff
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
-              ₹{valetPricing.pricePerStaffPerHour} <span className="text-xs text-slate-400 font-normal">/ staff / hr</span>
+            <div className="text-xl font-bold text-amber-700 mt-1">
+              ₹{valetPricing.pricePerStaffPerHour} <span className="text-xs text-amber-600/80 font-normal">/ staff / hr</span>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">{valetPricing.peakEventSurgePercent}% Event Surge • Min {valetPricing.minStaffRequirement} Staff</p>
+            <p className="text-[10px] text-amber-600 font-medium mt-1">{valetPricing.peakEventSurgePercent}% Event Surge • Min {valetPricing.minStaffRequirement} Staff</p>
           </div>
         </div>
       </div>
@@ -139,6 +139,7 @@ export default function PricingManagementView() {
             <Car className="w-4 h-4" />
             Local Driver Pricing
           </button>
+
           <button
             onClick={() => setActiveTab('outstation')}
             className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold transition-all border-b-2 ${activeTab === 'outstation'
@@ -149,6 +150,7 @@ export default function PricingManagementView() {
             <TrendingUp className="w-4 h-4" />
             Outstation Pricing
           </button>
+
           <button
             onClick={() => setActiveTab('valet')}
             className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold transition-all border-b-2 ${activeTab === 'valet'
@@ -159,6 +161,7 @@ export default function PricingManagementView() {
             <Building2 className="w-4 h-4" />
             Valet Event Pricing
           </button>
+
           <button
             onClick={() => setActiveTab('rules')}
             className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold transition-all border-b-2 ${activeTab === 'rules'
@@ -240,6 +243,19 @@ export default function PricingManagementView() {
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                   />
                   <p className="text-[10px] text-slate-400 mt-1">Platform revenue share</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Driver Travel to Pickup Allowance (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={150}
+                    readOnly
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 font-semibold text-slate-800"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Distance allowance for driver reaching customer vehicle</p>
                 </div>
 
                 <div>

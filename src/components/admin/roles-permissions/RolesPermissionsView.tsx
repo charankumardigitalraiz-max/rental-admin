@@ -675,38 +675,38 @@ export default function RolesPermissionsView() {
       <div className="bg-white p-6 rounded-xl border border-stone-200/80 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
           <div className="pt-2 md:pt-0">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">
               Total Defined Roles
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">{roles.length}</div>
+            <div className="text-xl font-bold text-slate-900 mt-1">{roles.length}</div>
             <p className="text-[10px] text-slate-400 mt-1">Configured access roles</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700 block">
               Built-in System Roles
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
+            <div className="text-xl font-bold text-amber-700 mt-1">
               {roles.filter((r) => r.isSystem).length}
             </div>
             <p className="text-[10px] text-amber-600 font-semibold mt-1">Core platform defaults</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-indigo-700 block">
               Custom RBAC Roles
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
+            <div className="text-xl font-bold text-indigo-700 mt-1">
               {roles.filter((r) => !r.isSystem).length}
             </div>
             <p className="text-[10px] text-indigo-600 font-semibold mt-1">User-created role policies</p>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">
               Assigned Admin Users
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
+            <div className="text-xl font-bold text-emerald-700 mt-1">
               {roles.reduce((acc, r) => acc + r.assignedUsersCount, 0)}
             </div>
             <p className="text-[10px] text-emerald-600 font-semibold mt-1">Active staff members assigned</p>

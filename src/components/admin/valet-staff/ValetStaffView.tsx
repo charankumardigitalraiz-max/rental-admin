@@ -55,29 +55,29 @@ export default function ValetStaffView() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
           <div className="pt-2 md:pt-0">
-            <p className="text-xs font-semibold text-slate-500">Total Valet Staff</p>
-            <div className="text-2xl font-black text-slate-900 mt-1">{valetStaff.length}</div>
-            <p className="text-[10px] text-slate-400 mt-1">Active roster staff</p>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">Total Valet Staff</span>
+            <div className="text-xl font-bold text-slate-900 mt-1">{valetStaff.length}</div>
+            <span className="text-[10px] text-slate-400 font-medium">Active roster staff</span>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <p className="text-xs font-semibold text-emerald-600">On Duty / Assigned</p>
-            <div className="text-2xl font-black text-emerald-800 mt-1">{onDutyCount}</div>
-            <p className="text-[10px] text-emerald-600/80 mt-1">Currently assigned to events</p>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">On Duty / Assigned</span>
+            <div className="text-xl font-bold text-emerald-700 mt-1">{onDutyCount}</div>
+            <span className="text-[10px] text-emerald-600 font-medium">Currently assigned to events</span>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <p className="text-xs font-semibold text-sky-600">Available Standby</p>
-            <div className="text-2xl font-black text-sky-800 mt-1">{availableCount}</div>
-            <p className="text-[10px] text-sky-600/80 mt-1">Ready for event allocation</p>
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-sky-700 block">Available Standby</span>
+            <div className="text-xl font-bold text-sky-700 mt-1">{availableCount}</div>
+            <span className="text-[10px] text-sky-600 font-medium">Ready for event allocation</span>
           </div>
 
           <div className="pt-3 md:pt-0 md:pl-4">
-            <p className="text-xs font-semibold text-amber-600">Average Roster Rating</p>
-            <div className="flex items-center gap-1 text-2xl font-black text-slate-900 mt-1">
-              {avgRating} <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700 block">Average Roster Rating</span>
+            <div className="flex items-center gap-1 text-xl font-bold text-amber-700 mt-1">
+              {avgRating} <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
             </div>
-            <p className="text-[10px] text-amber-600/80 mt-1">Based on event reviews</p>
+            <span className="text-[10px] text-amber-600 font-medium">Based on event reviews</span>
           </div>
         </div>
       </div>

@@ -14,6 +14,9 @@ export type ActiveTab =
   | 'subscription-payments'
   | 'customers'
   | 'customer-details'
+  | 'customer-vehicles'
+  | 'customer-vehicle-details'
+  | 'damage-claims'
   | 'valet-bookings'
   | 'valet-booking-details'
   | 'valet-staff'
@@ -468,4 +471,63 @@ export interface SystemSettings {
   cancellationFreeWindowMins: number;
   cancellationFeePercent: number;
   gstTaxPercent: number;
+}
+
+export interface CustomerVehicle {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  regNumber: string;
+  make: string;
+  model: string;
+  year: number;
+  transmission: 'Manual' | 'Automatic';
+  fuelType: 'Petrol' | 'Diesel' | 'EV' | 'CNG';
+  insuranceExpiry: string;
+  insuranceProvider: string;
+  policyNumber: string;
+  authorized: boolean;
+  status: 'Active' | 'Under Review' | 'Expired Insurance' | 'Suspended';
+  vehicleImages?: string[];
+  rcImage?: string;
+  rcNumber?: string;
+}
+
+export interface VehicleInspectionEvidence {
+  id: string;
+  bookingId: string;
+  bookingNumber: string;
+  type: 'Pre-Trip' | 'Post-Trip';
+  odometerReading: number;
+  fuelLevelPercent: number;
+  exteriorPhotos: string[];
+  interiorPhotos: string[];
+  dashboardPhoto: string;
+  existingScratches: string[];
+  recordedAt: string;
+  recordedByDriverName: string;
+  verifiedByCustomer: boolean;
+}
+
+export interface DamageClaim {
+  id: string;
+  claimNumber: string;
+  bookingId: string;
+  bookingNumber: string;
+  customerName: string;
+  customerPhone: string;
+  driverName: string;
+  driverPhone: string;
+  vehicleRegNumber: string;
+  vehicleModel: string;
+  incidentDate: string;
+  damageDescription: string;
+  preTripPhotoRef: string;
+  postTripPhotoRef: string;
+  estimatedRepairCost: number;
+  insurerNotified: boolean;
+  payoutHoldStatus: boolean;
+  status: 'Open' | 'Under Review' | 'Approved' | 'Rejected' | 'Settled';
+  createdAt: string;
 }

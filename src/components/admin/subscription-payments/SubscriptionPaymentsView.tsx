@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRentalStore } from '@/store/useRentalStore';
-import { CreditCard, Search, Download, CheckCircle2, SlidersHorizontal } from 'lucide-react';
+import { CreditCard, Search, Download, CheckCircle2, SlidersHorizontal, Eye } from 'lucide-react';
 
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { SubscriptionPayment } from '@/types';
@@ -18,7 +19,14 @@ export default function SubscriptionPaymentsView() {
     {
       key: 'transactionId',
       header: 'Transaction ID',
-      render: (sp) => <span className="font-mono font-bold text-slate-900">{sp.transactionId}</span>,
+      render: (sp) => (
+        <Link
+          href={`/admin/transactions/${sp.id}`}
+          className="font-mono font-bold text-slate-900 hover:text-primary hover:underline"
+        >
+          {sp.transactionId}
+        </Link>
+      ),
     },
     {
       key: 'driverName',
@@ -71,6 +79,20 @@ export default function SubscriptionPaymentsView() {
         >
           {sp.status}
         </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Action',
+      align: 'center',
+      render: (sp) => (
+        <Link
+          href={`/admin/transactions/${sp.id}`}
+          className="p-1.5 bg-primary-light hover:bg-primary text-primary hover:text-white rounded-md border border-primary/20 hover:border-primary transition-all inline-flex items-center justify-center shadow-2xs"
+          title="View Transaction Details"
+        >
+          <Eye className="w-3.5 h-3.5" />
+        </Link>
       ),
     },
   ];

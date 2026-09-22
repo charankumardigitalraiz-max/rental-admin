@@ -22,26 +22,31 @@ import {
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { notifications, adminUsers } = useRentalStore();
+  const { notifications, adminUsers, markNotificationAsRead, markAllNotificationsAsRead } = useRentalStore();
   const { toast } = useToast();
   const { user: authUser, logout: authLogout } = useAuth();
 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsProfileMenuOpen(false);
       }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
     };
-    if (isProfileMenuOpen) {
+    if (isProfileMenuOpen || isNotificationsOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isProfileMenuOpen]);
+  }, [isProfileMenuOpen, isNotificationsOpen]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const currentAdmin = authUser || adminUsers[0] || {
@@ -96,6 +101,14 @@ export default function Header() {
       title: 'Subscription Payment Transactions',
       subtitle: 'Driver pass purchase transactions and payment gateway logs',
     },
+    '/admin/transactions': {
+      title: 'Transactions & Payment Logs',
+      subtitle: 'Comprehensive audit list of customer ride payments, valet billing, and driver payouts',
+    },
+    '/admin/wallet': {
+      title: 'User Wallet & Savings Management',
+      subtitle: 'Monitor customer & driver savings balances, promotional cashbacks, top-ups, and balance adjustments',
+    },
     '/admin/customers': {
       title: 'Customers',
       subtitle: 'Customer profiles, total spent, booking history, and account statuses',
@@ -103,6 +116,22 @@ export default function Header() {
     '/admin/valet-bookings': {
       title: 'Valet Event Bookings',
       subtitle: 'Event valet parking requests, venue locations, and staff requirements',
+    },
+    '/admin/valet-staff': {
+      title: 'Valet Event Staff Roster',
+      subtitle: 'Manage professional valet drivers, duty status, shift assignments, and ratings',
+    },
+    '/admin/pricing': {
+      title: 'Pricing & Dynamic Surge Rules',
+      subtitle: 'Configure hourly tariffs, outstation rates, valet pricing, and surge multipliers',
+    },
+    '/admin/payouts': {
+      title: 'Driver & Staff Payout Settlements',
+      subtitle: 'Weekly payout batching, commission deductions, tax calculations, and bank disbursement',
+    },
+    '/admin/disputes': {
+      title: 'Support & Dispute Operations Center',
+      subtitle: 'Resolve ride cancellations, vehicle damage claims, payment disputes, and lost items',
     },
     '/admin/assignments': {
       title: 'Centralized Assignment Hub',
@@ -178,24 +207,108 @@ export default function Header() {
 
       {/* Right Controls */}
       <div className="flex items-center gap-3">
-        {/* Notifications Icon Button */}
-        <Link
-          href="/admin/notifications"
-          className="relative p-2 text-slate-600 hover:text-[#023526] hover:bg-[#faf8f5] rounded-lg transition-colors border border-transparent hover:border-[#e7dbc5]"
-          title="Notifications"
-        >
-          <Bell className="w-4 h-4" />
-          {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+        {/* Smart Notifications Popover Dropdown */}
+        <div className="relative" ref={notificationsRef}>
+          <button
+            onClick={() => {
+              setIsNotificationsOpen(!isNotificationsOpen);
+              setIsProfileMenuOpen(false);
+            }}
+            className="relative p-2 text-slate-600 hover:text-[#023526] hover:bg-[#faf8f5] rounded-lg transition-colors border border-transparent hover:border-[#e7dbc5] focus:outline-none cursor-pointer"
+            title="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+            )}
+          </button>
+
+          {isNotificationsOpen && (
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-slate-200/90 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              {/* Popover Header */}
+              <div className="p-3.5 bg-gradient-to-r from-emerald-950 to-[#023526] text-white flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-[#c5a880]" />
+                  <h4 className="text-xs font-bold text-white tracking-tight">Notifications</h4>
+                  {unreadCount > 0 && (
+                    <span className="px-1.5 py-0.5 bg-rose-500 text-white text-[9px] font-extrabold rounded-full">
+                      {unreadCount} New
+                    </span>
+                  )}
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={() => markAllNotificationsAsRead()}
+                    className="text-[10px] text-[#c5a880] hover:text-white font-bold transition-colors cursor-pointer"
+                  >
+                    Mark all as read
+                  </button>
+                )}
+              </div>
+
+              {/* Notifications List */}
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400 font-medium">
+                    No recent notifications
+                  </div>
+                ) : (
+                  notifications.slice(0, 5).map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => markNotificationAsRead(n.id)}
+                      className={`p-3 transition-colors cursor-pointer flex items-start gap-3 ${
+                        n.read ? 'bg-white hover:bg-slate-50/80' : 'bg-emerald-50/40 hover:bg-emerald-50/70'
+                      }`}
+                    >
+                      <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                          n.read
+                            ? 'bg-slate-100 text-slate-500'
+                            : 'bg-primary-light text-primary border border-primary/20'
+                        }`}
+                      >
+                        <Bell className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <h5 className={`text-xs font-bold truncate ${n.read ? 'text-slate-700' : 'text-slate-900'}`}>
+                            {n.title}
+                          </h5>
+                          <span className="text-[9.5px] text-slate-400 font-mono shrink-0">{n.sentAt}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">
+                          {n.message}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
+                <Link
+                  href="/admin/notifications"
+                  onClick={() => setIsNotificationsOpen(false)}
+                  className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  View All Notifications & Dispatch Center →
+                </Link>
+              </div>
+            </div>
           )}
-        </Link>
+        </div>
 
         <div className="h-6 w-[1px] bg-slate-200 mx-1 hidden sm:block"></div>
 
         {/* Admin Profile Smart Adjusting Popover */}
         <div className="relative" ref={dropdownRef}>
           <button
-            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            onClick={() => {
+              setIsProfileMenuOpen(!isProfileMenuOpen);
+              setIsNotificationsOpen(false);
+            }}
             className="flex items-center gap-2.5 p-1.5 hover:bg-[#faf8f5] rounded-lg transition-colors border border-transparent hover:border-[#e7dbc5] focus:outline-none"
             title="My Profile & Options"
           >

@@ -37,6 +37,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
   } = useRentalStore();
 
   const [tripFilter, setTripFilter] = useState<'all' | 'completed' | 'in-progress' | 'cancelled'>('all');
+  const [financialTab, setFinancialTab] = useState<'all' | 'transactions' | 'refunds'>('all');
 
   const targetId = customerId || selectedCustomerId;
   const customer = customers.find((c) => c.id === targetId) || customers[0];
@@ -162,13 +163,12 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       render: (b) => (
         <div className="min-w-[110px] text-center">
           <span
-            className={`px-3 py-1 rounded text-[10px] font-bold inline-block min-w-[80px] ${
-              b.status === 'Completed'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : b.status === 'Cancelled'
+            className={`px-3 py-1 rounded text-[10px] font-bold inline-block min-w-[80px] ${b.status === 'Completed'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : b.status === 'Cancelled'
                 ? 'bg-rose-50 text-rose-800 border border-rose-200'
                 : 'bg-sky-50 text-sky-800 border border-sky-200'
-            }`}
+              }`}
           >
             {b.status}
           </span>
@@ -182,11 +182,11 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       render: (b) => (
         <Link
           href={`/admin/driver-bookings/${b.id}`}
-          className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors flex items-center gap-1 ml-auto w-fit"
+          className="px-2.5 py-1 text-[11px] font-bold text-white bg-primary hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors flex items-center gap-1 ml-auto w-fit"
           title="View Booking Details"
         >
           <Eye className="w-3 h-3" />
-          <span>View</span>
+          {/* <span>View</span> */}
         </Link>
       ),
     },
@@ -221,15 +221,28 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       render: (t) => (
         <div className="min-w-[110px] text-center">
           <span
-            className={`px-3 py-1 rounded text-[10px] font-bold inline-block min-w-[80px] ${
-              t.status === 'Success'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-amber-50 text-amber-800 border border-amber-200'
-            }`}
+            className={`px-3 py-1 rounded text-[10px] font-bold inline-block min-w-[80px] ${t.status === 'Success'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-amber-50 text-amber-800 border border-amber-200'
+              }`}
           >
             {t.status}
           </span>
         </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Action',
+      align: 'right',
+      render: (t) => (
+        <Link
+          href={`/admin/transactions/${t.id}`}
+          className="px-2.5 py-1 text-[11px] font-bold text-white bg-primary hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors flex items-center gap-1 ml-auto w-fit"
+          title="View Transaction Details"
+        >
+          <Eye className="w-3 h-3" />
+        </Link>
       ),
     },
   ];
@@ -262,11 +275,10 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       render: (r) => (
         <div className="min-w-[110px] text-center">
           <span
-            className={`px-3 py-1 rounded text-[10px] font-bold inline-block min-w-[80px] ${
-              r.status === 'Completed' || r.status === 'Approved'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-rose-50 text-rose-800 border border-rose-200'
-            }`}
+            className={`px-3 py-1 rounded text-[10px] font-bold inline-block min-w-[80px] ${r.status === 'Completed' || r.status === 'Approved'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border border-rose-200'
+              }`}
           >
             {r.status}
           </span>
@@ -291,22 +303,20 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
             ID: {customer.id}
           </span>
           <span
-            className={`px-3 py-1 rounded text-xs font-bold ${
-              customer.status === 'Active'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-rose-50 text-rose-800 border border-rose-200'
-            }`}
+            className={`px-3 py-1 rounded text-xs font-bold ${customer.status === 'Active'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border border-rose-200'
+              }`}
           >
             {customer.status}
           </span>
 
           <button
             onClick={() => toggleCustomerStatus(customer.id)}
-            className={`px-3 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${
-              customer.status === 'Active'
-                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-            }`}
+            className={`px-3 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${customer.status === 'Active'
+              ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+              }`}
           >
             {customer.status === 'Active' ? (
               <>
@@ -331,9 +341,8 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
               className="w-20 h-20 rounded-full object-cover ring-4 ring-emerald-100 shadow-sm"
             />
             <span
-              className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${
-                customer.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'
-              }`}
+              className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${customer.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'
+                }`}
               title={`Account Status: ${customer.status}`}
             ></span>
           </div>
@@ -421,41 +430,37 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
             <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
               <button
                 onClick={() => setTripFilter('all')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all ${
-                  tripFilter === 'all'
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'all'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
               >
                 All ({customerTrips.length})
               </button>
               <button
                 onClick={() => setTripFilter('completed')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all ${
-                  tripFilter === 'completed'
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'completed'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
               >
                 Completed
               </button>
               <button
                 onClick={() => setTripFilter('in-progress')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all ${
-                  tripFilter === 'in-progress'
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'in-progress'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
               >
                 In Progress
               </button>
               <button
                 onClick={() => setTripFilter('cancelled')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all ${
-                  tripFilter === 'cancelled'
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'cancelled'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
               >
                 Cancelled
               </button>
@@ -464,41 +469,90 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
         }
       />
 
-      {/* 2-COLUMN EQUAL GRID: Payment Transactions & Refund History using global DataTable */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Payment Transactions */}
-        <DataTable<Transaction>
-          columns={txnColumns}
-          data={customerTxns}
-          keyExtractor={(t) => t.id}
-          pageSize={5}
-          emptyMessage="No payment transactions recorded for this customer."
-          headerActions={
-            <div className="flex items-center justify-between w-full">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <Receipt className="w-4.5 h-4.5 text-primary" /> Payment Transactions ({customerTxns.length})
-              </h3>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Payment Logs</span>
-            </div>
-          }
-        />
+      {/* Financial Records Navigation & Content */}
+      <div className="space-y-4">
+        {/* Tab Filter Control */}
+        {/* <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-primary" /> Financial Activity & History
+            </h3>
+          </div>
 
-        {/* Refund Requests */}
-        <DataTable<RefundRecord>
-          columns={refundColumns}
-          data={customerRefunds}
-          keyExtractor={(r) => r.id}
-          pageSize={5}
-          emptyMessage="No refund requests or dispute claims recorded."
-          headerActions={
-            <div className="flex items-center justify-between w-full">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <RotateCcw className="w-4.5 h-4.5 text-rose-500" /> Refund History ({customerRefunds.length})
-              </h3>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Refund Claims</span>
-            </div>
-          }
-        />
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+            <button
+              onClick={() => setFinancialTab('all')}
+              className={`px-3 py-1 rounded-md font-bold transition-all ${
+                financialTab === 'all'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              All Records ({customerTxns.length + customerRefunds.length})
+            </button>
+            <button
+              onClick={() => setFinancialTab('transactions')}
+              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 ${
+                financialTab === 'transactions'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              <span>Transactions ({customerTxns.length})</span>
+            </button>
+            <button
+              onClick={() => setFinancialTab('refunds')}
+              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 ${
+                financialTab === 'refunds'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Refunds ({customerRefunds.length})</span>
+            </button>
+          </div>
+        </div> */}
+
+        {/* Financial Tables Stack */}
+        <div className="space-y-6">
+          {/* {(financialTab === 'all' || financialTab === 'transactions') && ( */}
+          <DataTable<Transaction>
+            columns={txnColumns}
+            data={customerTxns}
+            keyExtractor={(t) => t.id}
+            pageSize={5}
+            emptyMessage="No payment transactions recorded for this customer."
+            headerActions={
+              <div className="flex items-center justify-between w-full">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Receipt className="w-4.5 h-4.5 text-primary" /> Payment Transactions ({customerTxns.length})
+                </h3>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Payment Logs</span>
+              </div>
+            }
+          />
+          {/* )} */}
+
+          {/* {(financialTab === 'all' || financialTab === 'refunds') && ( */}
+          <DataTable<RefundRecord>
+            columns={refundColumns}
+            data={customerRefunds}
+            keyExtractor={(r) => r.id}
+            pageSize={5}
+            emptyMessage="No refund requests or dispute claims recorded."
+            headerActions={
+              <div className="flex items-center justify-between w-full">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <RotateCcw className="w-4.5 h-4.5 text-rose-500" /> Refund History ({customerRefunds.length})
+                </h3>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Refund Claims</span>
+              </div>
+            }
+          />
+          {/* )} */}
+        </div>
       </div>
     </div>
   );

@@ -37,16 +37,29 @@ export default function ValetBookingsView() {
   const [assigningBooking, setAssigningBooking] = useState<ValetBooking | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState('');
 
-  const statuses = [
-    'All',
-    'New Request',
-    'Pending Assignment',
-    'Partially Assigned',
-    'Fully Assigned',
-    'In Progress',
-    'Completed',
-    'Cancelled',
-  ];
+  // Streamlined Event Status Options
+  const statuses = ['All', 'Pending', 'In Progress', 'Completed', 'Cancelled'];
+
+  const pendingCount = valetBookings.filter(
+    (b) =>
+      b.status === 'New Request' ||
+      b.status === 'Pending Assignment' ||
+      b.status === 'Partially Assigned' ||
+      b.status === 'Fully Assigned' ||
+      (b.status as string) === 'Pending'
+  ).length;
+  const inProgressCount = valetBookings.filter((b) => b.status === 'In Progress').length;
+  const completedCount = valetBookings.filter((b) => b.status === 'Completed').length;
+  const cancelledCount = valetBookings.filter((b) => b.status === 'Cancelled').length;
+
+  const getStatusCount = (st: string) => {
+    if (st === 'All') return valetBookings.length;
+    if (st === 'Pending') return pendingCount;
+    if (st === 'In Progress') return inProgressCount;
+    if (st === 'Completed') return completedCount;
+    if (st === 'Cancelled') return cancelledCount;
+    return 0;
+  };
 
   const filteredValetBookings = valetBookings.filter((v) => {
     const matchesSearch =
@@ -55,13 +68,37 @@ export default function ValetBookingsView() {
       v.eventName.toLowerCase().includes(searchFilter.toLowerCase()) ||
       v.venue.toLowerCase().includes(searchFilter.toLowerCase());
 
-    const matchesStatus = statusFilter === 'All' || v.status === statusFilter;
+    let matchesStatus = false;
+    if (statusFilter === 'All') {
+      matchesStatus = true;
+    } else if (statusFilter === 'Pending') {
+      matchesStatus =
+        v.status === 'New Request' ||
+        v.status === 'Pending Assignment' ||
+        v.status === 'Partially Assigned' ||
+        v.status === 'Fully Assigned' ||
+        (v.status as string) === 'Pending';
+    } else {
+      matchesStatus = v.status === statusFilter;
+    }
+
     return matchesSearch && matchesStatus;
   });
 
   const availableStaffList = valetStaff.filter(
     (s) => s.status === 'Available' || s.status === 'Assigned'
   );
+
+  const totalValetBookingsCount = valetBookings.length;
+  const activeEventsCount = valetBookings.filter((b) => b.status === 'In Progress').length;
+  const upcomingEventsCount = valetBookings.filter(
+    (b) =>
+      b.status === 'New Request' ||
+      b.status === 'Pending Assignment' ||
+      b.status === 'Partially Assigned' ||
+      b.status === 'Fully Assigned'
+  ).length;
+  const completedEventsCount = valetBookings.filter((b) => b.status === 'Completed').length;
 
   const handleAssignStaff = (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,15 +183,14 @@ export default function ValetBookingsView() {
       header: 'Status',
       render: (v) => (
         <span
-          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-            v.status === 'Fully Assigned' || v.status === 'In Progress'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : v.status === 'Partially Assigned' || v.status === 'New Request'
+          className={`px-2 py-0.5 rounded text-[10px] font-bold ${v.status === 'Fully Assigned' || v.status === 'In Progress'
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : v.status === 'Partially Assigned' || v.status === 'New Request'
               ? 'bg-amber-50 text-amber-700 border border-amber-200'
               : v.status === 'Completed'
-              ? 'bg-primary-light text-primary border border-primary/20'
-              : 'bg-rose-50 text-rose-700 border border-rose-200'
-          }`}
+                ? 'bg-primary-light text-primary border border-primary/20'
+                : 'bg-rose-50 text-rose-700 border border-rose-200'
+            }`}
         >
           {v.status}
         </span>
@@ -178,7 +214,7 @@ export default function ValetBookingsView() {
           </button>
           <button
             onClick={() => setAssigningBooking(v)}
-            className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-md shadow-xs"
+            className="px-2.5 py-1 bg-primary hover:bg-slate-800 text-white text-[10px] font-bold rounded-md shadow-xs"
             title="Assign Staff to Event"
           >
             Assign Staff
@@ -189,7 +225,48 @@ export default function ValetBookingsView() {
   ];
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="p-2 space-y-6 pb-10">
+      {/* Unified Stats Card */}
+      <div className="bg-white p-6 rounded-xl border border-stone-200/80 shadow-xs space-y-5">
+        {/* <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
+          <Building2 className="w-5 h-5 text-[#023526]" />
+          <div>
+            <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">
+              Valet Event Bookings Overview
+            </h1>
+            <p className="text-xs text-slate-500">
+              Track active corporate & wedding event assignments, staff dispatch schedules, and event completion logs.
+            </p>
+          </div>
+        </div> */}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+          <div className="pt-2 md:pt-0">
+            <p className="text-xs font-semibold text-slate-500">Total Event Bookings</p>
+            <div className="text-2xl font-black text-slate-900 mt-1">{totalValetBookingsCount}</div>
+            <p className="text-[10px] text-slate-400 mt-1">All venue & corporate bookings</p>
+          </div>
+
+          <div className="pt-3 md:pt-0 md:pl-4">
+            <p className="text-xs font-semibold text-amber-600">Active Events (In Progress)</p>
+            <div className="text-2xl font-black text-amber-800 mt-1">{activeEventsCount}</div>
+            <p className="text-[10px] text-amber-600/80 mt-1">Valet staff currently on ground</p>
+          </div>
+
+          <div className="pt-3 md:pt-0 md:pl-4">
+            <p className="text-xs font-semibold text-sky-600">Upcoming / Pending Events</p>
+            <div className="text-2xl font-black text-sky-800 mt-1">{upcomingEventsCount}</div>
+            <p className="text-[10px] text-sky-600/80 mt-1">New requests & staff allocation</p>
+          </div>
+
+          <div className="pt-3 md:pt-0 md:pl-4">
+            <p className="text-xs font-semibold text-emerald-600">Completed Events</p>
+            <div className="text-2xl font-black text-emerald-800 mt-1">{completedEventsCount}</div>
+            <p className="text-[10px] text-emerald-600/80 mt-1">Successfully fulfilled</p>
+          </div>
+        </div>
+      </div>
+
       <DataTable<ValetBooking>
         columns={columns}
         data={filteredValetBookings}
@@ -208,19 +285,22 @@ export default function ValetBookingsView() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              {statuses.map((st) => (
-                <option key={st} value={st}>
-                  {st}
-                </option>
-              ))}
+              {statuses.map((st) => {
+                const count = getStatusCount(st);
+                return (
+                  <option key={st} value={st}>
+                    {st} ({count})
+                  </option>
+                );
+              })}
             </select>
 
-            <button
+            {/* <button
               onClick={() => setActiveTab('valet-staff')}
-              className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-xs transition-all w-full sm:w-auto justify-center"
+              className="bg-primary hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-xs transition-all w-full sm:w-auto justify-center"
             >
               <UserCheck className="w-4 h-4 text-amber-400" /> Valet Staff Roster
-            </button>
+            </button> */}
           </div>
         }
       />

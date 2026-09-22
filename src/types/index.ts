@@ -31,9 +31,66 @@ export type ActiveTab =
   | 'reviews'
   | 'notifications'
   | 'reports'
+  | 'pricing'
+  | 'payouts'
+  | 'disputes'
+  | 'wallet'
   | 'admin-users'
   | 'roles-permissions'
   | 'settings';
+
+export interface SupportTicket {
+  id: string;
+  ticketNumber: string;
+  userType: 'Customer' | 'Driver' | 'Valet Staff';
+  userName: string;
+  userPhone: string;
+  userAvatar: string;
+  bookingNumber?: string;
+  issueType: 'Damage Claim' | 'Cancellation Dispute' | 'Payment Issue' | 'Driver Conduct' | 'Lost Item' | 'Other';
+  priority: 'High' | 'Medium' | 'Low' | 'Urgent';
+  status: 'Open' | 'Under Investigation' | 'Resolved' | 'Closed';
+  description: string;
+  createdAt: string;
+  assignedAdmin?: string;
+  resolutionNotes?: string;
+}
+
+export interface DriverPayoutRecord {
+  id: string;
+  payoutNumber: string;
+  driverOrStaffId: string;
+  driverOrStaffName: string;
+  driverOrStaffPhone: string;
+  driverOrStaffAvatar: string;
+  role: 'Driver' | 'Valet Staff';
+  period: string;
+  totalTripsOrEvents: number;
+  grossAmount: number;
+  platformCommission: number;
+  taxDeducted: number;
+  netPayout: number;
+  bankAccount: string;
+  status: 'Pending Approval' | 'Processing' | 'Completed' | 'Failed';
+  processedDate?: string;
+}
+
+export interface SystemSettings {
+  platformName: string;
+  contactEmail: string;
+  contactPhone: string;
+  currencySymbol: string;
+  autoDriverMatching: boolean;
+  driverSubscriptionMandatory: boolean;
+  minDriverRatingRequired: number;
+  valetMinNoticeHours: number;
+  valetHourlyRate: number;
+  localDriverHourlyRate: number;
+  outstationDriverHourlyRate: number;
+  cancellationFreeWindowMins: number;
+  cancellationFeePercent: number;
+  gstTaxPercent: number;
+}
 
 export type DriverBookingStatus =
   | 'Pending'

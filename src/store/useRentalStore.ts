@@ -19,6 +19,8 @@ import {
   NotificationRecord,
   AdminUser,
   SystemSettings,
+  SupportTicket,
+  DriverPayoutRecord,
 } from '@/types';
 import {
   initialDriverBookings,
@@ -39,6 +41,8 @@ import {
   initialNotifications,
   initialAdminUsers,
   initialSystemSettings,
+  initialSupportTickets,
+  initialDriverPayouts,
 } from '@/data/mockData';
 
 import { INITIAL_CARS } from '@/data';
@@ -87,6 +91,8 @@ interface DriverAppStoreState {
   notifications: NotificationRecord[];
   adminUsers: AdminUser[];
   settings: SystemSettings;
+  supportTickets: SupportTicket[];
+  driverPayouts: DriverPayoutRecord[];
 
   cars: any[];
   bookings: DriverBooking[];
@@ -95,6 +101,8 @@ interface DriverAppStoreState {
   updateBookingStatus: (bookingId: string, status: any, paymentStatus?: string) => void;
 
   // Actions
+  updateTicketStatus: (ticketId: string, status: SupportTicket['status'], resolutionNotes?: string) => void;
+  updatePayoutStatus: (payoutId: string, status: DriverPayoutRecord['status']) => void;
   assignDriverToBooking: (bookingId: string, driverId: string) => void;
   updateDriverBookingStatus: (bookingId: string, status: DriverBooking['status']) => void;
   cancelDriverBooking: (bookingId: string) => void;
@@ -196,6 +204,28 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
   notifications: initialNotifications,
   adminUsers: initialAdminUsers,
   settings: initialSystemSettings,
+  supportTickets: initialSupportTickets,
+  driverPayouts: initialDriverPayouts,
+
+  updateTicketStatus: (ticketId, status, resolutionNotes) =>
+    set((state) => ({
+      supportTickets: state.supportTickets.map((t) =>
+        t.id === ticketId ? { ...t, status, resolutionNotes: resolutionNotes || t.resolutionNotes } : t
+      ),
+    })),
+
+  updatePayoutStatus: (payoutId, status) =>
+    set((state) => ({
+      driverPayouts: state.driverPayouts.map((p) =>
+        p.id === payoutId
+          ? {
+              ...p,
+              status,
+              processedDate: status === 'Completed' ? new Date().toISOString().replace('T', ' ').slice(0, 16) : p.processedDate,
+            }
+          : p
+      ),
+    })),
 
   assignDriverToBooking: (bookingId, driverId) =>
     set((state) => {

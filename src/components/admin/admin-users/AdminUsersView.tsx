@@ -198,25 +198,6 @@ export default function AdminUsersView() {
 
   return (
     <div className="space-y-6 pb-10">
-      {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-primary" /> Staff & Administrative Team Roster
-          </h2>
-          <p className="text-xs text-slate-500 font-medium">
-            Manage administrative staff, fleet managers, operational privileges, and account statuses.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm hover:shadow active:scale-95 shrink-0"
-        >
-          <Plus className="w-4 h-4" /> Add Staff Member
-        </button>
-      </div>
-
       {/* Staff Statistics Band */}
       <div className="card-white p-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
@@ -258,22 +239,31 @@ export default function AdminUsersView() {
           searchPlaceholder="Search staff name, email, role, or phone..."
           searchFilterKeys={['name', 'email', 'phone', 'role']}
           headerActions={
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                <Filter className="w-3.5 h-3.5" /> Filter Role:
-              </span>
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary shadow-2xs"
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+                  <Filter className="w-3.5 h-3.5" /> Filter Role:
+                </span>
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary shadow-2xs"
+                >
+                  <option value="All">All Roles</option>
+                  {rolesList.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm hover:shadow active:scale-95 shrink-0"
               >
-                <option value="All">All Roles</option>
-                {rolesList.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
+                <Plus className="w-4 h-4" /> Add Staff Member
+              </button>
             </div>
           }
         />

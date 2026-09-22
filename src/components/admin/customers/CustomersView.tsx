@@ -66,6 +66,7 @@ export default function CustomersView() {
     {
       key: 'currentBooking',
       header: 'Current Booking',
+      className: 'min-w-[150px]',
       render: (c) =>
         c.currentBooking ? (
           <span className="font-mono font-bold text-xs text-primary bg-primary-light px-2 py-0.5 rounded">
@@ -97,7 +98,7 @@ export default function CustomersView() {
         <div className="flex items-center justify-center gap-1.5">
           <Link
             href={`/admin/customers/${c.id}`}
-            className="px-2.5 py-1 bg-primary-light hover:bg-primary text-primary hover:text-white text-[11px] font-bold rounded-md border border-primary/20 hover:border-primary transition-all inline-flex items-center gap-1 shadow-2xs"
+            className="px-2.5 py-1 bg-primary hover:bg-primary text-white hover:text-white text-[11px] font-bold rounded-md border border-primary/20 hover:border-primary transition-all inline-flex items-center gap-1 shadow-2xs"
             title="View Customer Profile & History"
           >
             <Eye className="w-3.5 h-3.5" />
@@ -193,8 +194,8 @@ export default function CustomersView() {
                   setStatusConfirmCustomer(null);
                 }}
                 className={`px-4 py-2 text-white font-bold rounded-lg text-xs shadow-xs transition-colors ${statusConfirmCustomer.status === 'Active'
-                    ? 'bg-rose-600 hover:bg-rose-700'
-                    : 'bg-emerald-600 hover:bg-emerald-700'
+                  ? 'bg-rose-600 hover:bg-rose-700'
+                  : 'bg-emerald-600 hover:bg-emerald-700'
                   }`}
               >
                 {statusConfirmCustomer.status === 'Active'

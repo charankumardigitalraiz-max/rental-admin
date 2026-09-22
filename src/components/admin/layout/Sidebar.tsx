@@ -20,6 +20,13 @@ import {
   User,
   ChevronDown,
   ChevronRight,
+  Receipt,
+  Wallet,
+  Building2,
+  SlidersHorizontal,
+  LifeBuoy,
+  Star,
+  Banknote,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -38,6 +45,8 @@ export default function Sidebar() {
     drivers,
     notifications,
     customers,
+    supportTickets,
+    valetStaff,
   } = useRentalStore();
 
   const [isDriversExpanded, setIsDriversExpanded] = useState(true);
@@ -47,6 +56,7 @@ export default function Sidebar() {
   const approvedDriversCount = drivers.filter((d) => d.status === 'Approved').length;
   const onlineDriversCount = drivers.filter((d) => d.dutyStatus === 'Online').length;
   const suspendedDriversCount = drivers.filter((d) => d.status === 'Suspended').length;
+  const openSupportTicketsCount = supportTickets?.filter((t) => t.status === 'Open').length || 0;
 
   const driverSubItems: { href: string; label: string; count: number; badgeColor?: string }[] = [
     { href: '/admin/drivers', label: 'All Drivers', count: drivers.length },
@@ -105,18 +115,50 @@ export default function Sidebar() {
           badge: pendingDriverBookings > 0 ? pendingDriverBookings : undefined,
         },
         { href: '/admin/drivers', label: 'Driver Management', icon: Car, id: 'drivers' },
-        { href: '/admin/driver-subscription-plans', label: 'Subscription Plans', icon: Ticket },
         { href: '/admin/driver-subscriptions', label: 'Subscribed Drivers', icon: Award },
-        { href: '/admin/subscription-payments', label: 'Subscription Payments', icon: CreditCard },
       ],
     },
-
+    {
+      groupTitle: 'VALET EVENT SERVICE',
+      items: [
+        { href: '/admin/valet-bookings', label: 'Valet Event Bookings', icon: Building2 },
+        { href: '/admin/valet-staff', label: 'Valet Staff Roster', icon: Users, badge: valetStaff?.length },
+      ],
+    },
+    {
+      groupTitle: 'PRICING & DISPATCH RULES',
+      items: [
+        { href: '/admin/pricing', label: 'Pricing & Dynamic Surge', icon: SlidersHorizontal },
+      ],
+    },
+    {
+      groupTitle: 'FINANCE & TRANSACTIONS',
+      items: [
+        { href: '/admin/wallet', label: 'User Wallet & Savings', icon: Wallet },
+        { href: '/admin/payouts', label: 'Driver & Staff Payouts', icon: Banknote },
+        { href: '/admin/transactions', label: 'Transactions & Logs', icon: Receipt },
+        { href: '/admin/subscription-payments', label: 'Subscription Payments', icon: CreditCard },
+        { href: '/admin/driver-subscription-plans', label: 'Subscription Plans', icon: Ticket },
+      ],
+    },
+    {
+      groupTitle: 'SUPPORT & QUALITY',
+      items: [
+        {
+          href: '/admin/disputes',
+          label: 'Support & Disputes',
+          icon: LifeBuoy,
+          badge: openSupportTicketsCount > 0 ? openSupportTicketsCount : undefined,
+        },
+        { href: '/admin/reviews', label: 'Reviews & Ratings', icon: Star },
+      ],
+    },
     {
       groupTitle: 'ADMINISTRATIVE',
       items: [
         { href: '/admin/admin-users', label: 'Staff & Admin Team', icon: ShieldCheck },
         { href: '/admin/roles-permissions', label: 'Roles & Permissions', icon: Lock },
-        { href: '/admin/settings', label: 'System Configurations', icon: Settings },
+        // { href: '/admin/settings', label: 'System Configurations', icon: Settings },
       ],
     },
   ];
@@ -136,13 +178,13 @@ export default function Sidebar() {
             <p className="text-[10px] font-semibold text-[#c5a880]/80">Admin Control Portal</p>
           </div>
         </div>
-        <Link
+        {/* <Link
           href="/"
           className="text-[10px] font-bold text-emerald-200 bg-emerald-900/60 hover:bg-emerald-800 hover:text-white px-2 py-1 rounded border border-emerald-700/50 transition-colors"
           title="Visit Customer Website"
         >
           Website
-        </Link>
+        </Link> */}
       </div>
 
       {/* Navigation List */}

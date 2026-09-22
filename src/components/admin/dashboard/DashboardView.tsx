@@ -212,7 +212,7 @@ export default function DashboardView() {
         <div className="flex justify-center">
           <Link
             href={`/admin/driver-bookings/${b.id}`}
-            className="p-1.5 bg-primary-light hover:bg-primary text-primary hover:text-white rounded-md border border-primary/20 hover:border-primary transition-all inline-flex items-center justify-center shadow-2xs"
+            className="p-1.5 bg-primary hover:bg-primary text-white hover:text-white rounded-md border border-primary/20 hover:border-primary transition-all inline-flex items-center justify-center shadow-2xs"
             title="View Booking Details"
           >
             <Eye className="w-3.5 h-3.5" />

@@ -657,7 +657,7 @@ export default function RolesPermissionsView() {
   ];
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="p-2 space-y-6 pb-12">
       {/* Save Notification Toast */}
       {saveToast && (
         <div className="bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between text-xs font-semibold animate-in fade-in slide-in-from-top-2">
@@ -670,6 +670,49 @@ export default function RolesPermissionsView() {
           </button>
         </div>
       )}
+
+      {/* Unified Metrics Card */}
+      <div className="bg-white p-6 rounded-xl border border-stone-200/80 shadow-xs">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+          <div className="pt-2 md:pt-0">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Total Defined Roles
+            </span>
+            <div className="text-2xl font-black text-slate-900 mt-1">{roles.length}</div>
+            <p className="text-[10px] text-slate-400 mt-1">Configured access roles</p>
+          </div>
+
+          <div className="pt-3 md:pt-0 md:pl-4">
+            <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">
+              Built-in System Roles
+            </span>
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              {roles.filter((r) => r.isSystem).length}
+            </div>
+            <p className="text-[10px] text-amber-600 font-semibold mt-1">Core platform defaults</p>
+          </div>
+
+          <div className="pt-3 md:pt-0 md:pl-4">
+            <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
+              Custom RBAC Roles
+            </span>
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              {roles.filter((r) => !r.isSystem).length}
+            </div>
+            <p className="text-[10px] text-indigo-600 font-semibold mt-1">User-created role policies</p>
+          </div>
+
+          <div className="pt-3 md:pt-0 md:pl-4">
+            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
+              Assigned Admin Users
+            </span>
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              {roles.reduce((acc, r) => acc + r.assignedUsersCount, 0)}
+            </div>
+            <p className="text-[10px] text-emerald-600 font-semibold mt-1">Active staff members assigned</p>
+          </div>
+        </div>
+      </div>
 
       {/* Main All System Access Roles Table */}
       <DataTable<SystemRole>

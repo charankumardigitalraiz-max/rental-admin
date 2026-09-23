@@ -108,12 +108,12 @@ export default function Sidebar() {
           icon: Users,
           badge: customers?.length > 0 ? customers.length : undefined,
         },
-        {
-          href: '/admin/customer-vehicles',
-          label: 'Customer Vehicles',
-          icon: CarFront,
-          badge: customerVehicles?.length > 0 ? customerVehicles.length : undefined,
-        },
+        // {
+        //   href: '/admin/customer-vehicles',
+        //   label: 'Customer Vehicles',
+        //   icon: CarFront,
+        //   badge: customerVehicles?.length > 0 ? customerVehicles.length : undefined,
+        // },
       ],
     },
     {
@@ -132,7 +132,7 @@ export default function Sidebar() {
     {
       groupTitle: 'VALET EVENT SERVICE',
       items: [
-        { href: '/admin/valet-bookings', label: 'Valet Event Bookings', icon: Building2 },
+        // { href: '/admin/valet-bookings', label: 'Valet Event Bookings', icon: Building2 },
         { href: '/admin/valet-staff', label: 'Valet Staff Roster', icon: Users, badge: valetStaff?.length },
       ],
     },
@@ -145,7 +145,7 @@ export default function Sidebar() {
     {
       groupTitle: 'FINANCE & TRANSACTIONS',
       items: [
-        { href: '/admin/wallet', label: 'User Wallet & Savings', icon: Wallet },
+        // { href: '/admin/wallet', label: 'User Wallet & Savings', icon: Wallet },
         { href: '/admin/payouts', label: 'Driver & Staff Payouts', icon: Banknote },
         { href: '/admin/transactions', label: 'Transactions & Logs', icon: Receipt },
         { href: '/admin/subscription-payments', label: 'Subscription Payments', icon: CreditCard },
@@ -155,12 +155,12 @@ export default function Sidebar() {
     {
       groupTitle: 'SUPPORT & QUALITY',
       items: [
-        {
-          href: '/admin/damage-claims',
-          label: 'Damage Claims Desk',
-          icon: ShieldAlert,
-          badge: openDamageClaimsCount > 0 ? openDamageClaimsCount : undefined,
-        },
+        // {
+        //   href: '/admin/damage-claims',
+        //   label: 'Damage Claims Desk',
+        //   icon: ShieldAlert,
+        //   badge: openDamageClaimsCount > 0 ? openDamageClaimsCount : undefined,
+        // },
         {
           href: '/admin/disputes',
           label: 'Support & Disputes',

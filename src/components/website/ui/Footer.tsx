@@ -95,8 +95,8 @@ export default function Footer() {
             © 2026 DrivePulse & Valet Technologies Pvt Ltd. All rights reserved.
           </div>
           <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-slate-200">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-200">Terms of Service</a>
+            <Link href="/privacy-policy" className="hover:text-[#c5a880] transition-colors">Privacy Policy</Link>
+            <Link href="/terms-and-conditions" className="hover:text-[#c5a880] transition-colors">Terms of Service</Link>
             <Link href="/admin" className="text-[#c5a880] hover:underline font-bold flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" /> Admin Portal
             </Link>

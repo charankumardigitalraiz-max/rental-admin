@@ -55,6 +55,7 @@
   --primary-light: var(--color-primary-light);
   --background: var(--color-bg-main);
   --foreground: var(--color-text-main);
+  --secondary: var(--brand-gold);
 }
 
 @theme {
@@ -153,6 +154,7 @@ body {
   from {
     width: 100%;
   }
+
   to {
     width: 0%;
   }

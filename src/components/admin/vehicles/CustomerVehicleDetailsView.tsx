@@ -77,8 +77,8 @@ export default function CustomerVehicleDetailsView({ vehicleId }: CustomerVehicl
           <button
             onClick={() => toggleVehicleAuthorization(vehicle.id)}
             className={`px-3 py-1 rounded-md text-xs font-bold border transition-colors inline-flex items-center gap-1 ${vehicle.authorized
-                ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+              ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+              : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
               }`}
           >
             {vehicle.authorized ? <Lock className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
@@ -260,9 +260,9 @@ export default function CustomerVehicleDetailsView({ vehicleId }: CustomerVehicl
           <div className="card-white p-5 space-y-3 bg-slate-900 text-white">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              <h4 className="font-bold text-sm">Driver Authorization Status</h4>
+              <h4 className="font-bold text-black text-sm">Driver Authorization Status</h4>
             </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">
+            <p className="text-[11px] text-slate-700 leading-relaxed">
               {vehicle.authorized
                 ? 'Owner has digitally authorized verified platform drivers to operate this vehicle.'
                 : 'Authorization is currently revoked. Drivers will not be assigned to this car.'}
@@ -270,8 +270,8 @@ export default function CustomerVehicleDetailsView({ vehicleId }: CustomerVehicl
             <button
               onClick={() => toggleVehicleAuthorization(vehicle.id)}
               className={`w-full py-2 rounded-lg font-bold text-xs transition-colors mt-2 ${vehicle.authorized
-                  ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                 }`}
             >
               {vehicle.authorized ? 'Revoke Authorization' : 'Authorize Driver Access'}

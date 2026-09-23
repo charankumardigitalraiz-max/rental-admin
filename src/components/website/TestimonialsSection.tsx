@@ -26,27 +26,27 @@ export default function TestimonialsSection() {
           </p>
         </div>
 
-        {/* Reviews Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Reviews Cards Container (Horizontal Scroll Carousel on Mobile, Grid on Desktop) */}
+        <div className="flex md:grid md:grid-cols-3 overflow-x-auto md:overflow-x-visible pb-4 md:pb-0 gap-5 md:gap-8 snap-x snap-mandatory scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
           {customerReviews.map((rev) => (
             <div
               key={rev.id}
-              className="bg-white border border-stone-200/90 rounded-3xl p-7 shadow-lg hover:shadow-xl transition-all text-left flex flex-col justify-between group"
+              className="bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-7 shadow-md hover:shadow-xl transition-all text-left flex flex-col justify-between group shrink-0 w-[280px] sm:w-[320px] md:w-auto snap-start"
             >
               <div>
                 {/* Rating Stars */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-1">
                     {[...Array(rev.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      <Star key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 fill-amber-400" />
                     ))}
                   </div>
-                  <span className="text-[10px] font-bold text-[#023526] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  <span className="text-[10px] font-bold text-[#023526] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 truncate max-w-[130px]">
                     {rev.serviceUsed}
                   </span>
                 </div>
 
-                <p className="text-xs sm:text-sm text-slate-700 italic leading-relaxed mb-6 font-medium">
+                <p className="text-xs sm:text-sm text-slate-700 italic leading-relaxed mb-6 font-medium line-clamp-4">
                   "{rev.comment}"
                 </p>
               </div>
@@ -56,14 +56,14 @@ export default function TestimonialsSection() {
                 <img
                   src={rev.avatar}
                   alt={rev.name}
-                  className="w-10 h-10 rounded-full object-cover border-2 border-[#023526]"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-[#023526]"
                 />
                 <div>
-                  <div className="font-bold text-sm text-slate-900 flex items-center gap-1">
+                  <div className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1">
                     <span>{rev.name}</span>
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   </div>
-                  <div className="text-[11px] text-slate-500 font-medium">{rev.role}</div>
+                  <div className="text-[10.5px] sm:text-[11px] text-slate-500 font-medium truncate max-w-[180px]">{rev.role}</div>
                 </div>
               </div>
             </div>

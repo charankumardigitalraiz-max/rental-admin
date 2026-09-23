@@ -156,14 +156,14 @@ export default function FareCalculator({ onOpenBooking }: FareCalculatorProps) {
         </div>
 
         {/* Calculator Outer Frame */}
-        <div className="bg-white/95 rounded-3xl border border-stone-200/90  p-6 sm:p-10 lg:p-12 max-w-7xl w-full mx-auto relative">
+        <div className="bg-white/95 rounded-3xl border border-stone-200/90 p-4 sm:p-10 lg:p-12 max-w-7xl w-full mx-auto relative">
 
           {/* Ultra-Compact Service Category Navigation Pills */}
           <div className="flex justify-center mb-6">
-            <div className="inline-flex items-center gap-1 p-1 bg-stone-100 border border-stone-200/80 rounded-xl shadow-2xs">
+            <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-1 p-1 bg-stone-100 border border-stone-200/80 rounded-xl shadow-2xs w-full sm:w-auto">
               <button
                 onClick={() => setServiceCategory('local')}
-                className={`py-1.5 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${serviceCategory === 'local'
+                className={`flex-1 sm:flex-initial py-2 px-3 sm:px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${serviceCategory === 'local'
                   ? 'bg-[#023526] text-white shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                   }`}
@@ -174,7 +174,7 @@ export default function FareCalculator({ onOpenBooking }: FareCalculatorProps) {
 
               <button
                 onClick={() => setServiceCategory('outstation')}
-                className={`py-1.5 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${serviceCategory === 'outstation'
+                className={`flex-1 sm:flex-initial py-2 px-3 sm:px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${serviceCategory === 'outstation'
                   ? 'bg-[#023526] text-white shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                   }`}
@@ -185,7 +185,7 @@ export default function FareCalculator({ onOpenBooking }: FareCalculatorProps) {
 
               <button
                 onClick={() => setServiceCategory('valet')}
-                className={`py-1.5 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${serviceCategory === 'valet'
+                className={`flex-1 sm:flex-initial py-2 px-3 sm:px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${serviceCategory === 'valet'
                   ? 'bg-[#023526] text-white shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                   }`}
@@ -196,10 +196,10 @@ export default function FareCalculator({ onOpenBooking }: FareCalculatorProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
 
             {/* Left Options Input Column */}
-            <div className="lg:col-span-7 space-y-6 text-left bg-white p-6 sm:p-8 rounded-2xl border border-stone-200/80 shadow-xs">
+            <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-left bg-white p-4 sm:p-8 rounded-2xl border border-stone-200/80 shadow-xs">
 
               {/* CATEGORY 1: LOCAL HOURLY DRIVER */}
               {serviceCategory === 'local' && (

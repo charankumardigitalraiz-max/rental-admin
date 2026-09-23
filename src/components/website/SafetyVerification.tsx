@@ -113,10 +113,66 @@ export default function SafetyVerification() {
         </div>
 
         {/* Interactive Safety Command Center Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
           
-          {/* Left Column: Command Center Spotlight Card */}
-          <div className="lg:col-span-5 bg-gradient-to-b from-[#023526] via-[#01261b] to-[#011a12] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#c5a880]/30 flex flex-col justify-between text-left relative overflow-hidden group">
+          {/* Top Horizontal Scroll Cards on Mobile / Vertical Stack on Desktop */}
+          <div className="order-1 lg:order-2 lg:col-span-7 flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 gap-3.5 snap-x snap-mandatory">
+            {verificationProtocols.map((protocol, idx) => {
+              const Icon = protocol.icon;
+              const isActive = idx === activeStepIndex;
+              return (
+                <div
+                  key={protocol.id}
+                  onClick={() => setActiveStepIndex(idx)}
+                  className={`p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between gap-4 shrink-0 w-[270px] sm:w-[320px] lg:w-auto snap-start ${
+                    isActive
+                      ? 'bg-white border-[#023526] ring-2 ring-[#023526]/15 shadow-md lg:translate-x-1'
+                      : 'bg-white hover:bg-stone-100/80 border-stone-200/90 shadow-2xs'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div
+                      className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                        isActive
+                          ? 'bg-[#023526] text-[#c5a880]'
+                          : 'bg-stone-100 text-slate-700'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9c7f56]">
+                          Step {protocol.stepNum}
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.2 rounded border border-emerald-200 truncate">
+                          {protocol.badge}
+                        </span>
+                      </div>
+                      <h4 className="text-sm sm:text-base font-bold text-slate-900 line-clamp-1">{protocol.title}</h4>
+                      <p className="text-xs text-slate-500 line-clamp-1 hidden sm:block mt-0.5 font-medium">
+                        {protocol.shortDesc}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-2">
+                    {isActive ? (
+                      <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-100 text-[#023526] flex items-center justify-center font-bold text-xs">
+                        ✓
+                      </span>
+                    ) : (
+                      <ChevronRight className="w-5 h-5 text-slate-400" />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Spotlight Command Center Details Card */}
+          <div className="order-2 lg:order-1 lg:col-span-5 bg-gradient-to-b from-[#023526] via-[#01261b] to-[#011a12] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#c5a880]/30 flex flex-col justify-between text-left relative overflow-hidden group">
             
             {/* Ambient Background Glow */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#c5a880]/10 rounded-full filter blur-3xl pointer-events-none"></div>
@@ -184,62 +240,6 @@ export default function SafetyVerification() {
               </button>
             </div>
 
-          </div>
-
-          {/* Right Column: 5 Interactive Protocol Cards */}
-          <div className="lg:col-span-7 flex flex-col justify-between space-y-3.5">
-            {verificationProtocols.map((protocol, idx) => {
-              const Icon = protocol.icon;
-              const isActive = idx === activeStepIndex;
-              return (
-                <div
-                  key={protocol.id}
-                  onClick={() => setActiveStepIndex(idx)}
-                  className={`p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between gap-4 ${
-                    isActive
-                      ? 'bg-white border-[#023526] ring-2 ring-[#023526]/15 shadow-md translate-x-1'
-                      : 'bg-white hover:bg-stone-100/80 border-stone-200/90 shadow-2xs'
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5 sm:gap-4">
-                    <div
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                        isActive
-                          ? 'bg-[#023526] text-[#c5a880]'
-                          : 'bg-stone-100 text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9c7f56]">
-                          Step {protocol.stepNum}
-                        </span>
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.2 rounded border border-emerald-200">
-                          {protocol.badge}
-                        </span>
-                      </div>
-                      <h4 className="text-base font-bold text-slate-900">{protocol.title}</h4>
-                      <p className="text-xs text-slate-500 line-clamp-1 hidden sm:block mt-0.5 font-medium">
-                        {protocol.shortDesc}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="shrink-0 flex items-center gap-2">
-                    {isActive ? (
-                      <span className="w-8 h-8 rounded-full bg-emerald-100 text-[#023526] flex items-center justify-center font-bold text-xs">
-                        ✓
-                      </span>
-                    ) : (
-                      <ChevronRight className="w-5 h-5 text-slate-400" />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
           </div>
 
         </div>

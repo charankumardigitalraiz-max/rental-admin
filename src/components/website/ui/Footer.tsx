@@ -8,14 +8,14 @@ export default function Footer() {
   return (
     <footer className="bg-[#011811] text-white border-t border-[#c5a880]/20 pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 text-left mb-12">
-          
+
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c5a880] via-[#b4966c] to-[#7e6542] flex items-center justify-center text-white shadow-md">
-                <Crown className="w-6 h-6 text-amber-100 fill-amber-100" />
+              <div className="w-10 h-10 rounded-xl bg-white/10 border border-[#c5a880]/30 p-1 flex items-center justify-center shadow-md overflow-hidden shrink-0">
+                <img src="/logo.png" alt="Brand Logo" className="w-full h-full object-contain rounded-xl" />
               </div>
               <div>
                 <div className="font-bold text-white text-lg tracking-tight">

@@ -185,8 +185,8 @@ export default function Sidebar() {
       {/* Brand Header */}
       <div className="h-16 border-b border-[#e7dbc5]/60 flex items-center justify-between px-5 bg-gradient-to-r from-emerald-950 to-[#023526]">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#c5a880] via-[#b4966c] to-[#7e6542] flex items-center justify-center text-white shadow-md ring-2 ring-[#c5a880]/30 shrink-0">
-            <Crown className="w-5 h-5 text-amber-100 fill-amber-100" />
+          <div className="w-9 h-9 rounded-lg bg-white/10 p-1 flex items-center justify-center border border-[#c5a880]/30 shadow-md ring-2 ring-[#c5a880]/20 shrink-0 overflow-hidden">
+            <img src="/logo.png" alt="Brand Logo" className="w-full h-full object-contain rounded-md" />
           </div>
           <div>
             <h1 className="font-bold text-white text-sm leading-tight tracking-tight">
@@ -342,13 +342,13 @@ export default function Sidebar() {
       </div>
 
       {/* Footer System Status */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-500 flex items-center justify-between">
+      {/* <div className="p-3 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-500 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
           <span className="font-semibold text-slate-700">Services Online</span>
         </div>
         <span className="text-[10px] text-slate-400 font-mono">v3.4.0</span>
-      </div>
+      </div> */}
     </aside>
   );
 }

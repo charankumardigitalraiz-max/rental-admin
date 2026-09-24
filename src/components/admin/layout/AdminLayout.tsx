@@ -25,22 +25,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <Loader2 className="w-8 h-8 text-[#023526] animate-spin mb-3" />
-        <p className="text-xs text-slate-600 font-medium tracking-wide">Checking security authorization...</p>
-      </div>
-    );
+  // If unauthenticated, return null to immediately jump to login screen without continuous loader
+  if (!isAuthenticated && !isLoading) {
+    router.replace('/admin/login');
+    return null;
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <Loader2 className="w-8 h-8 text-[#023526] animate-spin mb-3" />
-        <p className="text-xs text-slate-600 font-medium tracking-wide">Redirecting to administrator login...</p>
-      </div>
-    );
+  if (isLoading) {
+    return null;
   }
 
   return (

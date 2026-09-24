@@ -46,13 +46,8 @@ export default function AdminLoginPage() {
     }, 600);
   };
 
-  if (isLoading || isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-stone-100 flex flex-col items-center justify-center p-4">
-        <Loader2 className="w-8 h-8 text-[#023526] animate-spin mb-3" />
-        <p className="text-xs text-slate-600 font-medium tracking-wide">Verifying administrator session...</p>
-      </div>
-    );
+  if (isAuthenticated) {
+    return null;
   }
 
   return (
@@ -69,8 +64,8 @@ export default function AdminLoginPage() {
 
           {/* Brand Badge */}
           <div className="inline-flex items-center justify-center gap-3 px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-950 via-[#023526] to-emerald-950 text-white shadow-md border border-[#c5a880]/40">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#c5a880] via-[#b4966c] to-[#7e6542] flex items-center justify-center text-white shadow-sm ring-2 ring-[#c5a880]/40 shrink-0">
-              <Crown className="w-3.5 h-3.5 text-amber-100 fill-amber-100" />
+            <div className="w-8 h-8 rounded-lg bg-white/10 p-1 flex items-center justify-center border border-[#c5a880]/40 shadow-sm shrink-0 overflow-hidden">
+              <img src="/logo.png" alt="Brand Logo" className="w-full h-full object-contain rounded-md" />
             </div>
             <div className="text-left">
               <h1 className="font-extrabold text-white text-xs leading-tight tracking-tight">

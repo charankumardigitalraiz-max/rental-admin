@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '@/providers/QueryProvider';
-import AdminLayout from '@/components/layout/AdminLayout';
 import { ToastProvider } from '@/context/ToastContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -12,8 +12,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Royal Wheels | Car Rental Admin Dashboard',
-  description: 'Comprehensive Next.js Admin Dashboard for Car Rentals in India',
+  title: 'DrivePulse & Valet | Premier Chauffeurs & Events',
+  description: 'Bangalore premier acting driver & event valet service platform with admin portal.',
 };
 
 export default function RootLayout({
@@ -25,9 +25,9 @@ export default function RootLayout({
     <html lang="en" className={plusJakartaSans.className}>
       <body className="antialiased bg-white text-slate-900 min-h-screen">
         <QueryProvider>
-          <ToastProvider>
-            <AdminLayout>{children}</AdminLayout>
-          </ToastProvider>
+          <AuthProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

@@ -19,6 +19,11 @@ import {
   NotificationRecord,
   AdminUser,
   SystemSettings,
+  SupportTicket,
+  DriverPayoutRecord,
+  CustomerVehicle,
+  VehicleInspectionEvidence,
+  DamageClaim,
 } from '@/types';
 import {
   initialDriverBookings,
@@ -39,6 +44,11 @@ import {
   initialNotifications,
   initialAdminUsers,
   initialSystemSettings,
+  initialSupportTickets,
+  initialDriverPayouts,
+  initialCustomerVehicles,
+  initialInspectionEvidences,
+  initialDamageClaims,
 } from '@/data/mockData';
 
 import { INITIAL_CARS } from '@/data';
@@ -68,6 +78,9 @@ interface DriverAppStoreState {
   selectedCustomerId: string | null;
   setSelectedCustomerId: (id: string | null) => void;
 
+  selectedVehicleId: string | null;
+  setSelectedVehicleId: (id: string | null) => void;
+
   // Datasets
   driverBookings: DriverBooking[];
   drivers: Driver[];
@@ -87,6 +100,11 @@ interface DriverAppStoreState {
   notifications: NotificationRecord[];
   adminUsers: AdminUser[];
   settings: SystemSettings;
+  supportTickets: SupportTicket[];
+  driverPayouts: DriverPayoutRecord[];
+  customerVehicles: CustomerVehicle[];
+  inspectionEvidences: VehicleInspectionEvidence[];
+  damageClaims: DamageClaim[];
 
   cars: any[];
   bookings: DriverBooking[];
@@ -95,6 +113,10 @@ interface DriverAppStoreState {
   updateBookingStatus: (bookingId: string, status: any, paymentStatus?: string) => void;
 
   // Actions
+  updateTicketStatus: (ticketId: string, status: SupportTicket['status'], resolutionNotes?: string) => void;
+  updatePayoutStatus: (payoutId: string, status: DriverPayoutRecord['status']) => void;
+  updateDamageClaimStatus: (claimId: string, status: DamageClaim['status'], payoutHoldStatus?: boolean) => void;
+  toggleVehicleAuthorization: (vehicleId: string) => void;
   assignDriverToBooking: (bookingId: string, driverId: string) => void;
   updateDriverBookingStatus: (bookingId: string, status: DriverBooking['status']) => void;
   cancelDriverBooking: (bookingId: string) => void;
@@ -157,6 +179,9 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
   selectedCustomerId: null,
   setSelectedCustomerId: (id) => set({ selectedCustomerId: id }),
 
+  selectedVehicleId: null,
+  setSelectedVehicleId: (id) => set({ selectedVehicleId: id }),
+
   cars: INITIAL_CARS,
   driverBookings: initialDriverBookings,
   bookings: initialDriverBookings,
@@ -196,6 +221,51 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
   notifications: initialNotifications,
   adminUsers: initialAdminUsers,
   settings: initialSystemSettings,
+  supportTickets: initialSupportTickets,
+  driverPayouts: initialDriverPayouts,
+  customerVehicles: initialCustomerVehicles,
+  inspectionEvidences: initialInspectionEvidences,
+  damageClaims: initialDamageClaims,
+
+  updateTicketStatus: (ticketId, status, resolutionNotes) =>
+    set((state) => ({
+      supportTickets: state.supportTickets.map((t) =>
+        t.id === ticketId ? { ...t, status, resolutionNotes: resolutionNotes || t.resolutionNotes } : t
+      ),
+    })),
+
+  updatePayoutStatus: (payoutId, status) =>
+    set((state) => ({
+      driverPayouts: state.driverPayouts.map((p) =>
+        p.id === payoutId
+          ? {
+              ...p,
+              status,
+              processedDate: status === 'Completed' ? new Date().toISOString().replace('T', ' ').slice(0, 16) : p.processedDate,
+            }
+          : p
+      ),
+    })),
+
+  updateDamageClaimStatus: (claimId, status, payoutHoldStatus) =>
+    set((state) => ({
+      damageClaims: state.damageClaims.map((c) =>
+        c.id === claimId
+          ? {
+              ...c,
+              status,
+              payoutHoldStatus: payoutHoldStatus !== undefined ? payoutHoldStatus : c.payoutHoldStatus,
+            }
+          : c
+      ),
+    })),
+
+  toggleVehicleAuthorization: (vehicleId) =>
+    set((state) => ({
+      customerVehicles: state.customerVehicles.map((v) =>
+        v.id === vehicleId ? { ...v, authorized: !v.authorized } : v
+      ),
+    })),
 
   assignDriverToBooking: (bookingId, driverId) =>
     set((state) => {

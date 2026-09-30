@@ -145,7 +145,6 @@ export default function DriverBookingsView() {
     {
       key: 'driverName',
       header: 'Assigned Driver',
-      className: 'min-w-[180px] sm:min-w-[200px]',
       render: (b) =>
         b.driverName ? (
           <div>

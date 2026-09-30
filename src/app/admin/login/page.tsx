@@ -2,20 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/context/ToastContext';
-import { Crown, Lock, Mail, Eye, EyeOff, KeyRound, ArrowRight, Loader2, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Crown, Lock, Mail, Eye, EyeOff, KeyRound, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { isAuthenticated, login, isLoading } = useAuth();
+  const { isAuthenticated, login, isLoading, isSubmitting, error } = useAuthStore();
   const { toast } = useToast();
 
-  const [email, setEmail] = useState('admin@drivepulse.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [localError, setLocalError] = useState('');
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -23,31 +22,31 @@ export default function AdminLoginPage() {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
+    setLocalError('');
 
     if (!email.trim() || !password.trim()) {
-      setErrorMessage('Please enter both email address and password.');
+      setLocalError('Please enter both email address and password.');
       return;
     }
 
-    setIsSubmitting(true);
-
-    setTimeout(() => {
-      const success = login(email, password);
-      if (success) {
-        toast.success('Welcome Back!', 'Logged into Admin Management Portal.');
-        router.replace('/admin/dashboard');
-      } else {
-        setErrorMessage('Invalid administrator credentials.');
-        setIsSubmitting(false);
-      }
-    }, 600);
+    const success = await login(email, password);
+    if (success) {
+      toast.success('Welcome Back!', 'Logged into Admin Management Portal.');
+      router.replace('/admin/dashboard');
+    }
   };
 
-  if (isAuthenticated) {
-    return null;
+  const activeErrorMessage = localError || error;
+
+  if (isLoading || isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-stone-100 flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-8 h-8 text-[#023526] animate-spin mb-3" />
+        <p className="text-xs text-slate-600 font-medium tracking-wide">Verifying administrator session...</p>
+      </div>
+    );
   }
 
   return (
@@ -64,8 +63,8 @@ export default function AdminLoginPage() {
 
           {/* Brand Badge */}
           <div className="inline-flex items-center justify-center gap-3 px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-950 via-[#023526] to-emerald-950 text-white shadow-md border border-[#c5a880]/40">
-            <div className="w-8 h-8 rounded-lg bg-white/10 p-1 flex items-center justify-center border border-[#c5a880]/40 shadow-sm shrink-0 overflow-hidden">
-              <img src="/logo.png" alt="Brand Logo" className="w-full h-full object-contain rounded-md" />
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#c5a880] via-[#b4966c] to-[#7e6542] flex items-center justify-center text-white shadow-sm ring-2 ring-[#c5a880]/40 shrink-0">
+              <Crown className="w-3.5 h-3.5 text-amber-100 fill-amber-100" />
             </div>
             <div className="text-left">
               <h1 className="font-extrabold text-white text-xs leading-tight tracking-tight">
@@ -86,10 +85,10 @@ export default function AdminLoginPage() {
 
         </div>
 
-        {errorMessage && (
+        {activeErrorMessage && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">
             <Lock className="w-4 h-4 text-rose-500 shrink-0" />
-            <span>{errorMessage}</span>
+            <span>{activeErrorMessage}</span>
           </div>
         )}
 
@@ -138,19 +137,6 @@ export default function AdminLoginPage() {
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
-            </div>
-          </div>
-
-          {/* Default Demo Tip */}
-          <div className="p-3 bg-[#faf8f5] rounded-xl border border-[#e7dbc5] text-[11px] text-slate-600 leading-relaxed flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#023526] shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-[#023526]">Demo Credentials:</span>
-              <p className="mt-0.5 text-slate-500">
-                Email: <code className="text-slate-900 bg-white px-1.5 py-0.5 rounded border border-stone-200 font-mono text-[10px]">admin@drivepulse.com</code>
-                {' • '}
-                Password: <code className="text-slate-900 bg-white px-1.5 py-0.5 rounded border border-stone-200 font-mono text-[10px]">admin123</code>
-              </p>
             </div>
           </div>
 

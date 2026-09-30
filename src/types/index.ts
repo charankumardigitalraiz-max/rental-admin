@@ -333,6 +333,10 @@ export interface Customer {
   currentBooking?: string;
   status: 'Active' | 'Suspended';
   joinedDate: string;
+  mongoId?: string;
+  custId?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface LocalPricingConfig {

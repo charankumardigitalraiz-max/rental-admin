@@ -1,0 +1,52 @@
+# API Test Commands (cURL)
+
+You can use these cURL commands in your terminal (or Command Prompt / PowerShell) to test the APIs.
+
+## 1. User (Customer) APIs
+
+### Send OTP (Login)
+curl -X POST http://localhost:3000/api/user/login \
+-H "Content-Type: application/json" \
+-d "{\"phone\": \"9876543210\"}"
+
+### Verify OTP
+curl -X POST http://localhost:3000/api/user/verify-otp \
+-H "Content-Type: application/json" \
+-d "{\"phone\": \"9876543210\", \"otp\": \"1234\"}"
+
+### Register User
+curl -X POST http://localhost:3000/api/user/register \
+-H "Content-Type: application/json" \
+-d "{
+  \"firstName\": \"John\",
+  \"lastName\": \"Doe\",
+  \"email\": \"john.doe@example.com\",
+  \"phone\": \"9876543210\",
+  \"address\": \"123 Main St, City\"
+}"
+
+---
+
+## 2. Driver APIs
+
+### Send OTP (Login)
+curl -X POST http://localhost:3000/api/driver/login \
+-H "Content-Type: application/json" \
+-d "{\"phone\": \"5551234567\"}"
+
+### Verify OTP
+curl -X POST http://localhost:3000/api/driver/verify-otp \
+-H "Content-Type: application/json" \
+-d "{\"phone\": \"5551234567\", \"otp\": \"1234\"}"
+
+### Register Driver
+curl -X POST http://localhost:3000/api/driver/register \
+-H "Content-Type: application/json" \
+-d "{
+  \"firstName\": \"Jane\",
+  \"lastName\": \"Smith\",
+  \"email\": \"jane.smith@example.com\",
+  \"phone\": \"5551234567\",
+  \"address\": \"456 Auto Drive, City\",
+  \"licenseNumber\": \"DL-987654321\"
+}"

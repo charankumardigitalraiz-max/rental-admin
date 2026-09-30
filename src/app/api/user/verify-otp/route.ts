@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       { expiresIn: "7d" }
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       isRegistered: true,
       message: "OTP verified and logged in successfully",
@@ -69,6 +69,16 @@ export async function POST(request: Request) {
         custId: customer.custId,
       }
     });
+
+    response.cookies.set("user_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7 // 7 days in seconds
+    });
+
+    return response;
   } catch (error) {
     console.error("User OTP verification error:", error);
     return NextResponse.json(

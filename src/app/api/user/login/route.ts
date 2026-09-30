@@ -21,10 +21,10 @@ export async function POST(request: Request) {
       : process.env.DUMMY_OTP || "1234";
 
     // In a real application, you would send this OTP via SMS here.
-    
+
     // Connect to DB and save OTP
     await connectToDatabase();
-    
+
     // Upsert the OTP to ensure only the latest OTP exists per phone number
     await Otp.findOneAndUpdate(
       { phone },
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: "OTP sent successfully to user",
-      otp, // Returning OTP for testing purposes
+      // otp, // Returning OTP for testing purposes
     });
   } catch (error) {
     console.error("User login error:", error);

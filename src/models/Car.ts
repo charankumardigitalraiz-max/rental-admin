@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface ICar extends Document {
+export interface ICar extends Omit<Document, 'model'> {
   brand: string;
   model: string;
   year: number;

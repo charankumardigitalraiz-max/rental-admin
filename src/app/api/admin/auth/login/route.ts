@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
             { expiresIn: "1d" }
         );
 
-        const response = NextResponse.json({ success: true, data: admin }, { status: 200 });
-        
+        const response = NextResponse.json({ success: true, token, data: admin }, { status: 200 });
+
         response.cookies.set("admin_token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",

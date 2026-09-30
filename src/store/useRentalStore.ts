@@ -239,10 +239,10 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
       driverPayouts: state.driverPayouts.map((p) =>
         p.id === payoutId
           ? {
-              ...p,
-              status,
-              processedDate: status === 'Completed' ? new Date().toISOString().replace('T', ' ').slice(0, 16) : p.processedDate,
-            }
+            ...p,
+            status,
+            processedDate: status === 'Completed' ? new Date().toISOString().replace('T', ' ').slice(0, 16) : p.processedDate,
+          }
           : p
       ),
     })),
@@ -252,10 +252,10 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
       damageClaims: state.damageClaims.map((c) =>
         c.id === claimId
           ? {
-              ...c,
-              status,
-              payoutHoldStatus: payoutHoldStatus !== undefined ? payoutHoldStatus : c.payoutHoldStatus,
-            }
+            ...c,
+            status,
+            payoutHoldStatus: payoutHoldStatus !== undefined ? payoutHoldStatus : c.payoutHoldStatus,
+          }
           : c
       ),
     })),
@@ -276,18 +276,18 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
         driverBookings: state.driverBookings.map((b) =>
           b.id === bookingId
             ? {
-                ...b,
-                driverId: driver.id,
-                driverName: driver.name,
-                driverPhone: driver.phone,
-                driverRating: driver.rating,
-                driverAvatar: driver.avatar,
-                status: 'Driver Assigned',
-                timeline: {
-                  ...b.timeline,
-                  assigned: new Date().toISOString().replace('T', ' ').slice(0, 16),
-                },
-              }
+              ...b,
+              driverId: driver.id,
+              driverName: driver.name,
+              driverPhone: driver.phone,
+              driverRating: driver.rating,
+              driverAvatar: driver.avatar,
+              status: 'Driver Assigned',
+              timeline: {
+                ...b.timeline,
+                assigned: new Date().toISOString().replace('T', ' ').slice(0, 16),
+              },
+            }
             : b
         ),
         drivers: state.drivers.map((d) => (d.id === driverId ? { ...d, availability: 'Busy' } : d)),
@@ -313,10 +313,10 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
       drivers: state.drivers.map((d) =>
         d.id === driverId
           ? {
-              ...d,
-              status: 'Approved',
-              verification: { ...d.verification, status: 'Verified' },
-            }
+            ...d,
+            status: 'Approved',
+            verification: { ...d.verification, status: 'Verified' },
+          }
           : d
       ),
     })),
@@ -326,10 +326,10 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
       drivers: state.drivers.map((d) =>
         d.id === driverId
           ? {
-              ...d,
-              status: 'Rejected',
-              verification: { ...d.verification, status: 'Rejected' },
-            }
+            ...d,
+            status: 'Rejected',
+            verification: { ...d.verification, status: 'Rejected' },
+          }
           : d
       ),
     })),
@@ -408,8 +408,8 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
             updatedStaffIds.length === 0
               ? 'Pending Assignment'
               : updatedStaffIds.length < vb.requiredStaffCount
-              ? 'Partially Assigned'
-              : 'Fully Assigned';
+                ? 'Partially Assigned'
+                : 'Fully Assigned';
 
           return {
             ...vb,

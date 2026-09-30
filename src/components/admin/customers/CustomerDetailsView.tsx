@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
 import Link from 'next/link';
@@ -19,6 +19,7 @@ import {
   Eye,
   Car
 } from 'lucide-react';
+import { useCustomerStore } from '@/store/useCustomerStore';
 
 interface CustomerDetailsViewProps {
   customerId?: string;
@@ -27,21 +28,37 @@ interface CustomerDetailsViewProps {
 export default function CustomerDetailsView({ customerId }: CustomerDetailsViewProps = {}) {
   const router = useRouter();
   const {
-    customers,
+    customers: storeCustomers,
+    selectedCustomerDetails,
+    fetchCustomersById,
+    toggleCustomerStatus,
+  } = useCustomerStore();
+
+  const {
+    customers: rentalCustomers,
     selectedCustomerId,
     driverBookings,
     transactions,
     refunds,
-    setActiveTab,
-    toggleCustomerStatus,
-    setSelectedDriverBookingId,
   } = useRentalStore();
 
   const [tripFilter, setTripFilter] = useState<'all' | 'completed' | 'in-progress' | 'cancelled'>('all');
   const [financialTab, setFinancialTab] = useState<'all' | 'transactions' | 'refunds'>('all');
 
   const targetId = customerId || selectedCustomerId;
-  const customer = customers.find((c) => c.id === targetId) || customers[0];
+
+  useEffect(() => {
+    if (targetId) {
+      fetchCustomersById(targetId);
+    }
+  }, [targetId, fetchCustomersById]);
+
+  const customer =
+    selectedCustomerDetails?.customer ||
+    storeCustomers.find((c) => c.id === targetId || c.mongoId === targetId || c.custId === targetId) ||
+    rentalCustomers.find((c) => c.id === targetId) ||
+    storeCustomers[0] ||
+    rentalCustomers[0];
 
   if (!customer) {
     return (
@@ -54,13 +71,25 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
     );
   }
 
-  const customerTrips = driverBookings.filter(
-    (b) => b.customerName === customer.name || b.customerEmail === customer.email
-  );
-  const customerTxns = transactions.filter(
-    (t) => t.customerOrDriverName === customer.name
-  );
+  const customerTrips =
+    selectedCustomerDetails?.bookings && selectedCustomerDetails.bookings.length > 0
+      ? selectedCustomerDetails.bookings
+      : driverBookings.filter((b) => b.customerName === customer.name || b.customerEmail === customer.email);
+
+  const customerTxns =
+    selectedCustomerDetails?.transactions && selectedCustomerDetails.transactions.length > 0
+      ? selectedCustomerDetails.transactions
+      : transactions.filter((t) => t.customerOrDriverName === customer.name);
+
   const customerRefunds = refunds.filter((r) => r.customerName === customer.name);
+
+  const bookingStats = selectedCustomerDetails?.customerBookingStats;
+  const txnStats = selectedCustomerDetails?.customerTransactionStats;
+
+  const totalSpentAmount = txnStats?.totalSpentAmount ?? customer.totalSpent ?? 0;
+  const totalBookingsCount = bookingStats?.total ?? customer.totalBookings ?? customerTrips.length;
+  const completedTripsCount = bookingStats?.completed ?? customer.completedBookings ?? customerTrips.filter(b => b.status === 'Completed').length;
+  const cancelledTripsCount = bookingStats?.cancelled ?? customer.cancelledBookings ?? customerTrips.filter(b => b.status === 'Cancelled').length;
 
   const filteredTrips = customerTrips.filter((trip) => {
     if (tripFilter === 'completed') return trip.status === 'Completed';

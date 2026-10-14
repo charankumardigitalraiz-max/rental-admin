@@ -8,6 +8,7 @@ export interface CustomerInterface extends Document {
     phone: string;
     address?: string;
     status: boolean;
+    fcmToken?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -21,6 +22,7 @@ const customerSchema: Schema = new Schema(
         phone: { type: String, required: true },
         address: { type: String },
         status: { type: Boolean, default: true },
+        fcmToken: { type: String },
     },
     {
         timestamps: true,

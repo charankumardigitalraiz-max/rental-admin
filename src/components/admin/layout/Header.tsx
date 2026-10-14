@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -22,7 +23,13 @@ import {
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { notifications, adminUsers, markNotificationAsRead, markAllNotificationsAsRead } = useRentalStore();
+  const { adminUsers } = useRentalStore();
+  const {
+    notifications,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+  } = useNotificationStore();
   const { toast } = useToast();
   const { user: authUser, logout: authLogout } = useAuth();
 
@@ -30,6 +37,19 @@ export default function Header() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  // Sync notifications from API via Zustand
+  useEffect(() => {
+    fetchNotifications({ limit: 8 });
+  }, [fetchNotifications]);
+
+  const handleNotificationClick = (id: string) => {
+    markAsRead(id);
+  };
+
+  const handleMarkAllClick = () => {
+    markAllAsRead();
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -246,7 +266,7 @@ export default function Header() {
                 </div>
                 {unreadCount > 0 && (
                   <button
-                    onClick={() => markAllNotificationsAsRead()}
+                    onClick={handleMarkAllClick}
                     className="text-[10px] text-[#c5a880] hover:text-white font-bold transition-colors cursor-pointer"
                   >
                     Mark all as read
@@ -264,7 +284,7 @@ export default function Header() {
                   notifications.slice(0, 5).map((n) => (
                     <div
                       key={n.id}
-                      onClick={() => markNotificationAsRead(n.id)}
+                      onClick={() => handleNotificationClick(n.id)}
                       className={`p-3 transition-colors cursor-pointer flex items-start gap-3 ${
                         n.read ? 'bg-white hover:bg-slate-50/80' : 'bg-emerald-50/40 hover:bg-emerald-50/70'
                       }`}

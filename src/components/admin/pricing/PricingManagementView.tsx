@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRentalStore } from '@/store/useRentalStore';
+import React, { useState, useEffect } from 'react';
+import {
+  usePricingStore,
+  TimePricingTier,
+  LocalPricingTiers,
+  OutstationPricingTiers,
+  defaultDriverPricingData,
+} from '@/store/usePricingStore';
+import { useToast } from '@/context/ToastContext';
 import {
   DollarSign,
   TrendingUp,
@@ -12,30 +19,1122 @@ import {
   Zap,
   Save,
   CheckCircle,
+  CheckCircle2,
+  Circle,
+  Pencil,
   Plus,
+  Sliders,
   SlidersHorizontal,
+  RefreshCw,
+  Sun,
+  Moon,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+  ChevronRight,
+  ArrowRight,
+  Calculator,
+  Info,
+  Calendar,
+  Layers,
+  HelpCircle,
+  MousePointerClick,
 } from 'lucide-react';
 import DataTable, { Column } from '@/components/ui/DataTable';
-import { LocalPricingConfig, OutstationPricingConfig, ValetPricingConfig, PricingRule } from '@/types';
+import { ValetPricingConfig, PricingRule } from '@/types';
+
+// ============================================================================
+// UNIQUE STYLED FIELD COMPONENTS
+// ============================================================================
+
+interface CurrencyFieldProps {
+  label: string;
+  sublabel?: string;
+  value: number;
+  onChange: (val: number) => void;
+  prefix?: string;
+  unit?: string;
+  accent?: 'emerald' | 'indigo' | 'amber' | 'sky';
+  step?: number;
+  min?: number;
+}
+
+function CurrencyField({
+  label,
+  sublabel,
+  value,
+  onChange,
+  prefix = '₹',
+  unit,
+  accent = 'emerald',
+  step = 50,
+  min = 0,
+}: CurrencyFieldProps) {
+  const accentClasses = {
+    emerald: {
+      badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      ring: 'focus-within:border-emerald-600 focus-within:ring-emerald-500/15',
+      text: 'text-emerald-700',
+    },
+    indigo: {
+      badge: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+      ring: 'focus-within:border-indigo-600 focus-within:ring-indigo-500/15',
+      text: 'text-indigo-700',
+    },
+    amber: {
+      badge: 'bg-amber-50 text-amber-800 border-amber-200',
+      ring: 'focus-within:border-amber-600 focus-within:ring-amber-500/15',
+      text: 'text-amber-700',
+    },
+    sky: {
+      badge: 'bg-sky-50 text-sky-800 border-sky-200',
+      ring: 'focus-within:border-sky-600 focus-within:ring-sky-500/15',
+      text: 'text-sky-700',
+    },
+  }[accent];
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-[11.5px] font-semibold text-slate-700 tracking-tight flex items-center gap-1">
+          {label}
+        </label>
+        {sublabel && <span className="text-[10px] text-slate-400 font-medium">{sublabel}</span>}
+      </div>
+
+      <div
+        className={`relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-all duration-150 focus-within:ring-3 focus-within:shadow-xs ${accentClasses.ring} overflow-hidden`}
+      >
+        <span
+          className={`flex items-center justify-center font-semibold text-xs px-2.5 py-2.5 border-r select-none shrink-0 ${accentClasses.badge}`}
+        >
+          {prefix}
+        </span>
+
+        <input
+          type="number"
+          min={min}
+          step="any"
+          value={isNaN(value) ? '' : value}
+          onChange={(e) => onChange(Math.max(min, Number(e.target.value) || 0))}
+          className="w-full px-3 py-2 text-sm font-semibold text-slate-900 bg-transparent focus:outline-none tracking-tight tabular-nums"
+        />
+
+        {unit && (
+          <span className="px-2.5 py-1 text-[10.5px] font-semibold text-slate-400 bg-slate-50 border-l border-slate-100 shrink-0">
+            {unit}
+          </span>
+        )}
+
+        <div className="flex items-center pr-1.5 gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => onChange(Math.max(min, value - step))}
+            title={`Decrease by ${step}`}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer select-none"
+          >
+            -
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange(value + step)}
+            title={`Increase by ${step}`}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer select-none"
+          >
+            +
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface TimeWindowPickerProps {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  presets?: string[];
+}
+
+function TimeWindowPicker({
+  label,
+  value,
+  onChange,
+  presets = ['06:00-18:00', '18:00-06:00', '08:00-20:00', '20:00-08:00'],
+}: TimeWindowPickerProps) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-[11.5px] font-semibold text-slate-700 tracking-tight flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5 text-slate-400" />
+          {label}
+        </label>
+        <span className="text-[10px] text-slate-400 font-mono">24h format</span>
+      </div>
+
+      <div className="space-y-1.5">
+        <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all">
+          <span className="px-2.5 py-2.5 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center">
+            <Clock className="w-3.5 h-3.5 text-slate-500" />
+          </span>
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="06:00-18:00"
+            className="w-full px-3 py-2 text-xs font-mono font-semibold text-slate-800 bg-transparent focus:outline-none"
+          />
+        </div>
+
+        {/* Quick Presets */}
+        <div className="flex flex-wrap gap-1">
+          {presets.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => onChange(preset)}
+              className={`text-[10px] font-mono px-2 py-0.5 rounded-md transition-all cursor-pointer select-none ${value === preset
+                ? 'bg-slate-900 text-white font-semibold shadow-2xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 active:scale-95'
+                }`}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface HourSelectorProps {
+  label: string;
+  value: number;
+  onChange: (val: number) => void;
+  options?: number[];
+  unitText?: string;
+}
+
+function HourSelector({
+  label,
+  value,
+  onChange,
+  options = [2, 4, 6, 8, 10, 12, 24],
+  unitText = 'hrs',
+}: HourSelectorProps) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-[11.5px] font-semibold text-slate-700 tracking-tight">{label}</label>
+        <span className="text-[11px] font-semibold text-slate-900">
+          {value} {unitText}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        {options.map((h) => (
+          <button
+            key={h}
+            type="button"
+            onClick={() => onChange(h)}
+            className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer select-none ${value === h
+              ? 'bg-emerald-800 text-white border-emerald-900 shadow-2xs scale-102'
+              : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:scale-95'
+              }`}
+          >
+            {h}h
+          </button>
+        ))}
+
+        <div className="relative w-16 ml-1">
+          <input
+            type="number"
+            min={1}
+            value={value}
+            onChange={(e) => onChange(Math.max(1, Number(e.target.value) || 1))}
+            className="w-full text-xs font-semibold px-2 py-1 border border-slate-200 rounded-lg text-center bg-white focus:outline-none focus:border-emerald-600"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface MarginSplitProps {
+  customerPrice: number;
+  driverPrice: number;
+  unitLabel?: string;
+}
+
+function MarginSplitBar({ customerPrice, driverPrice, unitLabel }: MarginSplitProps) {
+  const cPrice = Math.max(0, customerPrice || 0);
+  const dPrice = Math.max(0, driverPrice || 0);
+  const margin = Math.max(0, cPrice - dPrice);
+  const driverShare = cPrice > 0 ? Math.round((dPrice / cPrice) * 100) : 0;
+  const platformShare = cPrice > 0 ? 100 - driverShare : 0;
+  const isLoss = dPrice > cPrice;
+
+  return (
+    <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/70 space-y-2">
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-1.5">
+          <Calculator className="w-3.5 h-3.5 text-slate-400" />
+          <span className="font-semibold text-slate-700">Financial Margin Split</span>
+          {unitLabel && <span className="text-[10px] text-slate-400">({unitLabel})</span>}
+        </div>
+
+        {isLoss ? (
+          <span className="text-[10.5px] font-semibold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+            ⚠ Driver Payout Exceeds Fare!
+          </span>
+        ) : (
+          <span className="text-[10.5px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+            Platform Retains: ₹{margin} ({platformShare}%)
+          </span>
+        )}
+      </div>
+
+      {/* Visual Dual-Bar */}
+      <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden flex">
+        <div
+          style={{ width: `${Math.min(100, Math.max(0, driverShare))}%` }}
+          className="bg-emerald-600 transition-all duration-300"
+          title={`Driver Payout: ₹${dPrice} (${driverShare}%)`}
+        />
+        <div
+          style={{ width: `${Math.min(100, Math.max(0, platformShare))}%` }}
+          className="bg-amber-500 transition-all duration-300"
+          title={`Platform Commission: ₹${margin} (${platformShare}%)`}
+        />
+      </div>
+
+      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+          <span>Driver Payout:</span>
+          <span className="font-semibold text-slate-800">
+            ₹{dPrice} ({driverShare}%)
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span>Platform Commission:</span>
+          <span className="font-semibold text-slate-800">
+            ₹{margin} ({platformShare}%)
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// READ-ONLY DISPLAY COMPONENTS (DEFAULT VIEW MODE)
+// ============================================================================
+
+interface ReadOnlyTierCardProps {
+  shiftTitle: string;
+  subTitle: string;
+  badgeText: string;
+  timeRange: string;
+  durationHours: number;
+  customerPrice: number;
+  driverPrice: number;
+  isNight?: boolean;
+  onEdit: () => void;
+}
+
+function ReadOnlyTierCard({
+  shiftTitle,
+  subTitle,
+  badgeText,
+  timeRange,
+  durationHours,
+  customerPrice,
+  driverPrice,
+  isNight = false,
+  onEdit,
+}: ReadOnlyTierCardProps) {
+  const margin = Math.max(0, customerPrice - driverPrice);
+  const marginPercent = customerPrice > 0 ? Math.round((margin / customerPrice) * 100) : 0;
+  const driverPercent = 100 - marginPercent;
+
+  return (
+    <div
+      onClick={onEdit}
+      className="group rounded-xl border border-slate-200/90 bg-slate-50/60 p-4.5 space-y-3.5 hover:border-emerald-600/40 hover:bg-white hover:shadow-xs transition-all cursor-pointer relative"
+    >
+      {/* Shift Header */}
+      <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/60">
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-7 h-7 rounded-lg flex items-center justify-center font-semibold transition-transform group-hover:scale-105 ${isNight ? 'bg-indigo-100/80 text-indigo-700' : 'bg-amber-100/80 text-amber-700'
+              }`}
+          >
+            {isNight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold text-slate-900 uppercase tracking-wide">
+              {shiftTitle}
+            </h4>
+            <span className="text-[11px] text-slate-400 font-mono">
+              {timeRange} • {durationHours}h duration
+            </span>
+          </div>
+        </div>
+
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200 shadow-2xs">
+          {badgeText}
+        </span>
+      </div>
+
+      {/* Main Fare & Margin Split */}
+      <div className="flex items-baseline justify-between pt-0.5">
+        <div>
+          <span className="text-2xl font-semibold text-slate-900 tracking-tight">
+            ₹{customerPrice.toLocaleString('en-IN')}
+          </span>
+          <span className="text-xs text-slate-400 ml-1.5 font-medium">Customer Fare</span>
+        </div>
+        <span className="text-xs text-emerald-800 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+          ₹{margin.toLocaleString('en-IN')} Margin ({marginPercent}%)
+        </span>
+      </div>
+
+      {/* Driver Payout and Edit Button */}
+      <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+        <span>
+          Driver Payout:{' '}
+          <span className="font-semibold text-slate-800">₹{driverPrice.toLocaleString('en-IN')}</span>{' '}
+          ({driverPercent}%)
+        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="text-xs font-semibold text-[#023526] group-hover:text-emerald-700 flex items-center gap-1 cursor-pointer transition-colors"
+        >
+          <Pencil className="w-3 h-3" />
+          Edit
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface ReadOnlyOutstationCardProps {
+  title: string;
+  subTitle: string;
+  badgeText: string;
+  days: number;
+  customerPrice: number;
+  driverPrice: number;
+  notes: string;
+  onEdit: () => void;
+}
+
+function ReadOnlyOutstationCard({
+  title,
+  subTitle,
+  badgeText,
+  days,
+  customerPrice,
+  driverPrice,
+  notes,
+  onEdit,
+}: ReadOnlyOutstationCardProps) {
+  const margin = Math.max(0, customerPrice - driverPrice);
+  const marginPercent = customerPrice > 0 ? Math.round((margin / customerPrice) * 100) : 0;
+  const driverPercent = 100 - marginPercent;
+
+  return (
+    <div
+      onClick={onEdit}
+      className="group bg-slate-50/60 rounded-xl border border-slate-200/90 p-5 space-y-4 hover:border-sky-500/40 hover:bg-white hover:shadow-xs transition-all cursor-pointer"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-800 flex items-center justify-center font-semibold border border-sky-200/80 transition-transform group-hover:scale-105">
+            <MapPin className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 tracking-tight">
+              {title}
+            </h3>
+            <p className="text-xs text-slate-500">{subTitle}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[10.5px] font-mono px-3 py-1 rounded-full bg-sky-50 text-sky-800 font-semibold border border-sky-200">
+            {badgeText}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="px-3 py-1 bg-slate-100 hover:bg-slate-200 group-hover:bg-sky-50 group-hover:text-sky-800 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <Pencil className="w-3 h-3" />
+            Edit
+          </button>
+        </div>
+      </div>
+
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50/70 border border-slate-200/60">
+        <div>
+          <span className="text-[10.5px] font-semibold text-slate-400 block uppercase tracking-wide">Included Coverage</span>
+          <div className="text-lg font-semibold text-slate-900 mt-0.5">
+            {days} Day(s) Package
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium">Minimum duration</span>
+        </div>
+
+        <div>
+          <span className="text-[10.5px] font-semibold text-slate-700 block uppercase tracking-wide">Customer Base Tariff</span>
+          <div className="text-lg font-semibold text-slate-900 mt-0.5">
+            ₹{customerPrice.toLocaleString('en-IN')}
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium">Billed per package</span>
+        </div>
+
+        <div>
+          <span className="text-[10.5px] font-semibold text-emerald-700 block uppercase tracking-wide">Driver Base Payout</span>
+          <div className="text-lg font-semibold text-emerald-700 mt-0.5">
+            ₹{driverPrice.toLocaleString('en-IN')}
+          </div>
+          <span className="text-[10px] text-emerald-600 font-medium">{driverPercent}% Guaranteed</span>
+        </div>
+
+        <div>
+          <span className="text-[10.5px] font-semibold text-amber-700 block uppercase tracking-wide">Platform Margin</span>
+          <div className="text-lg font-semibold text-amber-700 mt-0.5">
+            ₹{margin.toLocaleString('en-IN')}
+          </div>
+          <span className="text-[10px] text-amber-600 font-medium">{marginPercent}% Revenue Share</span>
+        </div>
+      </div>
+
+      {/* Margin Progress Bar */}
+      <div className="space-y-1">
+        <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden flex">
+          <div style={{ width: `${driverPercent}%` }} className="h-full bg-emerald-600 transition-all duration-300" />
+          <div style={{ width: `${marginPercent}%` }} className="h-full bg-amber-500 transition-all duration-300" />
+        </div>
+        <div className="flex items-center justify-between text-[10.5px] text-slate-400 font-medium">
+          <span>Driver: ₹{driverPrice} ({driverPercent}%)</span>
+          <span className="text-slate-500 font-semibold">{notes}</span>
+          <span>Platform: ₹{margin} ({marginPercent}%)</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ReadOnlyValetOverviewProps {
+  valetPricing: ValetPricingConfig;
+  onEdit: () => void;
+}
+
+function ReadOnlyValetOverview({ valetPricing, onEdit }: ReadOnlyValetOverviewProps) {
+  const driverStaffRate = 190;
+  const marginPerStaffHour = Math.max(0, valetPricing.pricePerStaffPerHour - driverStaffRate);
+  const marginPercent = valetPricing.pricePerStaffPerHour > 0 ? Math.round((marginPerStaffHour / valetPricing.pricePerStaffPerHour) * 100) : 0;
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-semibold border border-amber-200/80 shadow-2xs">
+            <Building2 className="w-5 h-5 text-amber-700" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 tracking-tight">
+              Valet Staffing & Event Operations Schedule
+            </h3>
+            <p className="text-xs text-slate-500">
+              Chauffeur event staffing for corporate galas, weddings, hotels, and luxury private venues.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200">
+            Active Event Tariff
+          </span>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="px-4 py-2 bg-[#023526] hover:bg-emerald-900 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit Valet Rates
+          </button>
+        </div>
+      </div>
+
+      {/* 4 Feature Tiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Tile 1 */}
+        <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+            <span className="flex items-center gap-1 text-slate-700">
+              <DollarSign className="w-3.5 h-3.5 text-amber-600" /> Staff Hourly Rate
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">Base</span>
+          </div>
+          <div className="text-2xl font-semibold text-slate-900">
+            ₹{valetPricing.pricePerStaffPerHour}
+          </div>
+          <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200/60">
+            <span>Staff gets: ₹{driverStaffRate}/hr</span>
+            <span className="text-amber-700 font-semibold">Margin: ₹{marginPerStaffHour}/hr ({marginPercent}%)</span>
+          </div>
+        </div>
+
+        {/* Tile 2 */}
+        <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+            <span className="flex items-center gap-1 text-slate-700">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-600" /> Minimum Team Size
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">Staffing</span>
+          </div>
+          <div className="text-2xl font-semibold text-slate-900">
+            {valetPricing.minStaffRequirement} Members
+          </div>
+          <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/60">
+            Minimum crew size required per event booking
+          </p>
+        </div>
+
+        {/* Tile 3 */}
+        <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+            <span className="flex items-center gap-1 text-slate-700">
+              <Zap className="w-3.5 h-3.5 text-amber-600" /> Peak Surge Surcharge
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">Surge</span>
+          </div>
+          <div className="text-2xl font-semibold text-amber-800">
+            +{valetPricing.peakEventSurgePercent}%
+          </div>
+          <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/60">
+            Applied during high-demand holidays & weekends
+          </p>
+        </div>
+
+        {/* Tile 4 */}
+        <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+            <span className="flex items-center gap-1 text-slate-700">
+              <Clock className="w-3.5 h-3.5 text-amber-600" /> Minimum Notice
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">Notice</span>
+          </div>
+          <div className="text-2xl font-semibold text-slate-900">
+            {valetPricing.minDurationHours} Hours
+          </div>
+          <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/60">
+            Advance notice needed for logistics & briefing
+          </p>
+        </div>
+      </div>
+
+      {/* Sample Booking Projection Box */}
+      <div className="p-4 rounded-xl bg-amber-50/40 border border-amber-200/70 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div>
+          <span className="font-semibold text-amber-900 block">
+            Sample Event Quote (4 Staff × 6 Hours Event):
+          </span>
+          <span className="text-slate-500 text-[11px]">
+            Customer Total: <span className="font-semibold text-slate-800">₹{(valetPricing.pricePerStaffPerHour * 4 * 6).toLocaleString('en-IN')}</span> · Driver Staff Earnings: <span className="font-semibold text-slate-800">₹{(driverStaffRate * 4 * 6).toLocaleString('en-IN')}</span> · Platform Net Margin: <span className="text-amber-800 font-semibold">₹{(marginPerStaffHour * 4 * 6).toLocaleString('en-IN')}</span>
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={onEdit}
+          className="self-start md:self-auto px-3.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+        >
+          <Pencil className="w-3 h-3" />
+          Update Valet Rates
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// MODAL EDIT TYPES & COMPONENT (CARD-SPECIFIC EDIT MODAL)
+// ============================================================================
+
+export type EditModalTarget =
+  | {
+    category: 'local';
+    tripType: 'one_way' | 'round_trip';
+    shift: 'morningHours' | 'nightHours';
+    title: string;
+    subTitle: string;
+    badgeText: string;
+    isNight: boolean;
+  }
+  | {
+    category: 'outstation';
+    tripType: 'one_way' | 'round_trip';
+    title: string;
+    subTitle: string;
+    badgeText: string;
+    notes: string;
+  }
+  | {
+    category: 'valet';
+    title: string;
+    subTitle: string;
+  };
+
+interface EditPricingModalProps {
+  target: EditModalTarget;
+  onClose: () => void;
+  localTiers: LocalPricingTiers;
+  outstationTiers: OutstationPricingTiers;
+  valetPricing: ValetPricingConfig;
+  onSaveLocalTier: (
+    tripType: 'one_way' | 'round_trip',
+    shift: 'morningHours' | 'nightHours',
+    updatedTier: TimePricingTier
+  ) => Promise<void>;
+  onSaveOutstationTier: (
+    tripType: 'one_way' | 'round_trip',
+    updatedTier: {
+      day: number;
+      customerPrice: number;
+      driverPrice: number;
+    }
+  ) => Promise<void>;
+  onSaveValet: (updatedValet: ValetPricingConfig) => void;
+  isSaving: boolean;
+}
+
+function EditPricingModal({
+  target,
+  onClose,
+  localTiers,
+  outstationTiers,
+  valetPricing,
+  onSaveLocalTier,
+  onSaveOutstationTier,
+  onSaveValet,
+  isSaving,
+}: EditPricingModalProps) {
+  // Local tier state
+  const [localShift, setLocalShift] = useState<'morningHours' | 'nightHours'>(
+    target.category === 'local' ? target.shift : 'morningHours'
+  );
+
+  const [draftLocalTier, setDraftLocalTier] = useState<TimePricingTier>(() => {
+    if (target.category === 'local') {
+      return { ...localTiers[target.tripType][target.shift] };
+    }
+    return { hours: 4, timeRange: '06:00-18:00', customerPrice: 400, driverPrice: 320 };
+  });
+
+  // Outstation tier state
+  const [draftOutstationDays, setDraftOutstationDays] = useState<number>(() => {
+    if (target.category === 'outstation') {
+      return outstationTiers[target.tripType].day || 1;
+    }
+    return 1;
+  });
+  const [draftOutstationCustomerPrice, setDraftOutstationCustomerPrice] = useState<number>(() => {
+    if (target.category === 'outstation') {
+      return outstationTiers[target.tripType].customerPrice || 1500;
+    }
+    return 1500;
+  });
+  const [draftOutstationDriverPrice, setDraftOutstationDriverPrice] = useState<number>(() => {
+    if (target.category === 'outstation') {
+      return outstationTiers[target.tripType].driverPrice || 1200;
+    }
+    return 1200;
+  });
+
+  // Valet tier state
+  const [draftValet, setDraftValet] = useState<ValetPricingConfig>(() => ({
+    ...valetPricing,
+  }));
+
+  // Handle shift switch in Local edit modal
+  const handleShiftSwitch = (shift: 'morningHours' | 'nightHours') => {
+    if (target.category === 'local') {
+      setLocalShift(shift);
+      setDraftLocalTier({ ...localTiers[target.tripType][shift] });
+    }
+  };
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (target.category === 'local') {
+      await onSaveLocalTier(target.tripType, localShift, draftLocalTier);
+    } else if (target.category === 'outstation') {
+      await onSaveOutstationTier(target.tripType, {
+        day: draftOutstationDays,
+        customerPrice: draftOutstationCustomerPrice,
+        driverPrice: draftOutstationDriverPrice,
+      });
+    } else if (target.category === 'valet') {
+      onSaveValet(draftValet);
+    }
+  };
+
+  const isNightShift = target.category === 'local' && localShift === 'nightHours';
+
+  return (
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn"
+    >
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/90 max-w-lg w-full overflow-hidden my-8">
+        {/* Modal Header */}
+        <div className="px-6 py-5 border-b border-slate-100 flex items-start justify-between gap-3 bg-gradient-to-b from-slate-50/80 to-white">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center font-semibold ${target.category === 'local'
+                ? isNightShift
+                  ? 'bg-indigo-100 text-indigo-700'
+                  : 'bg-amber-100 text-amber-700'
+                : target.category === 'outstation'
+                  ? 'bg-sky-100 text-sky-700'
+                  : 'bg-amber-100 text-amber-700'
+                }`}
+            >
+              {target.category === 'local' ? (
+                isNightShift ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />
+              ) : target.category === 'outstation' ? (
+                <MapPin className="w-5 h-5" />
+              ) : (
+                <Building2 className="w-5 h-5" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-semibold text-slate-900 tracking-tight">
+                  {target.category === 'local'
+                    ? `${target.tripType === 'one_way' ? 'One-Way' : 'Round-Trip'} ${localShift === 'nightHours' ? 'Night Shift' : 'Day Shift'
+                    }`
+                    : target.title}
+                </h3>
+                {target.category === 'local' && (
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${isNightShift
+                      ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                      }`}
+                  >
+                    {isNightShift ? 'Night Tariff' : 'Day Tariff'}
+                  </span>
+                )}
+                {target.category === 'outstation' && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200">
+                    {target.badgeText}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">{target.subTitle}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center font-semibold text-sm transition-colors cursor-pointer shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Modal Form */}
+        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-5">
+          {/* LOCAL TIER FIELDS */}
+          {target.category === 'local' && (
+            <div className="space-y-4">
+              {/* Shift Switcher */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <span className="text-xs font-semibold text-slate-700">Active Shift:</span>
+                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => handleShiftSwitch('morningHours')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${localShift === 'morningHours'
+                      ? 'bg-white text-slate-900 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                      }`}
+                  >
+                    <Sun className="w-3.5 h-3.5 text-amber-600" />
+                    Day Shift
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShiftSwitch('nightHours')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${localShift === 'nightHours'
+                      ? 'bg-slate-900 text-white shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                      }`}
+                  >
+                    <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                    Night Shift
+                  </button>
+                </div>
+              </div>
+
+              {/* Active Time Window */}
+              <TimeWindowPicker
+                label="Active Time Window (Clock Shift)"
+                value={draftLocalTier.timeRange}
+                onChange={(val) => setDraftLocalTier({ ...draftLocalTier, timeRange: val })}
+                presets={
+                  localShift === 'morningHours'
+                    ? ['06:00-18:00', '08:00-20:00', '07:00-19:00', '09:00-21:00']
+                    : ['18:00-06:00', '20:00-08:00', '22:00-06:00', '21:00-07:00']
+                }
+              />
+
+              {/* Included Duration */}
+              <HourSelector
+                label="Included Package Duration"
+                value={draftLocalTier.hours}
+                onChange={(val) => setDraftLocalTier({ ...draftLocalTier, hours: val })}
+                options={
+                  target.tripType === 'one_way'
+                    ? [2, 4, 6, 8, 10, 12]
+                    : [4, 8, 10, 12, 16, 24]
+                }
+              />
+
+              {/* Fares */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                <CurrencyField
+                  label="Customer Fare"
+                  sublabel="Billed to customer"
+                  value={draftLocalTier.customerPrice}
+                  onChange={(val) =>
+                    setDraftLocalTier({ ...draftLocalTier, customerPrice: val })
+                  }
+                  accent={isNightShift ? 'indigo' : 'emerald'}
+                  step={50}
+                />
+
+                <CurrencyField
+                  label="Driver Payout"
+                  sublabel="Paid to driver"
+                  value={draftLocalTier.driverPrice}
+                  onChange={(val) =>
+                    setDraftLocalTier({ ...draftLocalTier, driverPrice: val })
+                  }
+                  accent={isNightShift ? 'indigo' : 'emerald'}
+                  step={50}
+                />
+              </div>
+
+              {/* Live Margin Split */}
+              <MarginSplitBar
+                customerPrice={draftLocalTier.customerPrice}
+                driverPrice={draftLocalTier.driverPrice}
+              />
+            </div>
+          )}
+
+          {/* OUTSTATION FIELDS */}
+          {target.category === 'outstation' && (
+            <div className="space-y-4">
+              <HourSelector
+                label="Included Coverage Duration"
+                value={draftOutstationDays}
+                onChange={setDraftOutstationDays}
+                options={[1, 2, 3, 4, 5, 7]}
+                unitText="day(s)"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                <CurrencyField
+                  label="Customer Base Tariff"
+                  sublabel="Billed per package"
+                  value={draftOutstationCustomerPrice}
+                  onChange={setDraftOutstationCustomerPrice}
+                  accent="sky"
+                  step={100}
+                />
+
+                <CurrencyField
+                  label="Driver Base Payout"
+                  sublabel="Guaranteed driver share"
+                  value={draftOutstationDriverPrice}
+                  onChange={setDraftOutstationDriverPrice}
+                  accent="sky"
+                  step={100}
+                />
+              </div>
+
+              <MarginSplitBar
+                customerPrice={draftOutstationCustomerPrice}
+                driverPrice={draftOutstationDriverPrice}
+                unitLabel={`${draftOutstationDays} Day(s) Package`}
+              />
+            </div>
+          )}
+
+          {/* VALET FIELDS */}
+          {target.category === 'valet' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <CurrencyField
+                  label="Staff Hourly Rate"
+                  sublabel="Billed per staff per hr"
+                  value={draftValet.pricePerStaffPerHour}
+                  onChange={(val) =>
+                    setDraftValet({ ...draftValet, pricePerStaffPerHour: val })
+                  }
+                  accent="amber"
+                  step={10}
+                />
+
+                <CurrencyField
+                  label="Minimum Team Size"
+                  sublabel="Min crew per event"
+                  prefix="#"
+                  unit="staff"
+                  value={draftValet.minStaffRequirement}
+                  onChange={(val) =>
+                    setDraftValet({ ...draftValet, minStaffRequirement: val })
+                  }
+                  accent="amber"
+                  step={1}
+                  min={1}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <CurrencyField
+                  label="Peak Event Surge"
+                  sublabel="Demand multiplier"
+                  prefix="+"
+                  unit="%"
+                  value={draftValet.peakEventSurgePercent}
+                  onChange={(val) =>
+                    setDraftValet({ ...draftValet, peakEventSurgePercent: val })
+                  }
+                  accent="amber"
+                  step={5}
+                />
+
+                <CurrencyField
+                  label="Minimum Notice"
+                  sublabel="Advance briefing time"
+                  prefix="⏱"
+                  unit="hrs"
+                  value={draftValet.minDurationHours}
+                  onChange={(val) =>
+                    setDraftValet({ ...draftValet, minDurationHours: val })
+                  }
+                  accent="amber"
+                  step={1}
+                  min={1}
+                />
+              </div>
+
+              {/* Sample Quote Projection */}
+              <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/70 space-y-1 text-xs">
+                <div className="font-semibold text-amber-900">
+                  Sample Event Quote (4 Staff × 6 Hours Event):
+                </div>
+                <div className="text-slate-600 text-[11px] flex items-center justify-between pt-1 border-t border-amber-200/50">
+                  <span>Customer: ₹{(draftValet.pricePerStaffPerHour * 4 * 6).toLocaleString('en-IN')}</span>
+                  <span>Driver Staff: ₹{(190 * 4 * 6).toLocaleString('en-IN')}</span>
+                  <span className="font-semibold text-amber-800">
+                    Margin: ₹{Math.max(0, (draftValet.pricePerStaffPerHour - 190) * 4 * 6).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
+              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-5 py-2 bg-gradient-to-r from-[#023526] to-[#044c37] hover:from-[#012519] hover:to-[#023526] text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 export default function PricingManagementView() {
+  const { toast } = useToast();
   const {
-    localPricing,
-    outstationPricing,
+    driverPricing,
+    isLoading,
+    isSaving,
     valetPricing,
     pricingRules,
-    updateLocalPricing,
-    updateOutstationPricing,
+    fetchDriverPricing,
+    saveDriverPricing,
     updateValetPricing,
     addPricingRule,
     togglePricingRuleStatus,
-  } = useRentalStore();
+  } = usePricingStore();
 
   const [activeTab, setActiveTab] = useState<'local' | 'outstation' | 'valet' | 'rules'>('local');
-  const [localForm, setLocalForm] = useState<LocalPricingConfig>(localPricing);
-  const [outstationForm, setOutstationForm] = useState<OutstationPricingConfig>(outstationPricing);
+
+  // Modal Edit Target state (null means modal is closed)
+  const [editModalTarget, setEditModalTarget] = useState<EditModalTarget | null>(null);
+
+  // Local state initialized with store data or fallback defaults
+  const [localTiers, setLocalTiers] = useState<LocalPricingTiers>(
+    driverPricing?.local || defaultDriverPricingData.local
+  );
+  const [outstationTiers, setOutstationTiers] = useState<OutstationPricingTiers>(
+    driverPricing?.outstation || defaultDriverPricingData.outstation
+  );
   const [valetForm, setValetForm] = useState<ValetPricingConfig>(valetPricing);
-  const [savedSuccess, setSavedSuccess] = useState(false);
 
   // New Rule Form Modal state
   const [showAddRuleModal, setShowAddRuleModal] = useState(false);
@@ -49,29 +1148,108 @@ export default function PricingManagementView() {
     status: 'Active' as PricingRule['status'],
   });
 
-  const handleSaveLocal = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateLocalPricing(localForm);
-    triggerSuccess();
+  // Fetch driver pricing from database via Zustand on mount
+  useEffect(() => {
+    fetchDriverPricing();
+  }, [fetchDriverPricing]);
+
+  // Synchronize local form when store receives updated pricing data
+  useEffect(() => {
+    if (driverPricing) {
+      if (driverPricing.local) {
+        setLocalTiers(driverPricing.local);
+      }
+      if (driverPricing.outstation) {
+        setOutstationTiers(driverPricing.outstation);
+      }
+    }
+  }, [driverPricing]);
+
+  // Handle Save Local Driver Tier via Zustand
+  const handleSaveLocalTier = async (
+    tripType: 'one_way' | 'round_trip',
+    shift: 'morningHours' | 'nightHours',
+    updatedTier: TimePricingTier
+  ) => {
+    const updatedLocal: LocalPricingTiers = {
+      ...localTiers,
+      [tripType]: {
+        ...localTiers[tripType],
+        [shift]: updatedTier,
+      },
+    };
+    setLocalTiers(updatedLocal);
+
+    const payload = {
+      _id: driverPricing?._id,
+      local: updatedLocal,
+      outstation: outstationTiers,
+    };
+
+    const res = await saveDriverPricing(payload);
+    if (res.success) {
+      toast.success('Local Rate Updated', res.message || 'Pricing saved to database.');
+      setEditModalTarget(null);
+    } else {
+      toast.error('Save Failed', res.error || 'Could not save local pricing.');
+    }
   };
 
-  const handleSaveOutstation = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateOutstationPricing(outstationForm);
-    triggerSuccess();
+  // Handle Save Outstation Pricing Tier via Zustand
+  const handleSaveOutstationTier = async (
+    tripType: 'one_way' | 'round_trip',
+    updatedTier: {
+      day: number;
+      customerPrice: number;
+      driverPrice: number;
+    }
+  ) => {
+    const currentMode = outstationTiers[tripType];
+    const updatedOutstation: OutstationPricingTiers = {
+      ...outstationTiers,
+      [tripType]: {
+        ...currentMode,
+        day: updatedTier.day,
+        customerPrice: updatedTier.customerPrice,
+        driverPrice: updatedTier.driverPrice,
+        morningHours: {
+          ...currentMode.morningHours,
+          customerPrice: updatedTier.customerPrice,
+          driverPrice: updatedTier.driverPrice,
+        },
+        nightHours: {
+          ...currentMode.nightHours,
+          customerPrice: Math.round(updatedTier.customerPrice * 1.2),
+          driverPrice: Math.round(updatedTier.driverPrice * 1.2),
+        },
+      },
+    };
+    setOutstationTiers(updatedOutstation);
+
+    const payload = {
+      _id: driverPricing?._id,
+      local: localTiers,
+      outstation: updatedOutstation,
+    };
+
+    const res = await saveDriverPricing(payload);
+    if (res.success) {
+      toast.success('Outstation Rate Updated', res.message || 'Pricing saved to database.');
+      setEditModalTarget(null);
+    } else {
+      toast.error('Save Failed', res.error || 'Could not save outstation pricing.');
+    }
   };
 
-  const handleSaveValet = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateValetPricing(valetForm);
-    triggerSuccess();
+  // Handle Save Valet Event Pricing
+  const handleSaveValet = (updatedValet: ValetPricingConfig) => {
+    setValetForm(updatedValet);
+    updateValetPricing(updatedValet);
+    toast.success('Valet Rates Updated', 'Valet event tariff updated.');
+    setEditModalTarget(null);
   };
 
-  const triggerSuccess = () => {
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
-  };
-
+  // Handle Add Surge Rule
   const handleAddRuleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRule.ruleName.trim()) return;
@@ -86,473 +1264,592 @@ export default function PricingManagementView() {
       priority: 'Medium',
       status: 'Active',
     });
-    triggerSuccess();
+    toast.success('Surge Rule Created', 'New rule added successfully.');
   };
 
   return (
-    <div className="p-2 space-y-6 max-w-7xl mx-auto">
-      {/* Unified Pricing Overview Card */}
-      <div className="bg-white p-6 rounded-xl border border-stone-200/80 shadow-xs">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-          <div className="pt-2 md:pt-0">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">
-              Local Driver Rate
-            </span>
-            <div className="text-xl font-bold text-emerald-700 mt-1">
-              ₹{localPricing.basePrice} <span className="text-xs text-emerald-600/80 font-normal">/ min {localPricing.minDurationHours} hrs</span>
-            </div>
-            <p className="text-[10px] text-emerald-600 font-medium mt-1">₹{localPricing.perHourPrice}/hr extra • {localPricing.driverSharePercent}% Driver Payout</p>
-          </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* ====================================================================== */}
+      {/* PAGE HEADER */}
+      {/* ====================================================================== */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
+            Pricing & Tariffs
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Real-time customer fare tiers, driver payouts, and operational platform margins.
+          </p>
+        </div>
 
-          <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-sky-700 block">
-              Outstation Driver Rate
-            </span>
-            <div className="text-xl font-bold text-sky-700 mt-1">
-              ₹{outstationPricing.basePrice} <span className="text-xs text-sky-600/80 font-normal">/ hr</span>
-            </div>
-            <p className="text-[10px] text-sky-600 font-medium mt-1">Hourly billing • ₹{outstationPricing.perKmRate}/km extra • ₹{outstationPricing.driverFoodAllowancePerDay}/hr food</p>
-          </div>
+        <button
+          type="button"
+          onClick={() => fetchDriverPricing()}
+          disabled={isLoading}
+          className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 transition-all flex items-center gap-2 shadow-2xs active:scale-95 disabled:opacity-50 cursor-pointer self-start sm:self-auto"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+          <span>{isLoading ? 'Syncing...' : 'Refresh Rates'}</span>
+        </button>
+      </div>
 
-          <div className="pt-3 md:pt-0 md:pl-4">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700 block">
-              Valet Event Tariff
+      {/* ====================================================================== */}
+      {/* 4 SLEEK STAT TILES */}
+      {/* ====================================================================== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Metric 1: Local Driver */}
+        <div className="bg-white rounded-md border border-slate-200/80 p-4 shadow-2xs hover:border-slate-300 transition-all space-y-2">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+              <Car className="w-4 h-4 text-emerald-700" />
+              Local City Base
             </span>
-            <div className="text-xl font-bold text-amber-700 mt-1">
-              ₹{valetPricing.pricePerStaffPerHour} <span className="text-xs text-amber-600/80 font-normal">/ staff / hr</span>
-            </div>
-            <p className="text-[10px] text-amber-600 font-medium mt-1">{valetPricing.peakEventSurgePercent}% Event Surge • Min {valetPricing.minStaffRequirement} Staff</p>
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+              {localTiers.one_way.morningHours.hours}h tier
+            </span>
+          </div>
+          <div className="text-2xl font-semibold text-slate-900 tracking-tight">
+            ₹{localTiers.one_way.morningHours.customerPrice.toLocaleString('en-IN')}
+          </div>
+          <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+            <span>
+              Driver: <span className="font-semibold text-slate-800">₹{localTiers.one_way.morningHours.driverPrice}</span>
+            </span>
+            <span className="text-emerald-700 font-semibold">
+              ₹{localTiers.one_way.morningHours.customerPrice - localTiers.one_way.morningHours.driverPrice} margin
+            </span>
+          </div>
+        </div>
+
+        {/* Metric 2: Outstation */}
+        <div className="bg-white rounded-md border border-slate-200/80 p-4 shadow-2xs hover:border-slate-300 transition-all space-y-2">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+              <TrendingUp className="w-4 h-4 text-sky-600" />
+              Outstation Daily
+            </span>
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200/60">
+              {outstationTiers.one_way.day} Day Min
+            </span>
+          </div>
+          <div className="text-2xl font-semibold text-slate-900 tracking-tight">
+            ₹{outstationTiers.one_way.customerPrice.toLocaleString('en-IN')}
+          </div>
+          <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+            <span>
+              Driver: <span className="font-semibold text-slate-800">₹{outstationTiers.one_way.driverPrice}</span>
+            </span>
+            <span className="text-sky-700 font-semibold">
+              ₹{outstationTiers.one_way.customerPrice - outstationTiers.one_way.driverPrice} margin
+            </span>
+          </div>
+        </div>
+
+        {/* Metric 3: Valet Tariff */}
+        <div className="bg-white rounded-md border border-slate-200/80 p-4 shadow-2xs hover:border-slate-300 transition-all space-y-2">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+              <Building2 className="w-4 h-4 text-amber-600" />
+              Valet Staffing
+            </span>
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60">
+              Min {valetPricing.minStaffRequirement} Staff
+            </span>
+          </div>
+          <div className="text-2xl font-semibold text-slate-900 tracking-tight">
+            ₹{valetPricing.pricePerStaffPerHour}
+            <span className="text-xs text-slate-400 font-medium ml-1">/ staff / hr</span>
+          </div>
+          <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+            <span>
+              Surge: <span className="font-semibold text-slate-800">+{valetPricing.peakEventSurgePercent}%</span>
+            </span>
+            <span className="text-amber-800 font-semibold">{valetPricing.minDurationHours}h notice</span>
+          </div>
+        </div>
+
+        {/* Metric 4: Surge Multipliers */}
+        <div className="bg-white rounded-md border border-slate-200/80 p-4 shadow-2xs hover:border-slate-300 transition-all space-y-2">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+              <Zap className="w-4 h-4 text-purple-600" />
+              Surge Rules
+            </span>
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200/60">
+              {pricingRules.length} Total
+            </span>
+          </div>
+          <div className="text-2xl font-semibold text-purple-900 tracking-tight">
+            {pricingRules.filter((r) => r.status === 'Active').length} Active
+          </div>
+          <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+            <span>Dynamic Multipliers</span>
+            <span className="text-purple-700 font-semibold">Operational</span>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white rounded-xl border border-stone-200/80 shadow-xs overflow-hidden">
-        <div className="flex border-b border-slate-200 bg-slate-50/50">
-          <button
-            onClick={() => setActiveTab('local')}
-            className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold transition-all border-b-2 ${activeTab === 'local'
-              ? 'border-[#023526] text-[#023526] bg-white'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-          >
-            <Car className="w-4 h-4" />
-            Local Driver Pricing
-          </button>
+      {/* ====================================================================== */}
+      {/* SERVICE MODE TABS NAVIGATION */}
+      {/* ====================================================================== */}
+      <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
+        <button
+          type="button"
+          onClick={() => setActiveTab('local')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'local'
+            ? 'bg-[#023526] text-white shadow-xs'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+        >
+          <Car className="w-3.5 h-3.5" />
+          <span>Local Driver</span>
+        </button>
 
-          <button
-            onClick={() => setActiveTab('outstation')}
-            className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold transition-all border-b-2 ${activeTab === 'outstation'
-              ? 'border-[#023526] text-[#023526] bg-white'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            Outstation Pricing
-          </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('outstation')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'outstation'
+            ? 'bg-[#023526] text-white shadow-xs'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span>Outstation</span>
+        </button>
 
-          <button
-            onClick={() => setActiveTab('valet')}
-            className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold transition-all border-b-2 ${activeTab === 'valet'
-              ? 'border-[#023526] text-[#023526] bg-white'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-          >
-            <Building2 className="w-4 h-4" />
-            Valet Event Pricing
-          </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('valet')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'valet'
+            ? 'bg-[#023526] text-white shadow-xs'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          <span>Valet Tariff</span>
+        </button>
 
-          <button
-            onClick={() => setActiveTab('rules')}
-            className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold transition-all border-b-2 ${activeTab === 'rules'
-              ? 'border-[#023526] text-[#023526] bg-white'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-          >
-            <Zap className="w-4 h-4" />
-            Surge Rules ({pricingRules.length})
-          </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('rules')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'rules'
+            ? 'bg-[#023526] text-white shadow-xs'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+        >
+          <Zap className="w-3.5 h-3.5" />
+          <span>Surge Rules ({pricingRules.filter((r) => r.status === 'Active').length})</span>
+        </button>
+      </div>
+
+      {/* ====================================================================== */}
+      {/* TAB CONTENT 1: LOCAL DRIVER PRICING STUDIO */}
+      {/* ====================================================================== */}
+      {activeTab === 'local' && (
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 space-y-6 animate-fadeIn">
+          {/* Section 1: One-Way Local Driver Tiers */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-0.5">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <h4 className="text-sm font-semibold text-slate-800">One-Way Point-to-Point Tiers</h4>
+                <span className="text-xs text-slate-400 font-semibold ml-1.5">• Single drop off</span>
+              </div>
+              <span className="text-[11px] font-semibold text-slate-400">
+                Click any card to edit
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <ReadOnlyTierCard
+                shiftTitle="One-Way Day Shift"
+                subTitle="Regular standard day point-to-point hours"
+                badgeText="Day Tariff"
+                timeRange={localTiers.one_way.morningHours.timeRange}
+                durationHours={localTiers.one_way.morningHours.hours}
+                customerPrice={localTiers.one_way.morningHours.customerPrice}
+                driverPrice={localTiers.one_way.morningHours.driverPrice}
+                isNight={false}
+                onEdit={() =>
+                  setEditModalTarget({
+                    category: 'local',
+                    tripType: 'one_way',
+                    shift: 'morningHours',
+                    title: 'One-Way Day Shift',
+                    subTitle: 'Point-to-point standard daytime chauffeuring',
+                    badgeText: 'Day Tariff',
+                    isNight: false,
+                  })
+                }
+              />
+
+              <ReadOnlyTierCard
+                shiftTitle="One-Way Night Shift"
+                subTitle="Overnight late-night city rides"
+                badgeText="Night Tariff"
+                timeRange={localTiers.one_way.nightHours.timeRange}
+                durationHours={localTiers.one_way.nightHours.hours}
+                customerPrice={localTiers.one_way.nightHours.customerPrice}
+                driverPrice={localTiers.one_way.nightHours.driverPrice}
+                isNight={true}
+                onEdit={() =>
+                  setEditModalTarget({
+                    category: 'local',
+                    tripType: 'one_way',
+                    shift: 'nightHours',
+                    title: 'One-Way Night Shift',
+                    subTitle: 'Point-to-point overnight city chauffeuring',
+                    badgeText: 'Night Tariff',
+                    isNight: true,
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-slate-100" />
+
+          {/* Section 2: Round-Trip Local Driver Packages */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-0.5">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                <h4 className="text-sm font-semibold text-slate-800">Round-Trip Hourly Packages</h4>
+                <span className="text-xs text-slate-400 font-semibold ml-1.5">• Return city chauffeuring</span>
+              </div>
+              <span className="text-[11px] font-semibold text-slate-400">
+                Click any card to edit
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <ReadOnlyTierCard
+                shiftTitle="Round-Trip Day Shift"
+                subTitle="Multi-stop day city tour with return"
+                badgeText="Day Return"
+                timeRange={localTiers.round_trip.morningHours.timeRange}
+                durationHours={localTiers.round_trip.morningHours.hours}
+                customerPrice={localTiers.round_trip.morningHours.customerPrice}
+                driverPrice={localTiers.round_trip.morningHours.driverPrice}
+                isNight={false}
+                onEdit={() =>
+                  setEditModalTarget({
+                    category: 'local',
+                    tripType: 'round_trip',
+                    shift: 'morningHours',
+                    title: 'Round-Trip Day Shift',
+                    subTitle: 'Multi-stop city tour with return (daytime)',
+                    badgeText: 'Day Return',
+                    isNight: false,
+                  })
+                }
+              />
+
+              <ReadOnlyTierCard
+                shiftTitle="Round-Trip Night Shift"
+                subTitle="Late-night party or night event chauffeuring"
+                badgeText="Night Return"
+                timeRange={localTiers.round_trip.nightHours.timeRange}
+                durationHours={localTiers.round_trip.nightHours.hours}
+                customerPrice={localTiers.round_trip.nightHours.customerPrice}
+                driverPrice={localTiers.round_trip.nightHours.driverPrice}
+                isNight={true}
+                onEdit={() =>
+                  setEditModalTarget({
+                    category: 'local',
+                    tripType: 'round_trip',
+                    shift: 'nightHours',
+                    title: 'Round-Trip Night Shift',
+                    subTitle: 'Late-night party or return event chauffeuring',
+                    badgeText: 'Night Return',
+                    isNight: true,
+                  })
+                }
+              />
+            </div>
+          </div>
         </div>
+      )}
 
-        {/* Tab Contents */}
-        <div className="p-6">
-          {/* LOCAL DRIVER */}
-          {activeTab === 'local' && (
-            <form onSubmit={handleSaveLocal} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Base Fare (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={localForm.basePrice}
-                    onChange={(e) => setLocalForm({ ...localForm, basePrice: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Minimum base booking price</p>
+      {/* ====================================================================== */}
+      {/* TAB CONTENT 2: OUTSTATION PRICING STUDIO */}
+      {/* ====================================================================== */}
+      {activeTab === 'outstation' && (
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 space-y-6 animate-fadeIn">
+          {/* Header directly on main card */}
+          <div className="flex items-center justify-between px-0.5 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-sky-500" />
+              <h4 className="text-sm font-semibold text-slate-800">Intercity Outstation Tariffs</h4>
+              <span className="text-xs text-slate-400 font-semibold ml-1.5">• 2 Service Modes</span>
+            </div>
+            <span className="text-[11px] font-semibold text-slate-400">
+              Click any card to edit
+            </span>
+          </div>
+
+          {/* Outstation Cards */}
+          <div className="space-y-4">
+            <ReadOnlyOutstationCard
+              title="One-Way Intercity Outstation Tariff"
+              subTitle="Intercity driver drop to outstation cities (driver travel back required)."
+              badgeText="Daily Billing Cycle"
+              days={outstationTiers.one_way.day}
+              customerPrice={outstationTiers.one_way.customerPrice}
+              driverPrice={outstationTiers.one_way.driverPrice}
+              notes="Drop to destination (one-way)"
+              onEdit={() =>
+                setEditModalTarget({
+                  category: 'outstation',
+                  tripType: 'one_way',
+                  title: 'One-Way Intercity Outstation Tariff',
+                  subTitle: 'Intercity driver drop to outstation cities (driver travel back required).',
+                  badgeText: 'Daily Billing Cycle',
+                  notes: 'Drop to destination (one-way)',
+                })
+              }
+            />
+
+            <div className="border-t border-slate-100" />
+
+            <ReadOnlyOutstationCard
+              title="Round-Trip Intercity Outstation Packages"
+              subTitle="Chauffeur accompanies customer outstation for multi-day tours with return."
+              badgeText="Tour / Return Multi-Day"
+              days={outstationTiers.round_trip.day}
+              customerPrice={outstationTiers.round_trip.customerPrice}
+              driverPrice={outstationTiers.round_trip.driverPrice}
+              notes="Multi-day tour with return"
+              onEdit={() =>
+                setEditModalTarget({
+                  category: 'outstation',
+                  tripType: 'round_trip',
+                  title: 'Round-Trip Intercity Outstation Packages',
+                  subTitle: 'Chauffeur accompanies customer outstation for multi-day tours with return.',
+                  badgeText: 'Tour / Return Multi-Day',
+                  notes: 'Multi-day tour with return',
+                })
+              }
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ====================================================================== */}
+      {/* TAB CONTENT 3: VALET PRICING STUDIO */}
+      {/* ====================================================================== */}
+      {activeTab === 'valet' && (
+        <div className="space-y-6 animate-fadeIn">
+          <ReadOnlyValetOverview
+            valetPricing={valetForm}
+            onEdit={() =>
+              setEditModalTarget({
+                category: 'valet',
+                title: 'Valet Staffing & Event Operations',
+                subTitle: 'Chauffeur event staffing for corporate galas, weddings, hotels, and luxury private venues.',
+              })
+            }
+          />
+        </div>
+      )}
+
+      {/* ====================================================================== */}
+      {/* TAB CONTENT 4: SURGE RULES STUDIO */}
+      {/* ====================================================================== */}
+      {activeTab === 'rules' &&
+        (() => {
+          const ruleColumns: Column<PricingRule>[] = [
+            {
+              key: 'ruleName',
+              header: 'Rule Identifier',
+              render: (r) => (
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-semibold shrink-0">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-slate-900">{r.ruleName}</div>
+                    <div className="text-[10px] text-slate-400 font-mono">ID: {r.id}</div>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Min Duration Included (Hours)
-                  </label>
-                  <input
-                    type="number"
-                    value={localForm.minDurationHours}
-                    onChange={(e) => setLocalForm({ ...localForm, minDurationHours: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Hours covered in base fare</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Rate Per Additional Hour (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={localForm.perHourPrice}
-                    onChange={(e) => setLocalForm({ ...localForm, perHourPrice: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Charge for each extra hour</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Night Allowance Surcharge (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={localForm.nightCharge}
-                    onChange={(e) => setLocalForm({ ...localForm, nightCharge: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Applies 10 PM - 6 AM</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Platform Commission (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={localForm.platformCommissionPercent}
-                    onChange={(e) => setLocalForm({ ...localForm, platformCommissionPercent: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Platform revenue share</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Driver Travel to Pickup Allowance (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={150}
-                    readOnly
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 font-semibold text-slate-800"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Distance allowance for driver reaching customer vehicle</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Driver Share (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={localForm.driverSharePercent}
-                    onChange={(e) => setLocalForm({ ...localForm, driverSharePercent: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Driver payout share</p>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4 border-t border-slate-200">
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#023526] hover:bg-emerald-900 text-white font-bold text-xs rounded-lg shadow-sm transition-all"
+              ),
+            },
+            {
+              key: 'service',
+              header: 'Applicable Services',
+              render: (r) => (
+                <span className="px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                  {r.service}
+                </span>
+              ),
+            },
+            {
+              key: 'condition',
+              header: 'Trigger Condition',
+              render: (r) => <span className="text-xs text-slate-600 font-medium">{r.condition}</span>,
+            },
+            {
+              key: 'value',
+              header: 'Surge Surcharge',
+              render: (r) => (
+                <span className="font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                  +{r.value}
+                  {r.type === 'Percentage' ? '%' : ' ₹'}
+                </span>
+              ),
+            },
+            {
+              key: 'priority',
+              header: 'Priority',
+              render: (r) => (
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${r.priority === 'High'
+                    ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                    : 'bg-blue-100 text-blue-800 border border-blue-200'
+                    }`}
                 >
-                  <Save className="w-4 h-4" />
-                  Save Local Pricing Configuration
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* OUTSTATION DRIVER */}
-          {activeTab === 'outstation' && (
-            <form onSubmit={handleSaveOutstation} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Outstation Base Tariff (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={outstationForm.basePrice}
-                    onChange={(e) => setOutstationForm({ ...outstationForm, basePrice: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Per Day Tariff Rate (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={outstationForm.perDayRate}
-                    onChange={(e) => setOutstationForm({ ...outstationForm, perDayRate: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Driver Food Allowance (₹ / Day)
-                  </label>
-                  <input
-                    type="number"
-                    value={outstationForm.driverFoodAllowancePerDay}
-                    onChange={(e) => setOutstationForm({ ...outstationForm, driverFoodAllowancePerDay: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Night Stay Allowance (₹ / Night)
-                  </label>
-                  <input
-                    type="number"
-                    value={outstationForm.nightAllowancePerNight}
-                    onChange={(e) => setOutstationForm({ ...outstationForm, nightAllowancePerNight: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Platform Commission (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={outstationForm.platformCommissionPercent}
-                    onChange={(e) => setOutstationForm({ ...outstationForm, platformCommissionPercent: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4 border-t border-slate-200">
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#023526] hover:bg-emerald-900 text-white font-bold text-xs rounded-lg shadow-sm transition-all"
+                  {r.priority}
+                </span>
+              ),
+            },
+            {
+              key: 'status',
+              header: 'Status',
+              render: (r) => (
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 w-fit ${r.status === 'Active'
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    : 'bg-slate-100 text-slate-500 border border-slate-200'
+                    }`}
                 >
-                  <Save className="w-4 h-4" />
-                  Save Outstation Pricing Configuration
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* VALET EVENT */}
-          {activeTab === 'valet' && (
-            <form onSubmit={handleSaveValet} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Hourly Rate Per Valet Staff (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={valetForm.pricePerStaffPerHour}
-                    onChange={(e) => setValetForm({ ...valetForm, pricePerStaffPerHour: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Minimum Staff Requirement
-                  </label>
-                  <input
-                    type="number"
-                    value={valetForm.minStaffRequirement}
-                    onChange={(e) => setValetForm({ ...valetForm, minStaffRequirement: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Peak Event Surge (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={valetForm.peakEventSurgePercent}
-                    onChange={(e) => setValetForm({ ...valetForm, peakEventSurgePercent: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4 border-t border-slate-200">
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#023526] hover:bg-emerald-900 text-white font-bold text-xs rounded-lg shadow-sm transition-all"
-                >
-                  <Save className="w-4 h-4" />
-                  Save Valet Event Configuration
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* SURGE RULES */}
-          {activeTab === 'rules' && (() => {
-            const ruleColumns: Column<PricingRule>[] = [
-              {
-                key: 'ruleName',
-                header: 'Rule Name',
-                render: (r) => <span className="font-bold text-slate-900">{r.ruleName}</span>,
-              },
-              {
-                key: 'service',
-                header: 'Service Scope',
-                render: (r) => (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
-                    {r.service}
-                  </span>
-                ),
-              },
-              {
-                key: 'condition',
-                header: 'Condition',
-                render: (r) => <span className="text-slate-600">{r.condition}</span>,
-              },
-              {
-                key: 'value',
-                header: 'Surge Value',
-                render: (r) => (
-                  <span className="font-bold text-amber-700">
-                    +{r.value}{r.type === 'Percentage' ? '%' : ' ₹'}
-                  </span>
-                ),
-              },
-              {
-                key: 'priority',
-                header: 'Priority',
-                render: (r) => (
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.priority === 'High' ? 'bg-rose-100 text-rose-800' : 'bg-blue-100 text-blue-800'
+                    className={`w-1.5 h-1.5 rounded-full ${r.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-400'
                       }`}
-                  >
-                    {r.priority}
-                  </span>
-                ),
-              },
-              {
-                key: 'status',
-                header: 'Status',
-                render: (r) => (
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
-                      }`}
-                  >
-                    {r.status}
-                  </span>
-                ),
-              },
-              {
-                key: 'action',
-                header: 'Action',
-                align: 'right',
-                render: (r) => (
-                  <button
-                    onClick={() => togglePricingRuleStatus(r.id)}
-                    className={`px-2.5 py-1 text-[11px] font-bold rounded transition-colors ${r.status === 'Active'
-                      ? 'bg-rose-50 text-rose-700 hover:bg-rose-100'
-                      : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                      }`}
-                  >
-                    {r.status === 'Active' ? 'Disable' : 'Enable'}
-                  </button>
-                ),
-              },
-            ];
+                  />
+                  {r.status}
+                </span>
+              ),
+            },
+            {
+              key: 'action',
+              header: 'Action',
+              align: 'right',
+              render: (r) => (
+                <button
+                  onClick={() => togglePricingRuleStatus(r.id)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${r.status === 'Active'
+                    ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                    }`}
+                >
+                  {r.status === 'Active' ? 'Disable' : 'Enable'}
+                </button>
+              ),
+            },
+          ];
 
-            return (
-              <div className="space-y-4">
+          return (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
                 <DataTable<PricingRule>
                   columns={ruleColumns}
                   data={pricingRules}
                   keyExtractor={(r) => r.id}
                   pageSize={5}
-                  searchPlaceholder="Search rule name or condition..."
+                  searchPlaceholder="Filter rules by name or condition..."
                   searchFilterKeys={['ruleName', 'service', 'condition']}
                   emptyMessage="No dynamic surge rules configured."
                   headerActions={
                     <button
                       onClick={() => setShowAddRuleModal(true)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 bg-[#023526] text-white text-xs font-bold rounded-lg hover:bg-emerald-900 transition-colors shadow-xs"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-[#023526] text-white text-xs font-semibold rounded-xl hover:bg-emerald-900 transition-all shadow-sm"
                     >
-                      <Plus className="w-4 h-4" /> Add Surge Rule
+                      <Plus className="w-4 h-4" /> Add Dynamic Rule
                     </button>
                   }
                 />
               </div>
-            );
-          })()}
-        </div>
-      </div>
+            </div>
+          );
+        })()}
 
-      {/* Add Surge Rule Modal */}
+      {/* ====================================================================== */}
+      {/* EDIT PRICING MODAL (OPENS FOR THE EXACT CLICKED CARD) */}
+      {/* ====================================================================== */}
+      {editModalTarget && (
+        <EditPricingModal
+          target={editModalTarget}
+          onClose={() => setEditModalTarget(null)}
+          localTiers={localTiers}
+          outstationTiers={outstationTiers}
+          valetPricing={valetForm}
+          onSaveLocalTier={handleSaveLocalTier}
+          onSaveOutstationTier={handleSaveOutstationTier}
+          onSaveValet={handleSaveValet}
+          isSaving={isSaving}
+        />
+      )}
+
+      {/* ====================================================================== */}
+      {/* ADD SURGE RULE MODAL */}
+      {/* ====================================================================== */}
       {showAddRuleModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-6 space-y-4">
-            <h3 className="text-base font-bold text-slate-900">Add New Dynamic Surge Rule</h3>
-            <form onSubmit={handleAddRuleSubmit} className="space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900 tracking-tight">
+                  Add Dynamic Surge Rule
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAddRuleModal(false)}
+                className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center font-semibold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddRuleSubmit} noValidate className="space-y-4 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Rule Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Festival Peak Surge"
+                  placeholder="e.g. Festival Eve Surge"
                   value={newRule.ruleName}
                   onChange={(e) => setNewRule({ ...newRule, ruleName: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Target Service</label>
+                <label className="block font-semibold text-slate-700 mb-1">Target Service Scope</label>
                 <select
                   value={newRule.service}
                   onChange={(e) => setNewRule({ ...newRule, service: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none bg-white"
                 >
-                  <option value="All">All Services</option>
-                  <option value="Local Driver">Local Driver</option>
-                  <option value="Outstation Driver">Outstation Driver</option>
-                  <option value="Valet Staff">Valet Staff</option>
+                  <option value="All">All Services (Universal)</option>
+                  <option value="Local Driver">Local Driver Only</option>
+                  <option value="Outstation Driver">Outstation Driver Only</option>
+                  <option value="Valet Staff">Valet Staff Only</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Condition Description</label>
+                <label className="block font-semibold text-slate-700 mb-1">Trigger Condition</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Peak Rain Hours or Weekend 6PM-11PM"
+                  placeholder="e.g. Heavy Rain Warning or 18:00 - 23:00"
                   value={newRule.condition}
                   onChange={(e) => setNewRule({ ...newRule, condition: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none"
                 />
               </div>
 
@@ -562,19 +1859,19 @@ export default function PricingManagementView() {
                   <select
                     value={newRule.type}
                     onChange={(e) => setNewRule({ ...newRule, type: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none bg-white"
                   >
                     <option value="Percentage">Percentage (%)</option>
-                    <option value="Fixed">Fixed (₹)</option>
+                    <option value="Fixed">Fixed Amount (₹)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Surge Value</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Surcharge Value</label>
                   <input
                     type="number"
                     value={newRule.value}
                     onChange={(e) => setNewRule({ ...newRule, value: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none font-semibold"
                   />
                 </div>
               </div>
@@ -583,15 +1880,15 @@ export default function PricingManagementView() {
                 <button
                   type="button"
                   onClick={() => setShowAddRuleModal(false)}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50"
+                  className="px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#023526] text-white font-bold rounded-lg hover:bg-emerald-900"
+                  className="px-5 py-2 bg-[#023526] hover:bg-emerald-900 text-white font-semibold rounded-xl shadow-sm"
                 >
-                  Create Rule
+                  Create Surge Rule
                 </button>
               </div>
             </form>
@@ -599,5 +1896,26 @@ export default function PricingManagementView() {
         </div>
       )}
     </div>
+  );
+}
+
+// Icon helper for round trip
+function RotateCcwIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>
   );
 }

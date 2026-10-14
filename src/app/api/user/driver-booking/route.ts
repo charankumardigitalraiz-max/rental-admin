@@ -3,6 +3,7 @@ import connectToDatabase from "@/lib/mongodb";
 import DriverBooking from "@/models/driverBooking";
 import DriverPricing from "@/models/driverPricing";
 import { verifyUser } from "@/lib/auth";
+import { dispatchNotification } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   try {
@@ -128,6 +129,20 @@ export async function POST(request: Request) {
 
     // Create the booking in the database
     const newBooking = await DriverBooking.create(body);
+
+    // Trigger Firebase push notification to drivers and system
+    dispatchNotification({
+      title: `New Booking Request #${newBooking.bookingId || 'New'}`,
+      message: `${serviceType.toUpperCase()} trip requested for ${new Date(scheduledStartTime).toLocaleString()}. Tap to view details.`,
+      targetAudience: 'Drivers',
+      type: 'Booking',
+      data: {
+        bookingId: String(newBooking._id),
+        serviceType: String(serviceType),
+        tripType: String(tripType),
+      },
+      sentBy: 'System Booking Engine',
+    }).catch((err) => console.warn('[DriverBooking] Firebase push warning:', err?.message));
 
     return NextResponse.json(
       {

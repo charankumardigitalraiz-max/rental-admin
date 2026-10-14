@@ -147,6 +147,8 @@ interface DriverAppStoreState {
   updateReviewStatus: (reviewId: string, status: ReviewRecord['status']) => void;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
+  setNotifications: (notifications: NotificationRecord[]) => void;
+  addNotification: (notification: NotificationRecord) => void;
   updateSettings: (settings: Partial<SystemSettings>) => void;
 
   addAdminUser: (admin: Omit<AdminUser, 'id' | 'lastLogin'>) => void;
@@ -477,6 +479,16 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
   markAllNotificationsAsRead: () =>
     set((state) => ({
       notifications: state.notifications.map((n) => ({ ...n, read: true })),
+    })),
+
+  setNotifications: (notifications) =>
+    set(() => ({
+      notifications,
+    })),
+
+  addNotification: (notification) =>
+    set((state) => ({
+      notifications: [notification, ...state.notifications],
     })),
 
   updateSettings: (newSettings) =>

@@ -20,6 +20,7 @@ export interface DriverInterface extends Document {
     status: string;
     isOnline?: boolean;
     isVerified?: boolean;
+    fcmToken?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -45,6 +46,7 @@ const driverSchema: Schema = new Schema(
         status: { type: String, default: "pending" },
         isOnline: { type: Boolean, default: false },
         isVerified: { type: Boolean, default: false },
+        fcmToken: { type: String },
     },
     {
         timestamps: true,

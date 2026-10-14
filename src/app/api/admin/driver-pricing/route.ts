@@ -15,7 +15,39 @@ export async function GET(request: NextRequest) {
     }
 
     await connectToDatabase();
-    const pricingList = await DriverPricing.find({}).sort({ createdAt: -1 });
+    let pricingList = await DriverPricing.find({}).sort({ createdAt: -1 });
+
+    if (!pricingList || pricingList.length === 0) {
+      const defaultDoc = await DriverPricing.create({
+        local: {
+          one_way: {
+            morningHours: { hours: 4, timeRange: "06:00-18:00", customerPrice: 400, driverPrice: 320 },
+            nightHours: { hours: 4, timeRange: "18:00-06:00", customerPrice: 500, driverPrice: 400 },
+          },
+          round_trip: {
+            morningHours: { hours: 8, timeRange: "06:00-18:00", customerPrice: 800, driverPrice: 650 },
+            nightHours: { hours: 8, timeRange: "18:00-06:00", customerPrice: 950, driverPrice: 780 },
+          },
+        },
+        outstation: {
+          one_way: {
+            day: 1,
+            customerPrice: 1500,
+            driverPrice: 1200,
+            morningHours: { hours: 12, timeRange: "06:00-18:00", customerPrice: 1500, driverPrice: 1200 },
+            nightHours: { hours: 12, timeRange: "18:00-06:00", customerPrice: 1800, driverPrice: 1450 },
+          },
+          round_trip: {
+            day: 1,
+            customerPrice: 2000,
+            driverPrice: 1600,
+            morningHours: { hours: 12, timeRange: "06:00-18:00", customerPrice: 2000, driverPrice: 1600 },
+            nightHours: { hours: 12, timeRange: "18:00-06:00", customerPrice: 2400, driverPrice: 1950 },
+          },
+        },
+      });
+      pricingList = [defaultDoc];
+    }
 
     return NextResponse.json({ success: true, data: pricingList }, { status: 200 });
   } catch (error: any) {
@@ -41,14 +73,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     await connectToDatabase();
 
-    // Upsert: Find any existing pricing configuration and update it, 
-    // or create a new one if it doesn't exist.
-    // If you plan to have multiple pricing configs in the future, change the `{}` to a specific filter.
-    const filter = body._id ? { _id: body._id } : {};
+    const { _id, ...updatePayload } = body;
+    const filter = _id ? { _id } : {};
     
     const updatedPricing = await DriverPricing.findOneAndUpdate(
       filter,
-      body,
+      updatePayload,
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     );
 

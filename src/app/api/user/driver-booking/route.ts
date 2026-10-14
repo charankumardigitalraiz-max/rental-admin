@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import DriverBooking from "@/models/driverBooking";
 import DriverPricing from "@/models/driverPricing";
+import Customer from "@/models/customer";
 import { verifyUser } from "@/lib/auth";
+import { emitNewAvailableRide } from "@/lib/socket";
 
 export async function POST(request: Request) {
   try {
@@ -128,6 +130,31 @@ export async function POST(request: Request) {
 
     // Create the booking in the database
     const newBooking = await DriverBooking.create(body);
+
+    // Fetch customer details to broadcast complete ride info to drivers
+    const customer = await Customer.findById(userPayload.id).select("firstName lastName phone email custId").lean();
+
+    // Broadcast in real-time to all connected drivers
+    emitNewAvailableRide({
+      _id: newBooking._id,
+      bookingId: newBooking.bookingId,
+      serviceType: newBooking.serviceType,
+      tripType: newBooking.tripType,
+      scheduledStartTime: newBooking.scheduledStartTime,
+      durationHours: newBooking.durationHours,
+      durationDays: newBooking.durationDays,
+      pickupLocation: newBooking.pickupLocation,
+      dropLocation: newBooking.dropLocation,
+      vehicleType: newBooking.vehicleType,
+      baseAmount: newBooking.baseAmount,
+      totalAmount: newBooking.totalAmount,
+      estimatedDistance: newBooking.estimatedDistance || 0,
+      isKmBased: (newBooking.estimatedDistance && newBooking.estimatedDistance > 0) || (newBooking.extraKmAmount && newBooking.extraKmAmount > 0) || false,
+      distanceKm: newBooking.estimatedDistance || 0,
+      bookingStatus: newBooking.bookingStatus,
+      userDetails: customer || null,
+      createdAt: newBooking.createdAt,
+    });
 
     return NextResponse.json(
       {

@@ -3,6 +3,7 @@ import connectToDatabase from "@/lib/mongodb";
 import DriverBooking from "@/models/driverBooking";
 import Driver from "@/models/driver";
 import { verifyDriver } from "@/lib/auth";
+import { emitRideTaken, emitBookingUpdate } from "@/lib/socket";
 import mongoose from "mongoose";
 
 /**
@@ -76,6 +77,22 @@ export async function POST(
     booking.driverId = driver._id;
     booking.bookingStatus = "driver_assigned";
     await booking.save();
+
+    // ⚡ 1. Tell all other drivers to remove this ride from available list
+    emitRideTaken(booking.bookingId, booking._id.toString());
+
+    // ⚡ 2. Notify the customer and driver listening in the booking room
+    emitBookingUpdate(booking.bookingId, "booking:status_update", {
+      bookingId: booking.bookingId,
+      bookingStatus: "driver_assigned",
+      driver: {
+        id: driver._id,
+        firstName: driver.firstName,
+        lastName: driver.lastName,
+        phone: driver.phone,
+        driverId: driver.driverId,
+      },
+    });
 
     return NextResponse.json(
       {

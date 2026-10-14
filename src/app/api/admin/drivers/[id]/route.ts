@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ success: false, error: "Driver not found" }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, data: driver }, { status: 200 });
+        return NextResponse.json({ success: true, data: { driver } }, { status: 200 });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
@@ -47,6 +47,25 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             const existingDriver = await Driver.findOne({ email: body.email, _id: { $ne: id } });
             if (existingDriver) {
                 return NextResponse.json({ success: false, error: "Email is already in use by another driver" }, { status: 400 });
+            }
+        }
+
+        // Automatically sync isVerified based on status if not explicitly passed
+        if (body.status) {
+            const normalizedStatus = body.status.toLowerCase();
+            if (["verified", "approve", "approved", "active"].includes(normalizedStatus)) {
+                body.status = "verified";
+                if (body.isVerified === undefined) body.isVerified = true;
+            } else if (["rejected", "reject"].includes(normalizedStatus)) {
+                body.status = "rejected";
+                if (body.isVerified === undefined) body.isVerified = false;
+            } else if (["suspended", "suspend"].includes(normalizedStatus)) {
+                body.status = "suspended";
+                if (body.isVerified === undefined) body.isVerified = false;
+            }
+        } else if (body.isVerified !== undefined) {
+            if (body.isVerified === true && !body.status) {
+                body.status = "verified";
             }
         }
 

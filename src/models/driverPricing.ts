@@ -29,6 +29,8 @@ const OutstationTripTypeSchema = new Schema(
     day: { type: Number, required: true },
     customerPrice: { type: Number, required: true },
     driverPrice: { type: Number, required: true },
+    morningHours: { type: LocalTimePricingSchema, required: true },
+    nightHours: { type: LocalTimePricingSchema, required: true },
   },
   { _id: false }
 );

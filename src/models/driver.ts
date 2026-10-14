@@ -8,7 +8,18 @@ export interface DriverInterface extends Document {
     address?: string;
     driverId: string;
     licenseNumber: string;
-    status: boolean;
+    pancardNumber?: string;
+    pancard?: string;
+    aadhaarNumber?: string;
+    aadhaarCardFront?: string;
+    aadhaarCardBack?: string;
+    drivingLicense?: string;
+    selfie?: string;
+    passportId?: string;
+    passport?: string;
+    status: string;
+    isOnline?: boolean;
+    isVerified?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -22,7 +33,18 @@ const driverSchema: Schema = new Schema(
         address: { type: String },
         driverId: { type: String, required: true, unique: true },
         licenseNumber: { type: String, required: true, unique: true },
-        status: { type: Boolean, default: true },
+        pancardNumber: { type: String },
+        pancard: { type: String },
+        aadhaarNumber: { type: String },
+        aadhaarCardFront: { type: String },
+        aadhaarCardBack: { type: String },
+        drivingLicense: { type: String },
+        selfie: { type: String },
+        passportId: { type: String },
+        passport: { type: String },
+        status: { type: String, default: "pending" },
+        isOnline: { type: Boolean, default: false },
+        isVerified: { type: Boolean, default: false },
     },
     {
         timestamps: true,

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
 import Link from 'next/link';
@@ -35,11 +35,8 @@ interface DriverDetailsViewProps {
 export default function DriverDetailsView({ driverId }: DriverDetailsViewProps = {}) {
   const router = useRouter();
   const {
-    drivers,
     selectedDriverId,
     driverBookings,
-    driverSubscriptions,
-    setActiveTab,
     approveDriver,
     suspendDriver,
     activateDriver,
@@ -48,8 +45,102 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
   const [tripFilter, setTripFilter] = useState<'all' | 'completed' | 'active' | 'cancelled'>('all');
   const [selectedDocImage, setSelectedDocImage] = useState<{ title: string; url: string } | null>(null);
 
-  const targetId = driverId || selectedDriverId;
-  const driver = drivers.find((d) => d.id === targetId) || drivers[0];
+  const [dbDriver, setDbDriver] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDriver = async () => {
+      const idToFetch = driverId || selectedDriverId;
+      if (!idToFetch) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/admin/drivers/${idToFetch}`);
+        const json = await res.json();
+        if (json.success && json.data.driver) {
+          const d = json.data.driver;
+          
+          const safeUrl = (url: any, fallback: string) => {
+            if (!url || url === 'undefined' || url === 'null' || url === '') return fallback;
+            return url;
+          };
+
+          setDbDriver({
+            id: d._id || d.driverId,
+            name: `${d.firstName || ''} ${d.lastName || ''}`.trim(),
+            phone: d.phone || '',
+            email: d.email || '',
+            avatar: d.selfie || 'https://i.pravatar.cc/150',
+            status: d.status === 'pending' ? 'Pending Approval' :
+              d.status === 'verified' ? 'Approved' :
+                d.status === 'suspended' ? 'Suspended' :
+                  d.status === 'rejected' ? 'Rejected' : d.status,
+            dutyStatus: d.isOnline ? 'Online' : 'Offline',
+            availability: 'Available',
+            rating: 5.0,
+            completedBookings: 0,
+            totalBookings: 0,
+            cancelledBookings: 0,
+            earnings: { total: 0, pending: 0 },
+            currentLocation: d.address || 'Location unavailable',
+            subscription: {
+              status: 'None',
+              planName: 'No Plan',
+              startDate: '-',
+              expiryDate: '-',
+              daysRemaining: 0,
+              localEligible: false,
+              outstationEligible: false
+            },
+            verification: {
+              status: d.status === 'verified' ? 'Verified' : 'Pending',
+              licenseNumber: d.licenseNumber || 'Not provided',
+              licenseExpiry: 'Not provided',
+              licenseImage: safeUrl(d.drivingLicense, 'https://placehold.co/400x250/e2e8f0/475569?text=License+Image'),
+              idProofType: 'Aadhaar',
+              idProofNumber: d.aadhaarNumber || 'Not provided',
+              idProofImage: safeUrl(d.aadhaarCardFront, 'https://placehold.co/400x250/e2e8f0/475569?text=ID+Front'),
+              idProofImageBack: safeUrl(d.aadhaarCardBack, 'https://placehold.co/400x250/e2e8f0/475569?text=ID+Back'),
+              panNumber: d.pancardNumber || 'Not provided',
+              panImage: safeUrl(d.pancard, 'https://placehold.co/400x250/e2e8f0/475569?text=PAN+Card'),
+              passportNumber: d.passportId || 'Not provided',
+              passportImage: safeUrl(d.passport, 'https://placehold.co/400x250/e2e8f0/475569?text=Passport'),
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Error fetching driver details:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDriver();
+  }, [driverId, selectedDriverId]);
+
+  const driver = dbDriver;
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    try {
+      const dbStatus = newStatus === 'Approved' ? 'verified' : newStatus.toLowerCase();
+      const res = await fetch(`/api/admin/drivers/${driver.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: dbStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDbDriver((prev: any) => ({ ...prev, status: newStatus }));
+      }
+    } catch (e) {
+      console.error("Failed to update status", e);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-slate-500">Loading driver details...</div>;
+  }
 
   if (!driver) {
     return (
@@ -102,17 +193,25 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
           </span>
 
           {driver.status === 'Pending Approval' && (
-            <button
-              onClick={() => approveDriver(driver.id)}
-              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded shadow-xs flex items-center gap-1 transition-all"
-            >
-              <Check className="w-3.5 h-3.5" /> Approve Driver
-            </button>
+            <>
+              <button
+                onClick={() => handleStatusUpdate('Approved')}
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded shadow-xs flex items-center gap-1 transition-all"
+              >
+                <Check className="w-3.5 h-3.5" /> Approve Driver
+              </button>
+              <button
+                onClick={() => handleStatusUpdate('Rejected')}
+                className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded shadow-xs flex items-center gap-1 transition-all"
+              >
+                <Ban className="w-3.5 h-3.5" /> Reject Driver
+              </button>
+            </>
           )}
 
           {driver.status === 'Approved' && (
             <button
-              onClick={() => suspendDriver(driver.id)}
+              onClick={() => handleStatusUpdate('Suspended')}
               className="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded flex items-center gap-1 transition-all"
             >
               <Ban className="w-3.5 h-3.5" /> Suspend
@@ -121,7 +220,7 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
 
           {driver.status === 'Suspended' && (
             <button
-              onClick={() => activateDriver(driver.id)}
+              onClick={() => handleStatusUpdate('Approved')}
               className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded shadow-xs flex items-center gap-1 transition-all"
             >
               <Check className="w-3.5 h-3.5" /> Reactivate
@@ -208,8 +307,8 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
         </div>
       </div>
 
-      {/* HORIZONTAL GRID: DL Verification + ID Verification + Subscription Pass */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* HORIZONTAL GRID: Verification Docs & Subscription */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Card 1: Driving License Details */}
         <div className="card-white p-5 space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
@@ -294,25 +393,133 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
                 </div>
               </div>
 
-              {/* ID Proof Image Thumbnail */}
+              {/* ID Proof Image Thumbnails */}
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Govt ID (Front):</span>
+                  <div
+                    onClick={() =>
+                      setSelectedDocImage({
+                        title: `${driver.verification.idProofType} (Front) - ${driver.verification.idProofNumber}`,
+                        url: driver.verification.idProofImage,
+                      })
+                    }
+                    className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                  >
+                    <img
+                      src={driver.verification.idProofImage}
+                      alt="Govt ID Front"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                      <ZoomIn className="w-4 h-4" /> Preview
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Govt ID (Back):</span>
+                  <div
+                    onClick={() =>
+                      setSelectedDocImage({
+                        title: `${driver.verification.idProofType} (Back) - ${driver.verification.idProofNumber}`,
+                        url: driver.verification.idProofImageBack,
+                      })
+                    }
+                    className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                  >
+                    <img
+                      src={driver.verification.idProofImageBack}
+                      alt="Govt ID Back"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                      <ZoomIn className="w-4 h-4" /> Preview
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2.5: PAN Card Details */}
+        <div className="card-white p-5 space-y-4 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <FileText className="w-4.5 h-4.5 text-blue-600" /> PAN Card
+              </h3>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">PAN Number:</span>
+                  <span className="font-bold font-mono text-slate-900">{driver.verification.panNumber}</span>
+                </div>
+              </div>
+
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block">Govt ID Photo Document:</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase block">PAN Document:</span>
                 <div
                   onClick={() =>
                     setSelectedDocImage({
-                      title: `${driver.verification.idProofType} - ${driver.verification.idProofNumber}`,
-                      url: driver.verification.idProofImage,
+                      title: `PAN Card - ${driver.panNumber}`,
+                      url: driver.verification.panImage,
                     })
                   }
                   className="relative h-32 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
                 >
                   <img
-                    src={driver.verification.idProofImage}
-                    alt="Govt ID Proof"
+                    src={driver.verification.panImage}
+                    alt="PAN Card"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                    <ZoomIn className="w-4 h-4" /> Preview ID Document
+                    <ZoomIn className="w-4 h-4" /> Preview PAN Card
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2.6: Passport Details */}
+        <div className="card-white p-5 space-y-4 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <FileText className="w-4.5 h-4.5 text-indigo-600" /> Passport
+              </h3>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Passport Number:</span>
+                  <span className="font-bold font-mono text-slate-900">{driver.verification.passportNumber}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block">Passport Document:</span>
+                <div
+                  onClick={() =>
+                    setSelectedDocImage({
+                      title: `Passport - ${driver.verification.passportNumber}`,
+                      url: driver.verification.passportImage,
+                    })
+                  }
+                  className="relative h-32 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                >
+                  <img
+                    src={driver.verification.passportImage}
+                    alt="Passport"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                    <ZoomIn className="w-4 h-4" /> Preview Passport
                   </div>
                 </div>
               </div>

@@ -41,15 +41,77 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
   } = useRentalStore();
 
   const [activeTabFilter, setActiveTabFilter] = useState<string>('All');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [dbDrivers, setDbDrivers] = useState<any[]>([]);
 
-  // Trigger smooth loading state on filter or tab change
+  const handleUpdateDriverStatus = async (id: string, newStatus: string) => {
+    try {
+      const dbStatus = newStatus === 'Approved' ? 'verified' : newStatus.toLowerCase();
+      const res = await fetch(`/api/admin/drivers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: dbStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDbDrivers((prev) =>
+          prev.map((d) =>
+            d.id === id
+              ? {
+                  ...d,
+                  status: newStatus,
+                  verification: {
+                    ...d.verification,
+                    status: newStatus === 'Approved' ? 'Verified' : d.verification.status
+                  }
+                }
+              : d
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Failed to update driver status:', err);
+    }
+  };
+
+  // Fetch real drivers from API
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 250);
-    return () => clearTimeout(timer);
+    const fetchDrivers = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/admin/drivers');
+        const json = await res.json();
+        if (json.success && json.data.drivers) {
+          const mappedDrivers = json.data.drivers.map((d: any) => ({
+            id: d._id || d.driverId,
+            name: `${d.firstName || ''} ${d.lastName || ''}`.trim(),
+            phone: d.phone || '',
+            email: d.email || '',
+            avatar: d.selfie || 'https://i.pravatar.cc/150',
+            status: d.status === 'pending' ? 'Pending Approval' : 
+                    d.status === 'verified' ? 'Approved' : 
+                    d.status === 'suspended' ? 'Suspended' : 
+                    d.status === 'rejected' ? 'Rejected' : d.status,
+            dutyStatus: d.isOnline ? 'Online' : 'Offline',
+            availability: 'Available',
+            rating: 5.0,
+            completedBookings: 0,
+            earnings: { total: 0 },
+            subscription: { status: 'None', planName: '' },
+            verification: { 
+              status: d.status === 'verified' ? 'Verified' : 'Pending', 
+              licenseNumber: d.licenseNumber || '' 
+            }
+          }));
+          setDbDrivers(mappedDrivers);
+        }
+      } catch (error) {
+        console.error('Error fetching drivers:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDrivers();
   }, [filter, activeTab]);
 
   const handleTabFilterChange = (tab: string) => {
@@ -82,7 +144,7 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
     'Rejected',
   ];
 
-  const filteredDrivers = drivers.filter((d) => {
+  const filteredDrivers = dbDrivers.filter((d) => {
     switch (effectiveStatus) {
       case 'Pending Approval':
         return d.status === 'Pending Approval';
@@ -227,15 +289,21 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
           {d.status === 'Pending Approval' && (
             <>
               <button
-                onClick={() => approveDriver(d.id)}
-                className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded shadow-xs"
+                onClick={() => {
+                  approveDriver(d.id);
+                  handleUpdateDriverStatus(d.id, 'Approved');
+                }}
+                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded shadow-xs transition-colors cursor-pointer"
                 title="Approve Driver"
               >
                 Approve
               </button>
               <button
-                onClick={() => rejectDriver(d.id)}
-                className="px-2 py-1 bg-rose-600 text-white text-[10px] font-bold rounded shadow-xs"
+                onClick={() => {
+                  rejectDriver(d.id);
+                  handleUpdateDriverStatus(d.id, 'Rejected');
+                }}
+                className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded shadow-xs transition-colors cursor-pointer"
                 title="Reject Driver"
               >
                 Reject
@@ -245,8 +313,11 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
 
           {d.status === 'Approved' && (
             <button
-              onClick={() => suspendDriver(d.id)}
-              className="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded shadow-xs"
+              onClick={() => {
+                suspendDriver(d.id);
+                handleUpdateDriverStatus(d.id, 'Suspended');
+              }}
+              className="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded shadow-xs transition-colors cursor-pointer"
               title="Suspend Driver"
             >
               Suspend
@@ -255,8 +326,11 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
 
           {d.status === 'Suspended' && (
             <button
-              onClick={() => activateDriver(d.id)}
-              className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded shadow-xs"
+              onClick={() => {
+                activateDriver(d.id);
+                handleUpdateDriverStatus(d.id, 'Approved');
+              }}
+              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded shadow-xs transition-colors cursor-pointer"
               title="Re-activate Driver"
             >
               Activate
@@ -291,10 +365,10 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
   }
 
   // Dynamic Metrics depending on Screen Tab
-  const pendingDrivers = drivers.filter((d) => d.status === 'Pending Approval');
-  const approvedDrivers = drivers.filter((d) => d.status === 'Approved');
-  const onlineDrivers = drivers.filter((d) => d.dutyStatus === 'Online');
-  const suspendedDrivers = drivers.filter((d) => d.status === 'Suspended' || d.status === 'Rejected');
+  const pendingDrivers = dbDrivers.filter((d) => d.status === 'Pending Approval');
+  const approvedDrivers = dbDrivers.filter((d) => d.status === 'Approved');
+  const onlineDrivers = dbDrivers.filter((d) => d.dutyStatus === 'Online');
+  const suspendedDrivers = dbDrivers.filter((d) => d.status === 'Suspended' || d.status === 'Rejected');
 
   const renderTopStats = () => {
     if (filter === 'pending' || activeTab === 'drivers-pending') {
@@ -448,7 +522,7 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
                 <UserX className="w-4 h-4 text-amber-500" />
               </div>
               <h3 className="text-xl font-bold mt-1 text-amber-700">
-                {drivers.filter((d) => d.status === 'Suspended').length}
+                {dbDrivers.filter((d) => d.status === 'Suspended').length}
               </h3>
               <p className="text-[10px] text-amber-600 mt-0.5">Temporarily blocked</p>
             </div>
@@ -458,7 +532,7 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
                 <AlertCircle className="w-4 h-4 text-rose-500" />
               </div>
               <h3 className="text-xl font-bold mt-1 text-rose-700">
-                {drivers.filter((d) => d.status === 'Rejected').length}
+                {dbDrivers.filter((d) => d.status === 'Rejected').length}
               </h3>
               <p className="text-[10px] text-rose-600 mt-0.5">Failed DL verification</p>
             </div>
@@ -484,7 +558,7 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
               <span className="text-[10px] font-bold uppercase tracking-wider">Total Fleet</span>
               <Users className="w-4 h-4 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mt-1 text-slate-900">{drivers.length}</h3>
+            <h3 className="text-xl font-bold mt-1 text-slate-900">{dbDrivers.length}</h3>
             <p className="text-[10px] text-slate-500 mt-0.5">All registered drivers</p>
           </div>
 

@@ -1,12 +1,28 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import Driver from "@/models/driver";
-import jwt from "jsonwebtoken";
+import { uploadFile } from "@/lib/uploadFile";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { firstName, lastName, email, phone, address, licenseNumber } = body;
+    const formData = await request.formData();
+    
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+    const address = formData.get("address") as string;
+    const licenseNumber = formData.get("licenseNumber") as string;
+    const pancardNumber = formData.get("pancardNumber") as string;
+    const aadhaarNumber = formData.get("aadhaarNumber") as string;
+    const passportId = formData.get("passportId") as string;
+
+    const pancardFile = formData.get("pancard") as File | null;
+    const aadhaarCardFrontFile = formData.get("aadhaarCardFront") as File | null;
+    const aadhaarCardBackFile = formData.get("aadhaarCardBack") as File | null;
+    const drivingLicenseFile = formData.get("drivingLicense") as File | null;
+    const selfieFile = formData.get("selfie") as File | null;
+    const passportFile = formData.get("passport") as File | null;
 
     if (!firstName || !lastName || !email || !phone || !licenseNumber) {
       return NextResponse.json(
@@ -29,6 +45,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Handle file uploads
+    const pancard = await uploadFile(pancardFile);
+    const aadhaarCardFront = await uploadFile(aadhaarCardFrontFile);
+    const aadhaarCardBack = await uploadFile(aadhaarCardBackFile);
+    const drivingLicense = await uploadFile(drivingLicenseFile);
+    const selfie = await uploadFile(selfieFile);
+    const passport = await uploadFile(passportFile);
+
     // Generate unique driver ID
     const driverId = `DRV-${Date.now()}`;
 
@@ -40,22 +64,23 @@ export async function POST(request: Request) {
       phone,
       address,
       licenseNumber,
+      pancardNumber,
+      aadhaarNumber,
+      passportId,
       driverId,
-      status: true,
+      pancard,
+      aadhaarCardFront,
+      aadhaarCardBack,
+      drivingLicense,
+      selfie,
+      passport,
+      isVerified: false,
     });
-
-    // Generate token
-    const token = jwt.sign(
-      { id: newDriver._id, role: "driver" },
-      process.env.JWT_SECRET || "fallback",
-      { expiresIn: "7d" }
-    );
 
     return NextResponse.json(
       {
         success: true,
-        message: "Driver registered successfully",
-        token,
+        message: "Registration successful. Please wait for admin approval.",
         driver: {
           id: newDriver._id,
           firstName: newDriver.firstName,
@@ -63,6 +88,7 @@ export async function POST(request: Request) {
           phone: newDriver.phone,
           email: newDriver.email,
           driverId: newDriver.driverId,
+          isVerified: newDriver.isVerified ?? false,
         },
       },
       { status: 201 }

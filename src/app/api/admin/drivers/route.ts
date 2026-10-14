@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
         const status = url.searchParams.get("status");
         if (status !== null && status !== "") {
-            query.status = status === 'true';
+            query.status = status;
         }
 
         const drivers = await Driver.find(query)
@@ -41,8 +41,8 @@ export async function GET(req: NextRequest) {
 
         // Global counts for cards
         const totalDrivers = await Driver.countDocuments();
-        const activeDrivers = await Driver.countDocuments({ status: true });
-        const inactiveDrivers = await Driver.countDocuments({ status: false });
+        const activeDrivers = await Driver.countDocuments({ status: "verified" });
+        const inactiveDrivers = await Driver.countDocuments({ status: { $in: ["suspended", "rejected"] } });
 
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
@@ -51,19 +51,22 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            data: drivers,
-            counts: {
-                total: totalDrivers,
-                active: activeDrivers,
-                inactive: inactiveDrivers,
-                newThisMonth: newDriversThisMonth
+            data: {
+                drivers,
+                counts: {
+                    total: totalDrivers,
+                    active: activeDrivers,
+                    inactive: inactiveDrivers,
+                    newThisMonth: newDriversThisMonth
+                },
+                pagination: {
+                    total: filteredTotal,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(filteredTotal / limit)
+                }
             },
-            pagination: {
-                total: filteredTotal,
-                page,
-                limit,
-                totalPages: Math.ceil(filteredTotal / limit)
-            }
+
         }, { status: 200 });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -119,7 +122,7 @@ export async function POST(req: NextRequest) {
             phone,
             address,
             licenseNumber,
-            status: status !== undefined ? status : true,
+            status: status !== undefined ? status : "pending",
         });
 
         return NextResponse.json({ success: true, data: newDriver }, { status: 201 });

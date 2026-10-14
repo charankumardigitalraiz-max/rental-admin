@@ -145,3 +145,106 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function GET(request: Request) {
+  try {
+    const userPayload: any = verifyUser(request);
+
+    if (!userPayload) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized: Invalid or missing token" },
+        { status: 401 }
+      );
+    }
+
+    await connectToDatabase();
+
+    const { searchParams } = new URL(request.url);
+
+    // Pagination
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
+
+    // Build Query
+    // Aggregation pipelines do not auto-cast strings to ObjectIds, so we must manually cast it
+    const mongoose = require("mongoose");
+    const query: any = { 
+      userId: mongoose.Types.ObjectId.isValid(userPayload.id) 
+        ? new mongoose.Types.ObjectId(userPayload.id) 
+        : userPayload.id 
+    };
+    const andConditions: any[] = [];
+
+    // Status Filter (checks status OR bookingMode)
+    const status = searchParams.get("status");
+    if (status) {
+      andConditions.push({
+        $or: [{ status: status }, { bookingMode: status }]
+      });
+    }
+
+    // Date Range Filter (based on createdAt or scheduledStartTime)
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+
+    // Search (e.g., searching by serviceType, tripType, or booking ID if applicable)
+    const search = searchParams.get("search");
+    if (search) {
+      andConditions.push({
+        $or: [
+          { serviceType: { $regex: search, $options: "i" } },
+          { tripType: { $regex: search, $options: "i" } },
+        ]
+      });
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
+
+    // Aggregation pipeline for bookings
+    const pipeline: any[] = [
+      { $match: query },
+      { $sort: { createdAt: -1 } },
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [{ $skip: skip }, { $limit: limit }],
+        },
+      },
+    ];
+
+    const result = await DriverBooking.aggregate(pipeline);
+
+    const totalBookings = result[0]?.metadata[0]?.total || 0;
+    const bookings = result[0]?.data || [];
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          bookings,
+          pagination: {
+            total: totalBookings,
+            page,
+            limit,
+            totalPages: Math.ceil(totalBookings / limit),
+          },
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("Error fetching driver bookings:", error);
+    return NextResponse.json(
+      { success: false, message: error.message || "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

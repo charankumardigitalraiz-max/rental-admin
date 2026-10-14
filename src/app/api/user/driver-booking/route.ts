@@ -5,6 +5,7 @@ import DriverPricing from "@/models/driverPricing";
 import Customer from "@/models/customer";
 import { verifyUser } from "@/lib/auth";
 import { emitNewAvailableRide } from "@/lib/socket";
+import { dispatchNotification } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   try {
@@ -155,6 +156,19 @@ export async function POST(request: Request) {
       userDetails: customer || null,
       createdAt: newBooking.createdAt,
     });
+    // Trigger Firebase push notification to drivers and system
+    dispatchNotification({
+      title: `New Booking Request #${newBooking.bookingId || 'New'}`,
+      message: `${serviceType.toUpperCase()} trip requested for ${new Date(scheduledStartTime).toLocaleString()}. Tap to view details.`,
+      targetAudience: 'Drivers',
+      type: 'Booking',
+      data: {
+        bookingId: String(newBooking._id),
+        serviceType: String(serviceType),
+        tripType: String(tripType),
+      },
+      sentBy: 'System Booking Engine',
+    }).catch((err) => console.warn('[DriverBooking] Firebase push warning:', err?.message));
 
     return NextResponse.json(
       {
@@ -196,10 +210,10 @@ export async function GET(request: Request) {
     // Build Query
     // Aggregation pipelines do not auto-cast strings to ObjectIds, so we must manually cast it
     const mongoose = require("mongoose");
-    const query: any = { 
-      userId: mongoose.Types.ObjectId.isValid(userPayload.id) 
-        ? new mongoose.Types.ObjectId(userPayload.id) 
-        : userPayload.id 
+    const query: any = {
+      userId: mongoose.Types.ObjectId.isValid(userPayload.id)
+        ? new mongoose.Types.ObjectId(userPayload.id)
+        : userPayload.id
     };
     const andConditions: any[] = [];
 

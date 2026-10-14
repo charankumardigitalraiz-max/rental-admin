@@ -75,7 +75,7 @@ export default function AdminLoginPage() {
           </div>
 
           <div className="pt-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
               Administrator Sign In
             </h2>
             <p className="text-slate-500 text-xs font-normal mt-1 max-w-xs mx-auto">

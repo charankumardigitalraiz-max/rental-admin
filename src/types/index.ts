@@ -441,12 +441,24 @@ export interface ReviewRecord {
 
 export interface NotificationRecord {
   id: string;
-  targetAudience: 'Customers' | 'Drivers' | 'Valet Staff' | 'All';
-  type: 'Booking' | 'Subscription' | 'Payment' | 'Cancellation' | 'Assignment' | 'General';
+  _id?: string;
+  targetAudience: 'Customers' | 'Drivers' | 'Valet Staff' | 'All' | 'Custom';
+  type: 'Booking' | 'Subscription' | 'Payment' | 'Cancellation' | 'Assignment' | 'General' | 'Alert';
   title: string;
   message: string;
-  sentAt: string;
+  sentAt?: string;
   read?: boolean;
+  status?: 'sent' | 'failed' | 'scheduled';
+  successCount?: number;
+  failureCount?: number;
+  fcmMessageId?: string;
+  errorDetails?: string;
+  targetType?: 'topic' | 'token' | 'user' | 'broadcast';
+  topic?: string;
+  imageUrl?: string;
+  sentBy?: string;
+  createdAt?: string;
+  data?: Record<string, string>;
 }
 
 export interface AdminUser {

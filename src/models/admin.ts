@@ -8,6 +8,7 @@ export interface AdminInterface extends Document {
     role: string,
     password: string,
     status: boolean,
+    fcmToken?: string,
     createdAt: Date,
     updatedAt: Date
 }
@@ -22,6 +23,7 @@ const adminSchema: Schema = new Schema(
         role: String,
         password: String,
         status: Boolean,
+        fcmToken: String,
     }, {
     timestamps: true,
 }

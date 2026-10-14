@@ -114,6 +114,8 @@ export async function POST(req: NextRequest) {
         const driverId = `${prefix}${sequence.toString().padStart(4, "0")}`;
 
         // Create new driver
+        const isVerified = status && ["verified", "approved", "active"].includes(status.toLowerCase()) ? true : false;
+
         const newDriver = await Driver.create({
             firstName,
             lastName,
@@ -123,6 +125,7 @@ export async function POST(req: NextRequest) {
             address,
             licenseNumber,
             status: status !== undefined ? status : "pending",
+            isVerified,
         });
 
         return NextResponse.json({ success: true, data: newDriver }, { status: 201 });

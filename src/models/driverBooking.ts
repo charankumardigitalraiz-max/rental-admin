@@ -90,7 +90,7 @@ const driverBookingSchema: Schema = new Schema(
 
         userId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
+            ref: "Customer",
             required: true,
             index: true
         },
@@ -392,6 +392,10 @@ const driverBookingSchema: Schema = new Schema(
 
 driverBookingSchema.index({ "pickupLocation.location": "2dsphere" });
 
-const DriverBooking = mongoose.models.DriverBooking || mongoose.model<DriverBookingInterface>("DriverBooking", driverBookingSchema);
+if (mongoose.models && mongoose.models.DriverBooking) {
+    delete (mongoose.models as any).DriverBooking;
+}
+
+const DriverBooking = mongoose.model<DriverBookingInterface>("DriverBooking", driverBookingSchema);
 
 export default DriverBooking;

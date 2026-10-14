@@ -23,8 +23,14 @@ export function verifyAdmin(req: NextRequest | Request) {
     }
     if (!token) return null;
     try {
-        return jwt.verify(token, process.env.JWT_SECRET || "fallback_secret");
-    } catch (e) {
+        const secret = process.env.JWT_SECRET || "fallback_secret";
+        return jwt.verify(token, secret);
+    } catch (e: any) {
+        if (e.name === "TokenExpiredError") {
+            console.warn("verifyAdmin: Admin token has expired at", e.expiredAt);
+        } else {
+            console.error("verifyAdmin: Verification failed:", e.message);
+        }
         return null;
     }
 }
@@ -61,8 +67,44 @@ export function verifyUser(req: NextRequest | Request) {
     try {
         return jwt.verify(token, process.env.JWT_SECRET || "fallback");
     } catch (e) {
-        console.error("JWT verification failed:", e);
+        console.error("User JWT verification failed:", e);
         return null;
     }
 }
+
+export function verifyDriver(req: NextRequest | Request) {
+    const authHeader = req.headers.get("authorization");
+    let token = authHeader && authHeader.startsWith("Bearer ")
+        ? authHeader.split(" ")[1]
+        : null;
+
+    if (!token) {
+        if ('cookies' in req && typeof (req as any).cookies?.get === 'function') {
+            token = (req as NextRequest).cookies.get("driver_token")?.value
+                || (req as NextRequest).cookies.get("token")?.value
+                || null;
+        }
+
+        if (!token) {
+            const cookieHeader = req.headers.get("cookie");
+            if (cookieHeader) {
+                const match = cookieHeader.match(/(?:^|;\s*)(?:driver_token|token)=([^;]+)/);
+                if (match) {
+                    token = decodeURIComponent(match[1]);
+                }
+            }
+        }
+    }
+
+    if (!token) return null;
+
+    try {
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET || "fallback");
+        return decoded;
+    } catch (e) {
+        console.error("Driver JWT verification failed:", e);
+        return null;
+    }
+}
+
 

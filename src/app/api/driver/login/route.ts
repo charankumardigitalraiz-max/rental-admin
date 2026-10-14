@@ -27,7 +27,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!driver.isVerified) {
+    const isDriverVerified = driver.isVerified === true || ["verified", "approved", "active"].includes(driver.status);
+
+    if (!isDriverVerified) {
       return NextResponse.json(
         { success: false, message: "Your account is not verified yet. Please contact admin." },
         { status: 403 }

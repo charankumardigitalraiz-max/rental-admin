@@ -61,7 +61,7 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
         const json = await res.json();
         if (json.success && json.data.driver) {
           const d = json.data.driver;
-          
+
           const safeUrl = (url: any, fallback: string) => {
             if (!url || url === 'undefined' || url === 'null' || url === '') return fallback;
             return url;

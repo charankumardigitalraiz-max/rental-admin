@@ -28,4 +28,10 @@ const customerSchema: Schema = new Schema(
 );
 
 const Customer = mongoose.models.Customer || mongoose.model<CustomerInterface>("Customer", customerSchema);
+
+// Register User alias to prevent "Schema hasn't been registered for model User" errors
+if (!mongoose.models.User) {
+    mongoose.model("User", customerSchema);
+}
+
 export default Customer;

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         const token = jwt.sign(
             { id: admin._id, role: admin.role },
             process.env.JWT_SECRET || "fallback_secret",
-            { expiresIn: "1d" }
+            { expiresIn: "30d" }
         );
 
         const response = NextResponse.json({ success: true, token, data: admin }, { status: 200 });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
             path: "/",
-            maxAge: 60 * 60 * 24 // 1 day in seconds
+            maxAge: 60 * 60 * 24 * 30 // 30 days in seconds
         });
 
         return response;

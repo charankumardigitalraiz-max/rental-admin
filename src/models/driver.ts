@@ -48,8 +48,14 @@ const driverSchema: Schema = new Schema(
     },
     {
         timestamps: true,
+        strict: true,
     }
 );
 
-const Driver = mongoose.models.Driver || mongoose.model<DriverInterface>("Driver", driverSchema);
+// Delete old model from cache if exists so schema changes (isVerified) apply in hot reload
+if (mongoose.models && mongoose.models.Driver) {
+    delete (mongoose.models as any).Driver;
+}
+
+const Driver = mongoose.model<DriverInterface>("Driver", driverSchema);
 export default Driver;

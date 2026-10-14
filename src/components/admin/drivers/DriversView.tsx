@@ -58,13 +58,13 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
           prev.map((d) =>
             d.id === id
               ? {
-                  ...d,
-                  status: newStatus,
-                  verification: {
-                    ...d.verification,
-                    status: newStatus === 'Approved' ? 'Verified' : d.verification.status
-                  }
+                ...d,
+                status: newStatus,
+                verification: {
+                  ...d.verification,
+                  status: newStatus === 'Approved' ? 'Verified' : d.verification.status
                 }
+              }
               : d
           )
         );
@@ -88,19 +88,19 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
             phone: d.phone || '',
             email: d.email || '',
             avatar: d.selfie || 'https://i.pravatar.cc/150',
-            status: d.status === 'pending' ? 'Pending Approval' : 
-                    d.status === 'verified' ? 'Approved' : 
-                    d.status === 'suspended' ? 'Suspended' : 
-                    d.status === 'rejected' ? 'Rejected' : d.status,
+            status: d.status === 'pending' ? 'Pending Approval' :
+              d.status === 'verified' ? 'Approved' :
+                d.status === 'suspended' ? 'Suspended' :
+                  d.status === 'rejected' ? 'Rejected' : d.status,
             dutyStatus: d.isOnline ? 'Online' : 'Offline',
             availability: 'Available',
             rating: 5.0,
             completedBookings: 0,
             earnings: { total: 0 },
             subscription: { status: 'None', planName: '' },
-            verification: { 
-              status: d.status === 'verified' ? 'Verified' : 'Pending', 
-              licenseNumber: d.licenseNumber || '' 
+            verification: {
+              status: d.status === 'verified' ? 'Verified' : 'Pending',
+              licenseNumber: d.licenseNumber || ''
             }
           }));
           setDbDrivers(mappedDrivers);

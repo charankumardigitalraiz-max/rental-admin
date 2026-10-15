@@ -36,6 +36,19 @@ const OutstationTripTypeSchema = new Schema(
 );
 
 // -------------------------------------------------------------
+// Sub-schema for Valet Parking Structure
+// -------------------------------------------------------------
+const ValetParkingSchema = new Schema(
+  {
+    person: { type: Number, required: false },
+    hours: { type: Number, required: false },
+    customerprice: { type: Number, required: false },
+    driverprice: { type: Number, required: false },
+  },
+  { _id: false }
+);
+
+// -------------------------------------------------------------
 // Main Interface and Schema
 // -------------------------------------------------------------
 export interface DriverPricingInterface extends Document {
@@ -105,6 +118,12 @@ export interface DriverPricingInterface extends Document {
       };
     };
   };
+  valletparking?: {
+    person?: number;
+    hours?: number;
+    customerprice?: number;
+    driverprice?: number;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -119,6 +138,11 @@ const driverPricingSchema: Schema = new Schema(
     outstation: {
       one_way: { type: OutstationTripTypeSchema, required: false },
       round_trip: { type: OutstationTripTypeSchema, required: false },
+    },
+
+    valletparking: {
+      type: ValetParkingSchema,
+      required: false,
     },
   },
   {

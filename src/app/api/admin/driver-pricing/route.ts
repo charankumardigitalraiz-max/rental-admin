@@ -45,6 +45,12 @@ export async function GET(request: NextRequest) {
             nightHours: { hours: 12, timeRange: "18:00-06:00", customerPrice: 2400, driverPrice: 1950 },
           },
         },
+        valletparking: {
+          person: 1,
+          hours: 4,
+          customerprice: 600,
+          driverprice: 480,
+        },
       });
       pricingList = [defaultDoc];
     }

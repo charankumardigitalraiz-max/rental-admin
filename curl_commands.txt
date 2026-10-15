@@ -1,0 +1,175 @@
+================================================================================
+CAR RENTAL & VALET PARKING API - CURL COMMANDS REFERENCE
+================================================================================
+
+--------------------------------------------------------------------------------
+1. AUTHENTICATION
+--------------------------------------------------------------------------------
+
+# 1.1 Customer / User Login (to get USER_TOKEN)
+curl -X POST "http://localhost:3000/api/user/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "9876543210"
+  }'
+
+# 1.2 Customer Verify OTP (to get USER_TOKEN)
+curl -X POST "http://localhost:3000/api/user/verify-otp" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "9876543210",
+    "otp": "1234"
+  }'
+
+# 1.3 Admin Login (to get ADMIN_TOKEN)
+curl -X POST "http://localhost:3000/api/admin/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "your_password"
+  }'
+
+
+--------------------------------------------------------------------------------
+2. VALET PARKING BOOKING - USER SIDE APIS
+--------------------------------------------------------------------------------
+
+# 2.1 Create a Valet Parking Booking (Customer)
+# Contains: eventName, eventDate, location (Point coordinates & address), person, hours
+curl -X POST "http://localhost:3000/api/user/valet-booking" \
+  -H "Authorization: Bearer <USER_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "eventName": "Royal Grand Wedding Gala 2026",
+    "eventType": "wedding",
+    "eventDate": "2026-11-20T18:00:00.000Z",
+    "startTime": "18:00",
+    "endTime": "23:00",
+    "hours": 5,
+    "person": 4,
+    "venueName": "The Leela Palace",
+    "location": {
+      "type": "Point",
+      "coordinates": [77.6483, 12.9606],
+      "address": "The Leela Palace, 23 HAL Old Airport Rd, Kodihalli, Bengaluru, Karnataka 560008"
+    },
+    "address": "The Leela Palace, 23 HAL Old Airport Rd, Kodihalli, Bengaluru, Karnataka 560008",
+    "specialInstructions": "Guests will arrive in luxury sedans and SUVs. Please maintain uniform valet etiquette.",
+    "paymentMethod": "online"
+  }'
+
+# 2.2 Get Logged-in Customer'\''s Valet Bookings
+curl -X GET "http://localhost:3000/api/user/valet-booking?page=1&limit=10" \
+  -H "Authorization: Bearer <USER_TOKEN>"
+
+# 2.3 Filter Customer Valet Bookings by Status
+curl -X GET "http://localhost:3000/api/user/valet-booking?status=new_request" \
+  -H "Authorization: Bearer <USER_TOKEN>"
+
+
+--------------------------------------------------------------------------------
+3. VALET PARKING BOOKING - ADMIN SIDE APIS
+--------------------------------------------------------------------------------
+
+# 3.1 Get All Valet Bookings (Aggregation with Facets, Summary Cards, Lookups)
+curl -X GET "http://localhost:3000/api/admin/valet-bookings?page=1&limit=10" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# 3.2 Search & Filter Valet Bookings
+curl -X GET "http://localhost:3000/api/admin/valet-bookings?search=Leela&status=new_request&startDate=2026-11-01&endDate=2026-11-30" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# 3.3 Get Single Valet Booking by ID or Booking Reference
+curl -X GET "http://localhost:3000/api/admin/valet-bookings/VLT-123456" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# 3.4 Assign Valet Staff to Booking (Admin)
+curl -X PATCH "http://localhost:3000/api/admin/valet-bookings/VLT-123456" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "fully_assigned",
+    "assignedStaffIds": [
+      "651234567890abcdef123456",
+      "651234567890abcdef123457"
+    ],
+    "adminNotes": "Two senior valet captains assigned to venue"
+  }'
+
+# 3.5 Cancel Valet Booking (Admin)
+curl -X PATCH "http://localhost:3000/api/admin/valet-bookings/VLT-123456" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "cancelled",
+    "cancellationReason": "Customer rescheduled event"
+  }'
+
+
+--------------------------------------------------------------------------------
+4. DRIVER BOOKINGS - ADMIN SIDE APIS (AGGREGATION)
+--------------------------------------------------------------------------------
+
+# 4.1 Get All Driver Bookings
+curl -X GET "http://localhost:3000/api/admin/driver-bookings?page=1&limit=10" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# 4.2 Filter Driver Bookings by Status and Type
+curl -X GET "http://localhost:3000/api/admin/driver-bookings?status=pending&serviceType=local&search=BKG" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# 4.3 Get Single Driver Booking by ID or Reference
+curl -X GET "http://localhost:3000/api/admin/driver-bookings/BKG-123456" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# 4.4 Assign Driver to Booking (Admin)
+curl -X PATCH "http://localhost:3000/api/admin/driver-bookings/BKG-123456" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "driverId": "651234567890abcdef123456",
+    "adminNotes": "Assigned manually by dispatcher"
+  }'
+
+
+--------------------------------------------------------------------------------
+5. DRIVER & VALET PRICING CONFIGURATION
+--------------------------------------------------------------------------------
+
+# 5.1 Get Current Pricing (Includes Local, Outstation, and valletparking)
+curl -X GET "http://localhost:3000/api/admin/driver-pricing" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# 5.2 Update Valet Parking Pricing (person, hours, customerprice, driverprice)
+curl -X POST "http://localhost:3000/api/admin/driver-pricing" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "valletparking": {
+      "person": 1,
+      "hours": 4,
+      "customerprice": 650,
+      "driverprice": 500
+    }
+  }'
+
+
+--------------------------------------------------------------------------------
+6. FIREBASE PUSH NOTIFICATIONS
+--------------------------------------------------------------------------------
+
+# 6.1 Check Firebase Connection Status
+curl -X GET "http://localhost:3000/api/admin/notifications/status" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# 6.2 Send Push Notification Broadcast
+curl -X POST "http://localhost:3000/api/admin/notifications" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "New Valet Booking Available",
+    "message": "A high-profile wedding valet event is open for assignment at The Leela Palace.",
+    "targetAudience": "Drivers",
+    "type": "Booking"
+  }'
+================================================================================

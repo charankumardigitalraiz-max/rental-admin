@@ -184,14 +184,30 @@ export default function BookingModal({ isOpen, onClose, serviceType = 'local', i
             ) : (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Event Venue & Address</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Event Name</label>
                   <input
                     type="text"
                     required
-                    value={pickup}
+                    placeholder="e.g. Royal Wedding Gala / Tech Summit 2026"
+                    value={initialData?.eventName || pickup.includes('Wedding') || pickup.includes('Summit') ? pickup : (initialData?.eventName || 'Grand Royal Event')}
                     onChange={(e) => setPickup(e.target.value)}
                     className="w-full px-3 py-2.5 bg-black/40 border border-white/20 rounded-xl text-white text-xs focus:outline-none focus:border-[#c5a880]"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Event Location & Venue Address</label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 text-[#c5a880] absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. The Leela Palace, Old Airport Rd, Kodihalli, Bengaluru"
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 bg-black/40 border border-white/20 rounded-xl text-white text-xs focus:outline-none focus:border-[#c5a880]"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -207,15 +223,43 @@ export default function BookingModal({ isOpen, onClose, serviceType = 'local', i
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Valet Staff Count</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Event Start Time</label>
                     <input
-                      type="number"
-                      min="2"
-                      max="30"
-                      value={staffCount}
-                      onChange={(e) => setStaffCount(parseInt(e.target.value))}
+                      type="time"
+                      required
+                      value={bookingTime}
+                      onChange={(e) => setBookingTime(e.target.value)}
                       className="w-full px-3 py-2.5 bg-black/40 border border-white/20 rounded-xl text-white text-xs focus:outline-none focus:border-[#c5a880]"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Valet Staff Count (Persons)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={staffCount}
+                      onChange={(e) => setStaffCount(parseInt(e.target.value) || 1)}
+                      className="w-full px-3 py-2.5 bg-black/40 border border-white/20 rounded-xl text-white text-xs focus:outline-none focus:border-[#c5a880]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Duration (Hours)</label>
+                    <select
+                      value={durationHours}
+                      onChange={(e) => setDurationHours(parseInt(e.target.value))}
+                      className="w-full py-2.5 px-3 bg-black/40 border border-white/20 rounded-xl text-white text-xs focus:outline-none focus:border-[#c5a880]"
+                    >
+                      <option value="2">2 Hours</option>
+                      <option value="4">4 Hours</option>
+                      <option value="6">6 Hours</option>
+                      <option value="8">8 Hours</option>
+                      <option value="12">12 Hours</option>
+                    </select>
                   </div>
                 </div>
               </>

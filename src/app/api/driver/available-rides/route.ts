@@ -17,7 +17,9 @@ import mongoose from "mongoose";
  */
 export async function GET(request: Request) {
   try {
+
     const driverPayload: any = verifyDriver(request);
+
 
     if (!driverPayload) {
       return NextResponse.json(

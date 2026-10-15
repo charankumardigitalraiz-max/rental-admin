@@ -69,11 +69,11 @@ export async function POST(request: Request) {
     let driverFee = 0;
 
     if (serviceType === "local") {
-      const localPricing = pricing.local[tripType as "one_way" | "round_trip"];
-      if (!localPricing) {
+      const localPricing = pricing.local?.[tripType as "one_way" | "round_trip"];
+      if (!localPricing?.morningHours?.timeRange || !localPricing?.nightHours) {
         return NextResponse.json(
-          { success: false, message: "Invalid trip type for local service." },
-          { status: 400 }
+          { success: false, message: "Pricing configuration is incomplete for local service." },
+          { status: 500 }
         );
       }
 
@@ -84,11 +84,16 @@ export async function POST(request: Request) {
       const parseTime = (timeStr: string) => parseInt(timeStr.split(":")[0]);
       const [morningStart, morningEnd] = localPricing.morningHours.timeRange.split("-").map(parseTime);
 
-      let pricingTier;
-      if (hour >= morningStart && hour < morningEnd) {
-        pricingTier = localPricing.morningHours;
-      } else {
-        pricingTier = localPricing.nightHours;
+      const pricingTier =
+        hour >= morningStart && hour < morningEnd
+          ? localPricing.morningHours
+          : localPricing.nightHours;
+
+      if (!pricingTier || !pricingTier.hours || pricingTier.customerPrice === undefined || pricingTier.driverPrice === undefined) {
+        return NextResponse.json(
+          { success: false, message: "Selected pricing tier configuration is invalid." },
+          { status: 500 }
+        );
       }
 
       // Calculate based on requested duration vs package hours (simplistic assumption)
@@ -97,7 +102,7 @@ export async function POST(request: Request) {
       driverFee = pricingTier.driverPrice * durationRatio;
 
     } else if (serviceType === "outstation") {
-      const outstationPricing = pricing.outstation[tripType as "one_way" | "round_trip"];
+      const outstationPricing = pricing.outstation?.[tripType as "one_way" | "round_trip"];
       if (!outstationPricing) {
         return NextResponse.json(
           { success: false, message: "Invalid trip type for outstation service." },
@@ -105,9 +110,10 @@ export async function POST(request: Request) {
         );
       }
 
-      const daysRatio = body.durationDays ? Math.ceil(body.durationDays / outstationPricing.day) : 1;
-      baseAmount = outstationPricing.customerPrice * daysRatio;
-      driverFee = outstationPricing.driverPrice * daysRatio;
+      const packageDays = outstationPricing.day || 1;
+      const daysRatio = body.durationDays ? Math.ceil(body.durationDays / packageDays) : 1;
+      baseAmount = (outstationPricing.customerPrice ?? 0) * daysRatio;
+      driverFee = (outstationPricing.driverPrice ?? 0) * daysRatio;
     }
 
     body.pricingId = pricing._id;

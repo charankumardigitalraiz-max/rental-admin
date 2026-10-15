@@ -33,6 +33,12 @@ interface DataTableProps<T> {
   rowClassName?: (row: T) => string;
   /** When provided, DataTable skips client-side slicing and delegates pagination to the caller */
   serverPagination?: ServerPaginationProps;
+  /** Callback triggered when search input changes */
+  onSearchChange?: (term: string) => void;
+  /** Controlled search value from parent */
+  searchValue?: string;
+  /** Minimum duration in milliseconds the loader remains visible (defaults to 2000ms) */
+  minLoadingDurationMs?: number;
 }
 
 export default function DataTable<T>({
@@ -47,10 +53,36 @@ export default function DataTable<T>({
   headerActions,
   rowClassName,
   serverPagination,
+  onSearchChange,
+  searchValue,
+  minLoadingDurationMs = 1500,
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [internalSearchTerm, setInternalSearchTerm] = useState('');
   const [localLoading, setLocalLoading] = useState(false);
+
+  // Guarantee loader displays for at least 2 seconds (2000ms)
+  const [minLoaderActive, setMinLoaderActive] = useState(false);
+  const loadingStartTimeRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    if (externalLoading) {
+      loadingStartTimeRef.current = Date.now();
+      setMinLoaderActive(true);
+    } else if (loadingStartTimeRef.current !== null) {
+      const elapsed = Date.now() - loadingStartTimeRef.current;
+      const remainingTime = Math.max(0, minLoadingDurationMs - elapsed);
+
+      const timer = setTimeout(() => {
+        setMinLoaderActive(false);
+        loadingStartTimeRef.current = null;
+      }, remainingTime);
+
+      return () => clearTimeout(timer);
+    }
+  }, [externalLoading, minLoadingDurationMs]);
+
+  const searchTerm = searchValue !== undefined ? searchValue : internalSearchTerm;
 
   // Filter data by search query if keys are provided or search term exists
   const filteredData = React.useMemo(() => {
@@ -71,33 +103,42 @@ export default function DataTable<T>({
     });
   }, [data, searchTerm, searchFilterKeys]);
 
-  // Handle Search Input Change cleanly with temporary loader
+  // Handle Search Input Change cleanly with minimum 2-second loader
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const val = e.target.value;
+    if (searchValue === undefined) {
+      setInternalSearchTerm(val);
+    }
+    onSearchChange?.(val);
     setCurrentPage(1);
     setLocalLoading(true);
     const timer = setTimeout(() => {
       setLocalLoading(false);
-    }, 200);
+    }, minLoadingDurationMs);
     return () => clearTimeout(timer);
   };
 
-  // Trigger brief local loader when page changes
+  // Trigger minimum 2-second local loader when page changes
   const handlePageChange = (page: number) => {
     setLocalLoading(true);
     setCurrentPage(page);
     setTimeout(() => {
       setLocalLoading(false);
-    }, 250);
+    }, minLoadingDurationMs);
   };
 
   // Server-side pagination: use data as-is, delegate counts to caller
   const isServerPaginated = !!serverPagination;
-  const totalItems = isServerPaginated ? serverPagination!.totalItems : filteredData.length;
-  const totalPages = isServerPaginated ? serverPagination!.totalPages : Math.ceil(totalItems / pageSize) || 1;
-  const effectivePage = isServerPaginated ? serverPagination!.currentPage : currentPage;
+  const isSearching = !!searchTerm.trim();
+  const totalItems = isServerPaginated
+    ? (isSearching ? filteredData.length : serverPagination!.totalItems)
+    : filteredData.length;
+  const totalPages = isServerPaginated
+    ? (isSearching ? Math.ceil(totalItems / pageSize) || 1 : serverPagination!.totalPages)
+    : Math.ceil(totalItems / pageSize) || 1;
+  const effectivePage = isServerPaginated ? (isSearching ? 1 : serverPagination!.currentPage) : currentPage;
   const currentData = isServerPaginated
-    ? data  // server already returned the current page slice
+    ? (isSearching ? filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize) : data)
     : filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleEffectivePageChange = (page: number) => {
@@ -108,10 +149,10 @@ export default function DataTable<T>({
     }
   };
 
-  const showLoader = externalLoading || localLoading;
+  const showLoader = externalLoading || localLoading || minLoaderActive;
 
   return (
-    <div className="card-white relative overflow-hidden">
+    <div className="card-white overflow-hidden">
       {/* Table Header Bar with Search & Actions */}
       {(searchPlaceholder !== undefined || headerActions) && (
         <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-100 w-full bg-white">
@@ -132,21 +173,24 @@ export default function DataTable<T>({
         </div>
       )}
 
-      {/* Scoped Table Loader Overlay */}
-      {showLoader && <TableLoader message="Updating records..." />}
+      {/* Table Container - Scoped relative container for table rows only */}
+      <div className="relative overflow-x-auto w-full min-h-[160px]">
+        {/* Scoped Table Loader Overlay: ONLY covers rows below the header */}
+        {showLoader && (
+          <TableLoader message="Updating records..." className="top-[38px]" />
+        )}
 
-      <div className="overflow-x-auto w-full">
         <table className="w-full text-left text-xs">
-          <thead className="bg-[#023526] text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-[#012319]">
+          <thead className="bg-[#023526] text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-[#012319] relative z-20">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={`py-3 px-4 ${col.className || ''} ${col.align === 'right'
-                      ? 'text-right'
-                      : col.align === 'center'
-                        ? 'text-center'
-                        : 'text-left'
+                    ? 'text-right'
+                    : col.align === 'center'
+                      ? 'text-center'
+                      : 'text-left'
                     }`}
                 >
                   {col.header}
@@ -158,27 +202,32 @@ export default function DataTable<T>({
             {currentData.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="py-12 px-4 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-3 py-4 max-w-md mx-auto select-none">
-                    <div className="w-14 h-14 rounded-full bg-emerald-50/80 border border-emerald-200/60 flex items-center justify-center text-primary shadow-xs">
-                      <FolderSearch className="w-7 h-7 text-primary" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-bold text-slate-800 tracking-tight">
-                        No Matching Data Records Found
-                      </h4>
-                      <div className="text-xs text-slate-500 font-medium leading-relaxed">
-                        {emptyMessage}
+                  {!showLoader && (
+                    <div className="flex flex-col items-center justify-center space-y-3 py-4 max-w-md mx-auto select-none">
+                      <div className="w-14 h-14 rounded-full bg-emerald-50/80 border border-emerald-200/60 flex items-center justify-center text-primary shadow-xs">
+                        <FolderSearch className="w-7 h-7 text-primary" />
                       </div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-slate-800 tracking-tight">
+                          No Matching Data Records Found
+                        </h4>
+                        <div className="text-xs text-slate-500 font-medium leading-relaxed">
+                          {emptyMessage}
+                        </div>
+                      </div>
+                      {searchTerm.trim() && (
+                        <button
+                          onClick={() => {
+                            if (searchValue === undefined) setInternalSearchTerm('');
+                            onSearchChange?.('');
+                          }}
+                          className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors border border-slate-200 mt-1 shadow-2xs"
+                        >
+                          Clear Search Query
+                        </button>
+                      )}
                     </div>
-                    {searchTerm.trim() && (
-                      <button
-                        onClick={() => setSearchTerm('')}
-                        className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors border border-slate-200 mt-1 shadow-2xs"
-                      >
-                        Clear Search Query
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </td>
               </tr>
             ) : (
@@ -193,10 +242,10 @@ export default function DataTable<T>({
                       <td
                         key={col.key}
                         className={`py-3 px-4 ${col.className || ''} ${col.align === 'right'
-                            ? 'text-right'
-                            : col.align === 'center'
-                              ? 'text-center'
-                              : 'text-left'
+                          ? 'text-right'
+                          : col.align === 'center'
+                            ? 'text-center'
+                            : 'text-left'
                           }`}
                       >
                         {col.render

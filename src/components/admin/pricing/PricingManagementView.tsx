@@ -33,6 +33,7 @@ import {
   ShieldCheck,
   Sparkles,
   ChevronRight,
+  ChevronDown,
   ArrowRight,
   Calculator,
   Info,
@@ -197,9 +198,9 @@ function TimeWindowPicker({
           <Clock className="w-3.5 h-3.5 text-slate-400" />
           {label}
         </label>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+        {/* <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
           {windowDuration}h Active Window
-        </span>
+        </span> */}
       </div>
 
       {/* Dual Time Pickers: Start Time & End Time */}
@@ -403,6 +404,7 @@ interface ReadOnlyTierCardProps {
   badgeText: string;
   timeRange: string;
   durationHours: number;
+  chargeType?: string;
   customerPrice: number;
   driverPrice: number;
   isNight?: boolean;
@@ -415,6 +417,7 @@ function ReadOnlyTierCard({
   badgeText,
   timeRange,
   durationHours,
+  chargeType,
   customerPrice,
   driverPrice,
   isNight = false,
@@ -443,7 +446,7 @@ function ReadOnlyTierCard({
               {shiftTitle}
             </h4>
             <span className="text-[11px] text-slate-400 font-mono">
-              {timeRange} • {durationHours}h duration
+              {timeRange} • {chargeType || `Per ${durationHours} Hour${durationHours > 1 ? 's' : ''}`}
             </span>
           </div>
         </div>
@@ -1013,23 +1016,130 @@ function EditPricingModal({
                 }
               />
 
-              {/* Included Duration */}
-              {/* <HourSelector
-                label="Included Package Duration"
-                value={draftLocalTier.hours}
-                onChange={(val) => setDraftLocalTier({ ...draftLocalTier, hours: val })}
-                options={
-                  target.tripType === 'one_way'
-                    ? [2, 4, 6, 8, 10, 12]
-                    : [4, 8, 10, 12, 16, 24]
-                }
-              /> */}
+              {/* Charge Type Field (Billing Basis) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11.5px] font-semibold text-slate-700 tracking-tight flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    Charge Type (Billing Basis)
+                  </label>
+                  <span className="text-[10.5px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    {draftLocalTier.chargeType || `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`}
+                  </span>
+                </div>
+
+                <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all">
+                  <span className="px-2.5 py-2.5 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center shrink-0">
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                  </span>
+                  <select
+                    value={
+                      [
+                        'Per 1 Hour',
+                        'Per 2 Hours',
+                        'Per 3 Hours',
+                        'Per 4 Hours',
+                        'Per 5 Hours',
+                        'Per 6 Hours',
+                        'Per 8 Hours',
+                        'Per 10 Hours',
+                        'Per 12 Hours',
+                        'Per 24 Hours',
+                      ].includes(draftLocalTier.chargeType || '')
+                        ? draftLocalTier.chargeType
+                        : (draftLocalTier.chargeType ? 'custom' : `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`)
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'custom') {
+                        setDraftLocalTier({
+                          ...draftLocalTier,
+                          chargeType: draftLocalTier.chargeType && ![
+                            'Per 1 Hour',
+                            'Per 2 Hours',
+                            'Per 3 Hours',
+                            'Per 4 Hours',
+                            'Per 5 Hours',
+                            'Per 6 Hours',
+                            'Per 8 Hours',
+                            'Per 10 Hours',
+                            'Per 12 Hours',
+                            'Per 24 Hours',
+                          ].includes(draftLocalTier.chargeType)
+                            ? draftLocalTier.chargeType
+                            : `Per ${draftLocalTier.hours || 2} Hours`,
+                        });
+                      } else {
+                        const match = val.match(/\d+/);
+                        const hrs = match ? parseInt(match[0], 10) : draftLocalTier.hours;
+                        setDraftLocalTier({
+                          ...draftLocalTier,
+                          chargeType: val,
+                          hours: hrs,
+                        });
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-transparent focus:outline-none cursor-pointer appearance-none pr-8"
+                  >
+                    <option value="Per 1 Hour">Per 1 Hour</option>
+                    <option value="Per 2 Hours">Per 2 Hours</option>
+                    <option value="Per 3 Hours">Per 3 Hours</option>
+                    <option value="Per 4 Hours">Per 4 Hours</option>
+                    <option value="Per 5 Hours">Per 5 Hours</option>
+                    <option value="Per 6 Hours">Per 6 Hours</option>
+                    <option value="Per 8 Hours">Per 8 Hours</option>
+                    <option value="Per 10 Hours">Per 10 Hours</option>
+                    <option value="Per 12 Hours">Per 12 Hours</option>
+                    <option value="Per 24 Hours">Per 24 Hours (Full Day)</option>
+                    <option value="custom">Custom Billing Basis...</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-3 flex items-center text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+
+                {/* Direct text input when custom billing basis is selected */}
+                {draftLocalTier.chargeType && ![
+                  'Per 1 Hour',
+                  'Per 2 Hours',
+                  'Per 3 Hours',
+                  'Per 4 Hours',
+                  'Per 5 Hours',
+                  'Per 6 Hours',
+                  'Per 8 Hours',
+                  'Per 10 Hours',
+                  'Per 12 Hours',
+                  'Per 24 Hours',
+                ].includes(draftLocalTier.chargeType) && (
+                  <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all mt-1.5">
+                    <span className="px-2.5 py-2 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center shrink-0">
+                      <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="e.g. Per 2 Hours or Per Trip"
+                      value={draftLocalTier.chargeType}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const match = val.match(/\d+/);
+                        const hrs = match ? parseInt(match[0], 10) : draftLocalTier.hours;
+                        setDraftLocalTier({
+                          ...draftLocalTier,
+                          chargeType: val,
+                          hours: hrs,
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Fares */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                 <CurrencyField
                   label="Customer Fare"
-                  sublabel="Billed to customer"
+                  sublabel={`Billed ${draftLocalTier.chargeType || `per ${draftLocalTier.hours} hr${draftLocalTier.hours > 1 ? 's' : ''}`}`}
                   value={draftLocalTier.customerPrice}
                   onChange={(val) =>
                     setDraftLocalTier({ ...draftLocalTier, customerPrice: val })
@@ -1040,7 +1150,7 @@ function EditPricingModal({
 
                 <CurrencyField
                   label="Driver Payout"
-                  sublabel="Paid to driver"
+                  sublabel={`Paid ${draftLocalTier.chargeType || `per ${draftLocalTier.hours} hr${draftLocalTier.hours > 1 ? 's' : ''}`}`}
                   value={draftLocalTier.driverPrice}
                   onChange={(val) =>
                     setDraftLocalTier({ ...draftLocalTier, driverPrice: val })
@@ -1054,6 +1164,7 @@ function EditPricingModal({
               <MarginSplitBar
                 customerPrice={draftLocalTier.customerPrice}
                 driverPrice={draftLocalTier.driverPrice}
+                unitLabel={draftLocalTier.chargeType || `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`}
               />
             </div>
           )}
@@ -1594,6 +1705,7 @@ export default function PricingManagementView() {
                 badgeText="Day Tariff"
                 timeRange={localTiers.one_way.morningHours.timeRange}
                 durationHours={localTiers.one_way.morningHours.hours}
+                chargeType={localTiers.one_way.morningHours.chargeType}
                 customerPrice={localTiers.one_way.morningHours.customerPrice}
                 driverPrice={localTiers.one_way.morningHours.driverPrice}
                 isNight={false}
@@ -1616,6 +1728,7 @@ export default function PricingManagementView() {
                 badgeText="Night Tariff"
                 timeRange={localTiers.one_way.nightHours.timeRange}
                 durationHours={localTiers.one_way.nightHours.hours}
+                chargeType={localTiers.one_way.nightHours.chargeType}
                 customerPrice={localTiers.one_way.nightHours.customerPrice}
                 driverPrice={localTiers.one_way.nightHours.driverPrice}
                 isNight={true}
@@ -1657,6 +1770,7 @@ export default function PricingManagementView() {
                 badgeText="Day Return"
                 timeRange={localTiers.round_trip.morningHours.timeRange}
                 durationHours={localTiers.round_trip.morningHours.hours}
+                chargeType={localTiers.round_trip.morningHours.chargeType}
                 customerPrice={localTiers.round_trip.morningHours.customerPrice}
                 driverPrice={localTiers.round_trip.morningHours.driverPrice}
                 isNight={false}
@@ -1679,6 +1793,7 @@ export default function PricingManagementView() {
                 badgeText="Night Return"
                 timeRange={localTiers.round_trip.nightHours.timeRange}
                 durationHours={localTiers.round_trip.nightHours.hours}
+                chargeType={localTiers.round_trip.nightHours.chargeType}
                 customerPrice={localTiers.round_trip.nightHours.customerPrice}
                 driverPrice={localTiers.round_trip.nightHours.driverPrice}
                 isNight={true}

@@ -4,11 +4,13 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
+import { useValetBookingStore } from '@/store/useValetBookingStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import {
   LayoutDashboard,
   Car,
   CalendarCheck,
+  Building2,
   Users,
   CreditCard,
   Crown,
@@ -46,6 +48,7 @@ export default function Sidebar() {
     supportTickets,
     valetStaff,
   } = useRentalStore();
+  const { valetBookings, counts: valetCounts } = useValetBookingStore();
 
   const {
     isCollapsed,
@@ -72,6 +75,16 @@ export default function Sidebar() {
   const pendingDriverBookings = driverBookings.filter(
     (b) => b.status === 'Searching Driver' || b.status === 'Pending'
   ).length;
+  const pendingValetBookings =
+    valetCounts != null
+      ? (valetCounts.newRequests ?? 0) + (valetCounts.pendingAssignment ?? 0)
+      : (valetBookings || []).filter(
+          (b) =>
+            b.status === 'New Request' ||
+            b.status === 'Pending Assignment' ||
+            b.status === 'Partially Assigned' ||
+            (b.status as string) === 'Pending'
+        ).length;
   const pendingDriversCount = drivers.filter((d) => d.status === 'Pending Approval').length;
   const approvedDriversCount = drivers.filter((d) => d.status === 'Approved').length;
   const onlineDriversCount = drivers.filter((d) => d.dutyStatus === 'Online').length;
@@ -141,6 +154,12 @@ export default function Sidebar() {
     {
       groupTitle: 'VALET EVENT SERVICE',
       items: [
+        {
+          href: '/admin/valet-bookings',
+          label: 'Valet Bookings',
+          icon: Building2,
+          badge: pendingValetBookings > 0 ? pendingValetBookings : undefined,
+        },
         { href: '/admin/valet-staff', label: 'Valet Staff Roster', icon: Users, badge: valetStaff?.length },
       ],
     },

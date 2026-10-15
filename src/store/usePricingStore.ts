@@ -9,6 +9,7 @@ export interface TimePricingTier {
   timeRange: string;
   customerPrice: number;
   driverPrice: number;
+  chargeType?: string;
 }
 
 export interface LocalPricingTiers {

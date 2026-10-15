@@ -290,7 +290,20 @@ export interface ValetBooking {
   requiredStaffCount: number;
   assignedStaffIds: string[];
   assignedStaffNames: string[];
+  assignedStaffDetails?: {
+    id: string;
+    name: string;
+    phone?: string;
+    driverId?: string;
+    avatar?: string;
+    rating?: number;
+  }[];
   status: ValetBookingStatus;
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded' | string;
+  paymentMethod?: string;
+  specialInstructions?: string;
+  adminNotes?: string;
+  cancellationReason?: string;
   pricing: {
     pricePerStaff: number;
     totalBaseAmount: number;
@@ -320,6 +333,19 @@ export interface ValetStaff {
   location: string;
   assignedEventsCount: number;
   status: 'Available' | 'Assigned' | 'On Duty' | 'Offline' | 'Suspended';
+  idProofType?: 'Aadhaar Card' | 'PAN Card' | 'Voter ID' | 'Driving License' | 'Passport' | string;
+  idProofNumber?: string;
+  idProofImage?: string;
+  idProofFrontImage?: string;
+  idProofBackImage?: string;
+  aadhaarNumber?: string;
+  aadhaarCardImage?: string;
+  aadhaarCardFront?: string;
+  aadhaarCardBack?: string;
+  drivingLicenseNumber?: string;
+  emergencyContact?: string;
+  bloodGroup?: string;
+  address?: string;
   currentAssignment?: {
     bookingId: string;
     eventName: string;

@@ -27,13 +27,32 @@ export async function GET(req: NextRequest) {
     const matchStage: any = {};
 
     const status = url.searchParams.get("status");
-    if (status && status !== "All") {
-      matchStage.status = status;
+    if (status && status !== "All" && status !== "all") {
+      const s = status.toLowerCase();
+      if (s === "pending") {
+        matchStage.status = {
+          $in: ["new_request", "pending_assignment", "partially_assigned", "Pending", "pending"],
+        };
+      } else if (s === "in progress" || s === "in_progress") {
+        matchStage.status = {
+          $in: ["in_progress", "fully_assigned", "In Progress"],
+        };
+      } else if (s === "completed") {
+        matchStage.status = {
+          $in: ["completed", "Completed"],
+        };
+      } else if (s === "cancelled") {
+        matchStage.status = {
+          $in: ["cancelled", "Cancelled"],
+        };
+      } else {
+        matchStage.status = status;
+      }
     }
 
     const paymentStatus = url.searchParams.get("paymentStatus");
-    if (paymentStatus && paymentStatus !== "All") {
-      matchStage.paymentStatus = paymentStatus;
+    if (paymentStatus && paymentStatus !== "All" && paymentStatus !== "all") {
+      matchStage.paymentStatus = paymentStatus.toLowerCase();
     }
 
     const startDate = url.searchParams.get("startDate");
@@ -50,12 +69,37 @@ export async function GET(req: NextRequest) {
 
     const search = url.searchParams.get("search");
     if (search) {
-      matchStage.$or = [
+      const orClauses: any[] = [
         { bookingId: { $regex: search, $options: "i" } },
         { eventName: { $regex: search, $options: "i" } },
         { venueName: { $regex: search, $options: "i" } },
         { "location.address": { $regex: search, $options: "i" } },
+        { address: { $regex: search, $options: "i" } },
+        { eventType: { $regex: search, $options: "i" } },
       ];
+
+      try {
+        const CustomerModel = mongoose.models.Customer || mongoose.model("Customer");
+        const matchingCustomers = await CustomerModel.find({
+          $or: [
+            { firstName: { $regex: search, $options: "i" } },
+            { lastName: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { custId: { $regex: search, $options: "i" } },
+          ],
+        })
+          .select("_id")
+          .lean();
+
+        if (matchingCustomers.length > 0) {
+          orClauses.push({ userId: { $in: matchingCustomers.map((c: any) => c._id) } });
+        }
+      } catch (e) {
+        // Fallback if Customer lookup fails
+      }
+
+      matchStage.$or = orClauses;
     }
 
     const [result] = await ValetBooking.aggregate([

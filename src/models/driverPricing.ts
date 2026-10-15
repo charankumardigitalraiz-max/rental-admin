@@ -9,6 +9,7 @@ const LocalTimePricingSchema = new Schema(
     timeRange: { type: String, required: false }, // e.g., "06:00-18:00"
     customerPrice: { type: Number, required: false },
     driverPrice: { type: Number, required: false },
+    chargeType: { type: String, required: false },
   },
   { _id: false }
 );
@@ -59,12 +60,14 @@ export interface DriverPricingInterface extends Document {
         timeRange?: string;
         customerPrice?: number;
         driverPrice?: number;
+        chargeType?: string;
       };
       nightHours?: {
         hours?: number;
         timeRange?: string;
         customerPrice?: number;
         driverPrice?: number;
+        chargeType?: string;
       };
     };
     round_trip?: {
@@ -73,12 +76,14 @@ export interface DriverPricingInterface extends Document {
         timeRange?: string;
         customerPrice?: number;
         driverPrice?: number;
+        chargeType?: string;
       };
       nightHours?: {
         hours?: number;
         timeRange?: string;
         customerPrice?: number;
         driverPrice?: number;
+        chargeType?: string;
       };
     };
   };

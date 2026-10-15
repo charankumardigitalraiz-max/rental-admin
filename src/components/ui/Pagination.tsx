@@ -48,11 +48,10 @@ export default function Pagination({
             <button
               key={pageNum}
               onClick={() => onPageChange(pageNum)}
-              className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
-                isActive
+              className={`w-7 h-7 rounded-lg text-xs cursor-pointer font-semibold transition-all ${isActive
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-slate-600 hover:bg-slate-100 border border-slate-200'
-              }`}
+                }`}
             >
               {pageNum}
             </button>

@@ -135,6 +135,7 @@ interface DriverAppStoreState {
   updateValetBookingStatus: (bookingId: string, status: ValetBooking['status']) => void;
 
   updateValetStaffStatus: (staffId: string, status: ValetStaff['status']) => void;
+  addValetStaff: (staff: Omit<ValetStaff, 'id'>) => ValetStaff;
   toggleCustomerStatus: (customerId: string) => void;
 
   updateLocalPricing: (config: LocalPricingConfig) => void;
@@ -437,6 +438,17 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
     set((state) => ({
       valetStaff: state.valetStaff.map((s) => (s.id === staffId ? { ...s, status } : s)),
     })),
+
+  addValetStaff: (staffData) => {
+    const newStaff: ValetStaff = {
+      ...staffData,
+      id: `vst-${Date.now()}`,
+    };
+    set((state) => ({
+      valetStaff: [newStaff, ...state.valetStaff],
+    }));
+    return newStaff;
+  },
 
   toggleCustomerStatus: (customerId) =>
     set((state) => ({

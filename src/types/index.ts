@@ -213,14 +213,21 @@ export interface Driver {
 
 export interface SubscriptionPlan {
   id: string;
+  _id?: string;
   name: string;
+  planName?: string;
+  description?: string;
   price: number;
   durationDays: number;
+  billingCycle?: string;
   localEligible: boolean;
   outstationEligible: boolean;
   maxRequestsPerDay: number;
   features: string[];
   status: 'Active' | 'Inactive';
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DriverSubscription {

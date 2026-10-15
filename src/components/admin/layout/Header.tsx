@@ -18,7 +18,10 @@ import {
   User,
   Settings,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
+import { useSidebarStore } from '@/store/useSidebarStore';
 
 export default function Header() {
   const pathname = usePathname();
@@ -223,14 +226,31 @@ export default function Header() {
 
   const currentHeaderInfo = getHeaderInfo();
 
+  const { isCollapsed, toggleSidebar } = useSidebarStore();
+
   return (
-    <header className="h-16 bg-white border-b border-[#e7dbc5]/80 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
-      {/* Page Title & Subtitle */}
-      <div>
-        <h2 className="text-base font-bold text-[#023526] tracking-tight flex items-center gap-2">
-          {currentHeaderInfo.title}
-        </h2>
-        <p className="text-[11px] text-slate-500 hidden sm:block">{currentHeaderInfo.subtitle}</p>
+    <header className="h-16 bg-white border-b border-[#e7dbc5]/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+      {/* Page Title & Subtitle + Sidebar Toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={toggleSidebar}
+          className="p-1.5 text-slate-600 hover:text-[#023526] hover:bg-emerald-50/70 rounded-lg transition-colors border border-transparent hover:border-[#e7dbc5] focus:outline-none cursor-pointer"
+          title={isCollapsed ? 'Open / Expand Sidebar' : 'Close / Collapse Sidebar'}
+          aria-label="Toggle Sidebar"
+        >
+          {isCollapsed ? (
+            <PanelLeftOpen className="w-5 h-5 text-[#023526]" />
+          ) : (
+            <PanelLeftClose className="w-5 h-5 text-slate-600 hover:text-[#023526]" />
+          )}
+        </button>
+
+        <div>
+          <h2 className="text-base font-bold text-[#023526] tracking-tight flex items-center gap-2">
+            {currentHeaderInfo.title}
+          </h2>
+          <p className="text-[11px] text-slate-500 hidden sm:block">{currentHeaderInfo.subtitle}</p>
+        </div>
       </div>
 
       {/* Right Controls */}

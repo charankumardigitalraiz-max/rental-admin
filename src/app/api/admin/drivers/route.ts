@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
         const limit = parseInt(url.searchParams.get("limit") || "10");
         const skip = (page - 1) * limit;
 
-        const query: any = {};
+        const matchQuery: any = {};
 
         const search = url.searchParams.get("search");
         if (search) {
-            query.$or = [
+            matchQuery.$or = [
                 { firstName: { $regex: search, $options: "i" } },
                 { lastName: { $regex: search, $options: "i" } },
                 { email: { $regex: search, $options: "i" } },
@@ -29,20 +29,80 @@ export async function GET(req: NextRequest) {
 
         const status = url.searchParams.get("status");
         if (status !== null && status !== "") {
-            query.status = status;
+            matchQuery.status = status;
         }
 
-        const drivers = await Driver.find(query)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        const pipeline: any[] = [
+            { $match: matchQuery },
+            { $sort: { createdAt: -1 } },
+            {
+                $facet: {
+                    metadata: [{ $count: "total" }],
+                    data: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $lookup: {
+                                from: "driverbookings",
+                                let: { dId: "$_id" },
+                                pipeline: [
+                                    {
+                                        $match: {
+                                            $expr: {
+                                                $and: [
+                                                    { $eq: ["$driverId", "$$dId"] },
+                                                    { $eq: ["$bookingStatus", "trip_completed"] }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    {
+                                        $group: {
+                                            _id: null,
+                                            completedTrips: { $sum: 1 },
+                                            totalEarnings: {
+                                                $sum: {
+                                                    $add: [
+                                                        { $ifNull: ["$driverFee", 0] },
+                                                        { $ifNull: ["$driverAllowance", 0] }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                ],
+                                as: "tripStats"
+                            }
+                        },
+                        {
+                            $addFields: {
+                                completedTrips: {
+                                    $ifNull: [{ $arrayElemAt: ["$tripStats.completedTrips", 0] }, 0]
+                                },
+                                totalEarnings: {
+                                    $ifNull: [{ $arrayElemAt: ["$tripStats.totalEarnings", 0] }, 0]
+                                }
+                            }
+                        },
+                        {
+                            $project: {
+                                tripStats: 0
+                            }
+                        }
+                    ]
+                }
+            }
+        ];
 
-        const filteredTotal = await Driver.countDocuments(query);
+        const [aggregateResult, totalDrivers, activeDrivers, inactiveDrivers] = await Promise.all([
+            Driver.aggregate(pipeline),
+            Driver.countDocuments(),
+            Driver.countDocuments({ status: "verified" }),
+            Driver.countDocuments({ status: { $in: ["suspended", "rejected"] } })
+        ]);
 
-        // Global counts for cards
-        const totalDrivers = await Driver.countDocuments();
-        const activeDrivers = await Driver.countDocuments({ status: "verified" });
-        const inactiveDrivers = await Driver.countDocuments({ status: { $in: ["suspended", "rejected"] } });
+        const drivers = aggregateResult[0]?.data || [];
+        const filteredTotal = aggregateResult[0]?.metadata[0]?.total || 0;
 
         const startOfMonth = new Date();
         startOfMonth.setDate(1);

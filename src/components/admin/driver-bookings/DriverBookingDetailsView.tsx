@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
+import { useDriverBookingStore } from '@/store/useDriverBookingStore';
 import {
   ArrowLeft,
   CalendarCheck,
@@ -18,6 +19,7 @@ import {
   Mail,
   Receipt,
   RotateCcw,
+  Loader2,
 } from 'lucide-react';
 
 interface DriverBookingDetailsViewProps {
@@ -27,24 +29,52 @@ interface DriverBookingDetailsViewProps {
 export default function DriverBookingDetailsView({ bookingId }: DriverBookingDetailsViewProps = {}) {
   const router = useRouter();
   const {
-    driverBookings,
+    driverBookings: rentalBookings,
     selectedDriverBookingId,
     setActiveTab,
     setSelectedDriverId,
     setSelectedCustomerId,
   } = useRentalStore();
 
+  const {
+    driverBookings,
+    selectedBooking,
+    isLoading,
+    fetchDriverBookingById,
+  } = useDriverBookingStore();
+
   const targetId = bookingId || selectedDriverBookingId;
+
+  useEffect(() => {
+    if (targetId) {
+      fetchDriverBookingById(targetId);
+    }
+  }, [targetId, fetchDriverBookingById]);
+
   const booking =
-    driverBookings.find((b) => b.id === targetId) || driverBookings[0];
+    (selectedBooking && (selectedBooking.id === targetId || selectedBooking.bookingNumber === targetId || selectedBooking._id === targetId) ? selectedBooking : null) ||
+    driverBookings.find((b) => b.id === targetId || b.bookingNumber === targetId || b._id === targetId) ||
+    rentalBookings.find((b) => b.id === targetId || b.bookingNumber === targetId || b._id === targetId) ||
+    selectedBooking ||
+    driverBookings[0] ||
+    rentalBookings[0];
 
   if (!booking) {
     return (
-      <div className="card-white p-8 text-center text-slate-500">
-        Booking record not found.{' '}
-        <button onClick={() => router.back()} className="text-primary font-bold underline">
-          Back
-        </button>
+      <div className="card-white p-8 text-center text-slate-500 max-w-xl mx-auto my-12 space-y-3">
+        {isLoading ? (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <p className="text-xs font-semibold text-slate-600">Loading booking details from database...</p>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm font-semibold">Booking record not found.</p>
+            <button onClick={() => router.back()} className="text-primary font-bold underline text-xs">
+              Back to Bookings
+            </button>
+          </>
+        )}
       </div>
     );
   }

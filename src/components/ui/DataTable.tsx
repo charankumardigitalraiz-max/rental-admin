@@ -13,6 +13,13 @@ export interface Column<T> {
   className?: string;
 }
 
+export interface ServerPaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+}
+
 interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
@@ -24,6 +31,8 @@ interface DataTableProps<T> {
   searchFilterKeys?: (keyof T)[];
   headerActions?: React.ReactNode;
   rowClassName?: (row: T) => string;
+  /** When provided, DataTable skips client-side slicing and delegates pagination to the caller */
+  serverPagination?: ServerPaginationProps;
 }
 
 export default function DataTable<T>({
@@ -37,6 +46,7 @@ export default function DataTable<T>({
   searchFilterKeys,
   headerActions,
   rowClassName,
+  serverPagination,
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,9 +91,22 @@ export default function DataTable<T>({
     }, 250);
   };
 
-  const totalItems = filteredData.length;
-  const totalPages = Math.ceil(totalItems / pageSize) || 1;
-  const currentData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  // Server-side pagination: use data as-is, delegate counts to caller
+  const isServerPaginated = !!serverPagination;
+  const totalItems = isServerPaginated ? serverPagination!.totalItems : filteredData.length;
+  const totalPages = isServerPaginated ? serverPagination!.totalPages : Math.ceil(totalItems / pageSize) || 1;
+  const effectivePage = isServerPaginated ? serverPagination!.currentPage : currentPage;
+  const currentData = isServerPaginated
+    ? data  // server already returned the current page slice
+    : filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const handleEffectivePageChange = (page: number) => {
+    if (isServerPaginated) {
+      serverPagination!.onPageChange(page);
+    } else {
+      handlePageChange(page);
+    }
+  };
 
   const showLoader = externalLoading || localLoading;
 
@@ -194,11 +217,11 @@ export default function DataTable<T>({
       {totalItems > 0 && (
         <div className="px-4 py-3 border-t border-slate-100 bg-white">
           <Pagination
-            currentPage={currentPage}
+            currentPage={effectivePage}
             totalPages={totalPages}
             totalItems={totalItems}
-            itemsPerPage={pageSize}
-            onPageChange={handlePageChange}
+            itemsPerPage={isServerPaginated ? (data.length || pageSize) : pageSize}
+            onPageChange={handleEffectivePageChange}
           />
         </div>
       )}

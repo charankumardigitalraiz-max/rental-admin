@@ -169,6 +169,12 @@ export interface DriverBooking {
     started?: string;
     completed?: string;
   };
+  _id?: string;
+  bookingId?: string;
+  rawBookingStatus?: string;
+  cancellationReason?: string;
+  adminNotes?: string;
+  userNotes?: string;
 }
 
 export interface Driver {

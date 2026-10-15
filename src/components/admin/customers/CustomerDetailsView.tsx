@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useRentalStore } from '@/store/useRentalStore';
 import Link from 'next/link';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { DriverBooking, Transaction, RefundRecord } from '@/types';
@@ -17,9 +16,13 @@ import {
   Ban,
   Check,
   Eye,
-  Car
+  Car,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { useCustomerStore } from '@/store/useCustomerStore';
+import { useToast } from '@/context/ToastContext';
+import Modal from '@/components/ui/Modal';
 
 interface CustomerDetailsViewProps {
   customerId?: string;
@@ -27,25 +30,20 @@ interface CustomerDetailsViewProps {
 
 export default function CustomerDetailsView({ customerId }: CustomerDetailsViewProps = {}) {
   const router = useRouter();
+  const { toast } = useToast();
   const {
     customers: storeCustomers,
     selectedCustomerDetails,
+    isLoading,
     fetchCustomersById,
     toggleCustomerStatus,
   } = useCustomerStore();
 
-  const {
-    customers: rentalCustomers,
-    selectedCustomerId,
-    driverBookings,
-    transactions,
-    refunds,
-  } = useRentalStore();
-
   const [tripFilter, setTripFilter] = useState<'all' | 'completed' | 'in-progress' | 'cancelled'>('all');
-  const [financialTab, setFinancialTab] = useState<'all' | 'transactions' | 'refunds'>('all');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const targetId = customerId || selectedCustomerId;
+  const targetId = customerId;
 
   useEffect(() => {
     if (targetId) {
@@ -55,10 +53,53 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
 
   const customer =
     selectedCustomerDetails?.customer ||
-    storeCustomers.find((c) => c.id === targetId || c.mongoId === targetId || c.custId === targetId) ||
-    rentalCustomers.find((c) => c.id === targetId) ||
-    storeCustomers[0] ||
-    rentalCustomers[0];
+    storeCustomers.find((c) => c.id === targetId || c.mongoId === targetId || c.custId === targetId);
+
+  // Delete handler
+  const handleDelete = async () => {
+    if (!customer) return;
+    setIsDeleting(true);
+    try {
+      const token =
+        localStorage.getItem('token') ||
+        localStorage.getItem('admin_token') ||
+        document.cookie.split('; ').find((r) => r.startsWith('admin_token=') || r.startsWith('token='))?.split('=')[1];
+      const res = await fetch(`/api/admin/customers/${customer.mongoId || customer.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        toast.success('Customer Deleted', `${customer.name}'s account has been permanently removed.`);
+        router.push('/admin/customers');
+      } else {
+        toast.error('Delete Failed', json.error || 'Could not delete customer.');
+      }
+    } catch (err: any) {
+      toast.error('Delete Failed', err.message || 'Network error.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  if (isLoading && !customer) {
+    return (
+      <div className="space-y-4 pb-10 animate-pulse">
+        <div className="h-10 bg-slate-100 rounded-xl w-32" />
+        <div className="card-white p-6 flex gap-5">
+          <div className="w-20 h-20 rounded-full bg-slate-200" />
+          <div className="space-y-2 flex-1">
+            <div className="h-6 bg-slate-200 rounded w-48" />
+            <div className="h-4 bg-slate-100 rounded w-72" />
+            <div className="h-4 bg-slate-100 rounded w-56" />
+          </div>
+        </div>
+        <div className="card-white p-6 h-24 bg-slate-50" />
+        <div className="card-white p-6 h-40 bg-slate-50" />
+      </div>
+    );
+  }
 
   if (!customer) {
     return (
@@ -74,14 +115,14 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
   const customerTrips =
     selectedCustomerDetails?.bookings && selectedCustomerDetails.bookings.length > 0
       ? selectedCustomerDetails.bookings
-      : driverBookings.filter((b) => b.customerName === customer.name || b.customerEmail === customer.email);
+      : [];
 
   const customerTxns =
     selectedCustomerDetails?.transactions && selectedCustomerDetails.transactions.length > 0
       ? selectedCustomerDetails.transactions
-      : transactions.filter((t) => t.customerOrDriverName === customer.name);
+      : [];
 
-  const customerRefunds = refunds.filter((r) => r.customerName === customer.name);
+  const customerRefunds: RefundRecord[] = [];
 
   const bookingStats = selectedCustomerDetails?.customerBookingStats;
   const txnStats = selectedCustomerDetails?.customerTransactionStats;
@@ -330,7 +371,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-700">
-            ID: {customer.id}
+            ID: {customer.custId || customer.id}
           </span>
           <span
             className={`px-3 py-1 rounded text-xs font-bold ${customer.status === 'Active'
@@ -349,14 +390,17 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
               }`}
           >
             {customer.status === 'Active' ? (
-              <>
-                <Ban className="w-3.5 h-3.5" /> Suspend Account
-              </>
+              <><Ban className="w-3.5 h-3.5" /> Suspend Account</>
             ) : (
-              <>
-                <Check className="w-3.5 h-3.5" /> Activate Account
-              </>
+              <><Check className="w-3.5 h-3.5" /> Activate Account</>
             )}
+          </button>
+
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="px-3 py-1 text-xs font-bold rounded flex items-center gap-1 bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Delete
           </button>
         </div>
       </div>
@@ -413,37 +457,37 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
         </div>
       </div>
 
-      {/* Customer Performance Summary Cards - Unified Strip */}
-      <div className="card-white p-5">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-0 sm:divide-x divide-slate-100">
-          <div className="space-y-1 sm:pr-5">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Bookings</span>
-            <div className="text-xl font-bold text-slate-900">{customer.totalBookings}</div>
-            <p className="text-[10px] text-slate-500">Lifetime requested trips</p>
-          </div>
+      {/* Customer Performance Summary - Individual Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card-white p-4 space-y-1">
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Bookings</span>
+          <div className="text-xl font-bold text-slate-900">{customer.totalBookings}</div>
+          <p className="text-[10px] text-slate-500">Lifetime requested trips</p>
+        </div>
 
-          <div className="space-y-1 sm:px-5">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Completed Trips</span>
-            <div className="text-xl font-bold text-emerald-600">{customer.completedBookings}</div>
-            <p className="text-[10px] text-emerald-600 font-medium">Successfully fulfilled</p>
-          </div>
+        <div className="card-white p-4 space-y-1">
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">Completed Trips</span>
+          <div className="text-xl font-bold text-emerald-600">{customer.completedBookings}</div>
+          <p className="text-[10px] text-emerald-600 font-medium">Successfully fulfilled</p>
+        </div>
 
-          <div className="space-y-1 sm:px-5">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Cancelled Trips</span>
-            <div className="text-xl font-bold text-rose-600">{customer.cancelledBookings}</div>
-            <p className="text-[10px] text-rose-600 font-medium">Cancelled orders</p>
-          </div>
+        <div className="card-white p-4 space-y-1">
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-rose-700 block">Cancelled Trips</span>
+          <div className="text-xl font-bold text-rose-600">{customer.cancelledBookings}</div>
+          <p className="text-[10px] text-rose-600 font-medium">Cancelled orders</p>
+        </div>
 
-          <div className="space-y-1 sm:pl-5">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Active Status</span>
-            <div className="text-xl font-bold text-slate-900">{customer.status}</div>
-            <p className="text-[10px] text-slate-500">Account standing</p>
+        <div className="card-white p-4 space-y-1">
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Active Status</span>
+          <div className={`text-xl font-bold ${customer.status === 'Active' ? 'text-emerald-600' : 'text-rose-600'}`}>
+            {customer.status}
           </div>
+          <p className="text-[10px] text-slate-500">Account standing</p>
         </div>
       </div>
 
       {/* Customer Vehicle Information Section (Modern Full Width Card Design) */}
-      <div className="card-white p-6 space-y-6">
+      {/* <div className="card-white p-6 space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
@@ -455,16 +499,12 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
             </div>
           </div>
           <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200">
-            {useRentalStore.getState().customerVehicles.filter(v => v.customerId === customer.id || v.customerName === customer.name).length || 1} Vehicle Registered
+            1 Vehicle Registered
           </span>
         </div>
 
         {(() => {
-          const userVehicles = useRentalStore
-            .getState()
-            .customerVehicles.filter((v) => v.customerId === customer.id || v.customerName === customer.name);
-
-          const displayVehicles = userVehicles.length > 0 ? userVehicles : [
+          const displayVehicles = [
             {
               id: 'cv-1',
               customerId: customer.id,
@@ -473,6 +513,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
               regNumber: 'KA-01-MJ-8821',
               make: 'Hyundai',
               model: 'Creta SX (O)',
+              vehicleType: "EV",
               year: 2022,
               transmission: 'Automatic',
               fuelType: 'Petrol',
@@ -485,9 +526,9 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
               vehicleImages: [
                 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
                 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80',
-                'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=800&q=80'
-              ]
-            }
+                'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=800&q=80',
+              ],
+            },
           ];
 
           return (
@@ -499,7 +540,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
 
                 return (
                   <div key={v.id} className="bg-slate-50/70 border border-slate-200 rounded-2xl p-5 space-y-5">
-                    {/* Vehicle Header Strip */}
+            
                     <div className="flex items-center justify-between gap-4 bg-white p-4.5 rounded-xl border border-slate-200/90 shadow-2xs">
                       <div>
                         <h4 className="font-extrabold text-slate-900 text-lg tracking-tight flex items-center gap-2">
@@ -511,7 +552,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
                         <span className="text-xs text-slate-500 font-medium mt-0.5 block">Manufacturing Year: {v.year}</span>
                       </div>
 
-                      {/* Highlighted Vehicle Plate Badge */}
+                      
                       <div className="flex items-center gap-2">
                         <div className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-mono font-black text-base tracking-wider rounded-lg border-2 border-slate-900 shadow-sm flex items-center gap-2 ring-2 ring-amber-400/20">
                           <span className="w-2 h-2 rounded-full bg-slate-900 inline-block"></span>
@@ -520,9 +561,9 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
                       </div>
                     </div>
 
-                    {/* Specifications Grid & Photos Container */}
+                  
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-                      {/* Specifications Grid (8 cols) */}
+                   
                       <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-3.5 bg-white p-5 rounded-xl border border-slate-200/80">
                         <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-100 space-y-0.5">
                           <span className="text-[10.5px] uppercase font-bold text-slate-400 block">Transmission</span>
@@ -553,9 +594,14 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
                           <span className="text-[10.5px] uppercase font-bold text-slate-400 block">Insurance Expiry</span>
                           <span className="font-bold text-emerald-700 text-xs">{v.insuranceExpiry}</span>
                         </div>
+
+                        <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-100 space-y-0.5">
+                          <span className="text-[10.5px] uppercase font-bold text-slate-400 block">Vehicle Type</span>
+                          <span className="font-bold text-emerald-700 text-xs">{v.vehicleType}</span>
+                        </div>
                       </div>
 
-                      {/* Vehicle Photos Gallery Display (4 cols) */}
+     
                       <div className="lg:col-span-4 bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col justify-between space-y-3">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                           <span className="text-[11px] uppercase font-bold text-slate-600">Vehicle Photos</span>
@@ -581,7 +627,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
             </div>
           );
         })()}
-      </div>
+      </div> */}
 
       {/* FULL WIDTH: Booking History Table using global DataTable */}
       <DataTable<DriverBooking>
@@ -594,11 +640,11 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
             <div>
               <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <CalendarCheck className="w-5 h-5 text-primary" /> Customer Booking History ({customerTrips.length})
+                <CalendarCheck className="w-5 h-5 text-primary" /> Customer Booking History
               </h3>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+            {/* <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
               <button
                 onClick={() => setTripFilter('all')}
                 className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'all'
@@ -635,7 +681,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
               >
                 Cancelled
               </button>
-            </div>
+            </div> */}
           </div>
         }
       />
@@ -698,7 +744,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
             headerActions={
               <div className="flex items-center justify-between w-full">
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <Receipt className="w-4.5 h-4.5 text-primary" /> Payment Transactions ({customerTxns.length})
+                  <Receipt className="w-4.5 h-4.5 text-primary" /> Payment Transactions
                 </h3>
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Payment Logs</span>
               </div>
@@ -716,7 +762,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
             headerActions={
               <div className="flex items-center justify-between w-full">
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <RotateCcw className="w-4.5 h-4.5 text-rose-500" /> Refund History ({customerRefunds.length})
+                  <RotateCcw className="w-4.5 h-4.5 text-rose-500" /> Refund History
                 </h3>
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Refund Claims</span>
               </div>
@@ -725,6 +771,46 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
           {/* )} */}
         </div>
       </div>
+      {/* Delete Customer Confirmation Modal */}
+      {showDeleteModal && (
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => { if (!isDeleting) setShowDeleteModal(false); }}
+          title="Permanently Delete Customer"
+          subtitle="This action cannot be undone. All customer data will be removed."
+          icon={Trash2}
+          maxWidth="sm"
+          footer={
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-bold hover:bg-slate-50 transition-colors text-xs disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs shadow-xs transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Delete Permanently
+              </button>
+            </div>
+          }
+        >
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-center gap-3 text-xs">
+            <img src={customer.avatar} alt={customer.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-rose-200" />
+            <div>
+              <div className="font-bold text-slate-900">{customer.name}</div>
+              <div className="text-rose-700">{customer.email} • {customer.custId}</div>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

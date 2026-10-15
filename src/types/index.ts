@@ -378,6 +378,13 @@ export interface OutstationPricingConfig {
   taxPercent: number;
 }
 
+export interface ValetParkingPricingTier {
+  person: number;
+  hours: number;
+  customerprice: number;
+  driverprice: number;
+}
+
 export interface ValetPricingConfig {
   pricePerStaffPerHour: number;
   minStaffRequirement: number;

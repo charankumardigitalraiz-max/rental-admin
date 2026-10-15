@@ -7,6 +7,7 @@ import {
   LocalPricingTiers,
   OutstationPricingTiers,
   defaultDriverPricingData,
+  ValetParkingPricingTier,
 } from '@/store/usePricingStore';
 import { useToast } from '@/context/ToastContext';
 import {
@@ -162,47 +163,110 @@ function TimeWindowPicker({
   onChange,
   presets = ['06:00-18:00', '18:00-06:00', '08:00-20:00', '20:00-08:00'],
 }: TimeWindowPickerProps) {
+  // Parse start and end time from value string e.g. "06:00-18:00"
+  const parts = (value || '').split('-');
+  const startTime = parts[0] || '06:00';
+  const endTime = parts[1] || '18:00';
+
+  const handleStartChange = (newStart: string) => {
+    if (!newStart) return;
+    onChange(`${newStart}-${endTime}`);
+  };
+
+  const handleEndChange = (newEnd: string) => {
+    if (!newEnd) return;
+    onChange(`${startTime}-${newEnd}`);
+  };
+
+  const calculateHours = (s: string, e: string) => {
+    if (!s || !e) return 12;
+    const [sH, sM] = s.split(':').map(Number);
+    const [eH, eM] = e.split(':').map(Number);
+    if (isNaN(sH) || isNaN(eH)) return 12;
+    let mins = (eH * 60 + (eM || 0)) - (sH * 60 + (sM || 0));
+    if (mins <= 0) mins += 24 * 60; // Next-day night shift wrap-around
+    return Math.round((mins / 60) * 10) / 10;
+  };
+
+  const windowDuration = calculateHours(startTime, endTime);
+
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-[11.5px] font-semibold text-slate-700 tracking-tight flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5 text-slate-400" />
           {label}
         </label>
-        <span className="text-[10px] text-slate-400 font-mono">24h format</span>
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+          {windowDuration}h Active Window
+        </span>
       </div>
 
-      <div className="space-y-1.5">
-        <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all">
-          <span className="px-2.5 py-2.5 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center">
-            <Clock className="w-3.5 h-3.5 text-slate-500" />
+      {/* Dual Time Pickers: Start Time & End Time */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="space-y-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+            <Sun className="w-3 h-3 text-amber-500" /> Start Time
           </span>
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="06:00-18:00"
-            className="w-full px-3 py-2 text-xs font-mono font-semibold text-slate-800 bg-transparent focus:outline-none"
-          />
+          <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all">
+            <span className="px-2.5 py-2 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center shrink-0">
+              <Clock className="w-3.5 h-3.5 text-slate-500" />
+            </span>
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => handleStartChange(e.target.value)}
+              className="w-full px-2.5 py-2 text-xs font-mono font-semibold text-slate-800 bg-transparent focus:outline-none cursor-pointer"
+            />
+          </div>
         </div>
 
-        {/* Quick Presets */}
-        <div className="flex flex-wrap gap-1">
-          {presets.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              onClick={() => onChange(preset)}
-              className={`text-[10px] font-mono px-2 py-0.5 rounded-md transition-all cursor-pointer select-none ${value === preset
-                ? 'bg-slate-900 text-white font-semibold shadow-2xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 active:scale-95'
-                }`}
-            >
-              {preset}
-            </button>
-          ))}
+        <div className="space-y-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+            <Moon className="w-3 h-3 text-indigo-500" /> End Time
+          </span>
+          <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all">
+            <span className="px-2.5 py-2 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center shrink-0">
+              <Clock className="w-3.5 h-3.5 text-slate-500" />
+            </span>
+            <input
+              type="time"
+              value={endTime}
+              onChange={(e) => handleEndChange(e.target.value)}
+              className="w-full px-2.5 py-2 text-xs font-mono font-semibold text-slate-800 bg-transparent focus:outline-none cursor-pointer"
+            />
+          </div>
         </div>
       </div>
+
+      {/* Quick Shift Presets */}
+      {/* {presets && presets.length > 0 && (
+        <div className="pt-0.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-medium text-slate-400 mr-1">Presets:</span>
+            {presets.map((preset) => {
+              const isSelected = value === preset;
+              const [pStart, pEnd] = preset.split('-');
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => onChange(preset)}
+                  className={`text-[10.5px] font-mono px-2 py-0.5 rounded-md transition-all cursor-pointer select-none flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-slate-900 text-white font-semibold shadow-2xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 active:scale-95'
+                  }`}
+                >
+                  <span>{pStart}</span>
+                  <span className="text-slate-400">→</span>
+                  <span>{pEnd}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )} */}
     </div>
   );
 }
@@ -538,14 +602,21 @@ function ReadOnlyOutstationCard({
 }
 
 interface ReadOnlyValetOverviewProps {
-  valetPricing: ValetPricingConfig;
+  valetParkingTier: ValetParkingPricingTier;
   onEdit: () => void;
 }
 
-function ReadOnlyValetOverview({ valetPricing, onEdit }: ReadOnlyValetOverviewProps) {
-  const driverStaffRate = 190;
-  const marginPerStaffHour = Math.max(0, valetPricing.pricePerStaffPerHour - driverStaffRate);
-  const marginPercent = valetPricing.pricePerStaffPerHour > 0 ? Math.round((marginPerStaffHour / valetPricing.pricePerStaffPerHour) * 100) : 0;
+function ReadOnlyValetOverview({ valetParkingTier, onEdit }: ReadOnlyValetOverviewProps) {
+  const customerPrice = valetParkingTier?.customerprice ?? 600;
+  const driverPrice = valetParkingTier?.driverprice ?? 480;
+  const margin = Math.max(0, customerPrice - driverPrice);
+  const marginPercent = customerPrice > 0 ? Math.round((margin / customerPrice) * 100) : 0;
+  const driverPercent = 100 - marginPercent;
+
+  const durationHours = valetParkingTier?.hours ?? 4;
+  const personCount = valetParkingTier?.person ?? 1;
+  const customerHourly = Math.round(customerPrice / durationHours);
+  const driverHourly = Math.round(driverPrice / durationHours);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-6">
@@ -556,17 +627,17 @@ function ReadOnlyValetOverview({ valetPricing, onEdit }: ReadOnlyValetOverviewPr
           </div>
           <div>
             <h3 className="text-base font-semibold text-slate-900 tracking-tight">
-              Valet Staffing & Event Operations Schedule
+              Valet Parking & Event Operations
             </h3>
             <p className="text-xs text-slate-500">
-              Chauffeur event staffing for corporate galas, weddings, hotels, and luxury private venues.
+              Professional chauffeur and valet parking attendant operations for venues, hotels, and luxury private events.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200">
-            Active Event Tariff
+            Active Valet Tariff
           </span>
           <button
             type="button"
@@ -585,16 +656,18 @@ function ReadOnlyValetOverview({ valetPricing, onEdit }: ReadOnlyValetOverviewPr
         <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-1.5">
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
             <span className="flex items-center gap-1 text-slate-700">
-              <DollarSign className="w-3.5 h-3.5 text-amber-600" /> Staff Hourly Rate
+              <DollarSign className="w-3.5 h-3.5 text-amber-600" /> Customer Package Fare
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">Base</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">
+              {durationHours}h Tier
+            </span>
           </div>
           <div className="text-2xl font-semibold text-slate-900">
-            ₹{valetPricing.pricePerStaffPerHour}
+            ₹{customerPrice.toLocaleString('en-IN')}
           </div>
           <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200/60">
-            <span>Staff gets: ₹{driverStaffRate}/hr</span>
-            <span className="text-amber-700 font-semibold">Margin: ₹{marginPerStaffHour}/hr ({marginPercent}%)</span>
+            <span>₹{customerHourly}/hr rate</span>
+            <span className="text-amber-700 font-semibold">{personCount} Attendant</span>
           </div>
         </div>
 
@@ -602,59 +675,74 @@ function ReadOnlyValetOverview({ valetPricing, onEdit }: ReadOnlyValetOverviewPr
         <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-1.5">
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
             <span className="flex items-center gap-1 text-slate-700">
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-600" /> Minimum Team Size
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Driver Staff Payout
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">Staffing</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200">
+              Guaranteed
+            </span>
           </div>
-          <div className="text-2xl font-semibold text-slate-900">
-            {valetPricing.minStaffRequirement} Members
+          <div className="text-2xl font-semibold text-emerald-700">
+            ₹{driverPrice.toLocaleString('en-IN')}
           </div>
-          <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/60">
-            Minimum crew size required per event booking
-          </p>
+          <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200/60">
+            <span>₹{driverHourly}/hr payout</span>
+            <span className="text-emerald-700 font-semibold">{driverPercent}% share</span>
+          </div>
         </div>
 
         {/* Tile 3 */}
         <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-1.5">
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
             <span className="flex items-center gap-1 text-slate-700">
-              <Zap className="w-3.5 h-3.5 text-amber-600" /> Peak Surge Surcharge
+              <Zap className="w-3.5 h-3.5 text-amber-600" /> Platform Revenue
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">Surge</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">
+              Margin
+            </span>
           </div>
           <div className="text-2xl font-semibold text-amber-800">
-            +{valetPricing.peakEventSurgePercent}%
+            ₹{margin.toLocaleString('en-IN')}
           </div>
-          <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/60">
-            Applied during high-demand holidays & weekends
-          </p>
+          <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200/60">
+            <span>Retained revenue</span>
+            <span className="text-amber-800 font-semibold">{marginPercent}% margin</span>
+          </div>
         </div>
 
         {/* Tile 4 */}
         <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-1.5">
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
             <span className="flex items-center gap-1 text-slate-700">
-              <Clock className="w-3.5 h-3.5 text-amber-600" /> Minimum Notice
+              <Clock className="w-3.5 h-3.5 text-slate-500" /> Service Window
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold border border-amber-200">Notice</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+              Duration
+            </span>
           </div>
           <div className="text-2xl font-semibold text-slate-900">
-            {valetPricing.minDurationHours} Hours
+            {durationHours} Hours
           </div>
           <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/60">
-            Advance notice needed for logistics & briefing
+            {personCount} Valet driver dedicated per booking
           </p>
         </div>
       </div>
+
+      {/* Margin Split Bar */}
+      <MarginSplitBar
+        customerPrice={customerPrice}
+        driverPrice={driverPrice}
+        unitLabel={`${personCount} Attendant · ${durationHours}h Package`}
+      />
 
       {/* Sample Booking Projection Box */}
       <div className="p-4 rounded-xl bg-amber-50/40 border border-amber-200/70 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         <div>
           <span className="font-semibold text-amber-900 block">
-            Sample Event Quote (4 Staff × 6 Hours Event):
+            Standard Valet Package ({personCount} Staff × {durationHours} Hours):
           </span>
           <span className="text-slate-500 text-[11px]">
-            Customer Total: <span className="font-semibold text-slate-800">₹{(valetPricing.pricePerStaffPerHour * 4 * 6).toLocaleString('en-IN')}</span> · Driver Staff Earnings: <span className="font-semibold text-slate-800">₹{(driverStaffRate * 4 * 6).toLocaleString('en-IN')}</span> · Platform Net Margin: <span className="text-amber-800 font-semibold">₹{(marginPerStaffHour * 4 * 6).toLocaleString('en-IN')}</span>
+            Customer Total: <span className="font-semibold text-slate-800">₹{customerPrice.toLocaleString('en-IN')}</span> · Driver Staff Earnings: <span className="font-semibold text-slate-800">₹{driverPrice.toLocaleString('en-IN')}</span> · Platform Net Margin: <span className="text-amber-800 font-semibold">₹{margin.toLocaleString('en-IN')} ({marginPercent}%)</span>
           </span>
         </div>
 
@@ -704,7 +792,8 @@ interface EditPricingModalProps {
   onClose: () => void;
   localTiers: LocalPricingTiers;
   outstationTiers: OutstationPricingTiers;
-  valetPricing: ValetPricingConfig;
+  valetParkingTier: ValetParkingPricingTier;
+  valetPricing?: ValetPricingConfig;
   onSaveLocalTier: (
     tripType: 'one_way' | 'round_trip',
     shift: 'morningHours' | 'nightHours',
@@ -718,7 +807,8 @@ interface EditPricingModalProps {
       driverPrice: number;
     }
   ) => Promise<void>;
-  onSaveValet: (updatedValet: ValetPricingConfig) => void;
+  onSaveValetParkingTier: (updatedTier: ValetParkingPricingTier) => Promise<void>;
+  onSaveValet?: (updatedValet: ValetPricingConfig) => void;
   isSaving: boolean;
 }
 
@@ -727,9 +817,11 @@ function EditPricingModal({
   onClose,
   localTiers,
   outstationTiers,
+  valetParkingTier,
   valetPricing,
   onSaveLocalTier,
   onSaveOutstationTier,
+  onSaveValetParkingTier,
   onSaveValet,
   isSaving,
 }: EditPricingModalProps) {
@@ -765,9 +857,12 @@ function EditPricingModal({
     return 1200;
   });
 
-  // Valet tier state
-  const [draftValet, setDraftValet] = useState<ValetPricingConfig>(() => ({
-    ...valetPricing,
+  // Valet parking state
+  const [draftValetParking, setDraftValetParking] = useState<ValetParkingPricingTier>(() => ({
+    person: valetParkingTier?.person ?? 1,
+    hours: valetParkingTier?.hours ?? 4,
+    customerprice: valetParkingTier?.customerprice ?? 600,
+    driverprice: valetParkingTier?.driverprice ?? 480,
   }));
 
   // Handle shift switch in Local edit modal
@@ -800,7 +895,7 @@ function EditPricingModal({
         driverPrice: draftOutstationDriverPrice,
       });
     } else if (target.category === 'valet') {
-      onSaveValet(draftValet);
+      await onSaveValetParkingTier(draftValetParking);
     }
   };
 
@@ -919,7 +1014,7 @@ function EditPricingModal({
               />
 
               {/* Included Duration */}
-              <HourSelector
+              {/* <HourSelector
                 label="Included Package Duration"
                 value={draftLocalTier.hours}
                 onChange={(val) => setDraftLocalTier({ ...draftLocalTier, hours: val })}
@@ -928,7 +1023,7 @@ function EditPricingModal({
                     ? [2, 4, 6, 8, 10, 12]
                     : [4, 8, 10, 12, 16, 24]
                 }
-              />
+              /> */}
 
               {/* Fares */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
@@ -1002,75 +1097,77 @@ function EditPricingModal({
             </div>
           )}
 
-          {/* VALET FIELDS */}
+          {/* VALET PARKING FIELDS */}
           {target.category === 'valet' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <CurrencyField
-                  label="Staff Hourly Rate"
-                  sublabel="Billed per staff per hr"
-                  value={draftValet.pricePerStaffPerHour}
+                  label="Customer Package Fare"
+                  sublabel="Billed to customer"
+                  value={draftValetParking.customerprice}
                   onChange={(val) =>
-                    setDraftValet({ ...draftValet, pricePerStaffPerHour: val })
+                    setDraftValetParking({ ...draftValetParking, customerprice: val })
                   }
                   accent="amber"
-                  step={10}
+                  step={50}
+                  min={0}
                 />
 
                 <CurrencyField
-                  label="Minimum Team Size"
-                  sublabel="Min crew per event"
-                  prefix="#"
-                  unit="staff"
-                  value={draftValet.minStaffRequirement}
+                  label="Driver Staff Payout"
+                  sublabel="Guaranteed driver earnings"
+                  value={draftValetParking.driverprice}
                   onChange={(val) =>
-                    setDraftValet({ ...draftValet, minStaffRequirement: val })
+                    setDraftValetParking({ ...draftValetParking, driverprice: val })
                   }
-                  accent="amber"
-                  step={1}
-                  min={1}
+                  accent="emerald"
+                  step={50}
+                  min={0}
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <CurrencyField
-                  label="Peak Event Surge"
-                  sublabel="Demand multiplier"
-                  prefix="+"
-                  unit="%"
-                  value={draftValet.peakEventSurgePercent}
+                  label="Valet Attendants / Staff"
+                  sublabel="Number of staff required"
+                  prefix="#"
+                  unit="person"
+                  value={draftValetParking.person}
                   onChange={(val) =>
-                    setDraftValet({ ...draftValet, peakEventSurgePercent: val })
-                  }
-                  accent="amber"
-                  step={5}
-                />
-
-                <CurrencyField
-                  label="Minimum Notice"
-                  sublabel="Advance briefing time"
-                  prefix="⏱"
-                  unit="hrs"
-                  value={draftValet.minDurationHours}
-                  onChange={(val) =>
-                    setDraftValet({ ...draftValet, minDurationHours: val })
+                    setDraftValetParking({ ...draftValetParking, person: Math.max(1, val) })
                   }
                   accent="amber"
                   step={1}
                   min={1}
                 />
+
+                <HourSelector
+                  label="Package Duration"
+                  value={draftValetParking.hours}
+                  onChange={(val) =>
+                    setDraftValetParking({ ...draftValetParking, hours: Math.max(1, val) })
+                  }
+                  options={[2, 4, 6, 8, 10, 12]}
+                />
               </div>
 
-              {/* Sample Quote Projection */}
+              {/* Margin Split Bar */}
+              <MarginSplitBar
+                customerPrice={draftValetParking.customerprice}
+                driverPrice={draftValetParking.driverprice}
+                unitLabel={`${draftValetParking.person} Staff · ${draftValetParking.hours}h Package`}
+              />
+
+              {/* Sample / Breakdown Projection */}
               <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/70 space-y-1 text-xs">
                 <div className="font-semibold text-amber-900">
-                  Sample Event Quote (4 Staff × 6 Hours Event):
+                  Rate Summary ({draftValetParking.person} Staff × {draftValetParking.hours} Hours Package):
                 </div>
                 <div className="text-slate-600 text-[11px] flex items-center justify-between pt-1 border-t border-amber-200/50">
-                  <span>Customer: ₹{(draftValet.pricePerStaffPerHour * 4 * 6).toLocaleString('en-IN')}</span>
-                  <span>Driver Staff: ₹{(190 * 4 * 6).toLocaleString('en-IN')}</span>
+                  <span>Customer: ₹{draftValetParking.customerprice.toLocaleString('en-IN')} (₹{Math.round(draftValetParking.customerprice / (draftValetParking.hours || 1))}/hr)</span>
+                  <span>Driver Staff: ₹{draftValetParking.driverprice.toLocaleString('en-IN')} (₹{Math.round(draftValetParking.driverprice / (draftValetParking.hours || 1))}/hr)</span>
                   <span className="font-semibold text-amber-800">
-                    Margin: ₹{Math.max(0, (draftValet.pricePerStaffPerHour - 190) * 4 * 6).toLocaleString('en-IN')}
+                    Margin: ₹{Math.max(0, draftValetParking.customerprice - draftValetParking.driverprice).toLocaleString('en-IN')} ({draftValetParking.customerprice > 0 ? Math.round(((draftValetParking.customerprice - draftValetParking.driverprice) / draftValetParking.customerprice) * 100) : 0}%)
                   </span>
                 </div>
               </div>
@@ -1103,7 +1200,7 @@ function EditPricingModal({
   );
 }
 
-// ============================================================================
+// ============================================= ===============================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -1134,6 +1231,9 @@ export default function PricingManagementView() {
   const [outstationTiers, setOutstationTiers] = useState<OutstationPricingTiers>(
     driverPricing?.outstation || defaultDriverPricingData.outstation
   );
+  const [valetParkingTier, setValetParkingTier] = useState<ValetParkingPricingTier>(
+    driverPricing?.valletparking || defaultDriverPricingData.valletparking!
+  );
   const [valetForm, setValetForm] = useState<ValetPricingConfig>(valetPricing);
 
   // New Rule Form Modal state
@@ -1162,6 +1262,9 @@ export default function PricingManagementView() {
       if (driverPricing.outstation) {
         setOutstationTiers(driverPricing.outstation);
       }
+      if (driverPricing.valletparking) {
+        setValetParkingTier(driverPricing.valletparking);
+      }
     }
   }, [driverPricing]);
 
@@ -1184,6 +1287,7 @@ export default function PricingManagementView() {
       _id: driverPricing?._id,
       local: updatedLocal,
       outstation: outstationTiers,
+      valletparking: valetParkingTier,
     };
 
     const res = await saveDriverPricing(payload);
@@ -1230,6 +1334,7 @@ export default function PricingManagementView() {
       _id: driverPricing?._id,
       local: localTiers,
       outstation: updatedOutstation,
+      valletparking: valetParkingTier,
     };
 
     const res = await saveDriverPricing(payload);
@@ -1238,6 +1343,26 @@ export default function PricingManagementView() {
       setEditModalTarget(null);
     } else {
       toast.error('Save Failed', res.error || 'Could not save outstation pricing.');
+    }
+  };
+
+  // Handle Save Valet Parking Tier via Zustand & Database
+  const handleSaveValetParkingTier = async (updatedTier: ValetParkingPricingTier) => {
+    setValetParkingTier(updatedTier);
+
+    const payload = {
+      _id: driverPricing?._id,
+      local: localTiers,
+      outstation: outstationTiers,
+      valletparking: updatedTier,
+    };
+
+    const res = await saveDriverPricing(payload);
+    if (res.success) {
+      toast.success('Valet Parking Rate Updated', res.message || 'Pricing saved to database.');
+      setEditModalTarget(null);
+    } else {
+      toast.error('Save Failed', res.error || 'Could not save valet parking pricing.');
     }
   };
 
@@ -1296,7 +1421,7 @@ export default function PricingManagementView() {
       {/* ====================================================================== */}
       {/* 4 SLEEK STAT TILES */}
       {/* ====================================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {/* Metric 1: Local Driver */}
         <div className="bg-white rounded-md border border-slate-200/80 p-4 shadow-2xs hover:border-slate-300 transition-all space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500">
@@ -1345,31 +1470,33 @@ export default function PricingManagementView() {
           </div>
         </div>
 
-        {/* Metric 3: Valet Tariff */}
+        {/* Metric 3: Valet Parking */}
         <div className="bg-white rounded-md border border-slate-200/80 p-4 shadow-2xs hover:border-slate-300 transition-all space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span className="flex items-center gap-1.5 font-semibold text-slate-700">
               <Building2 className="w-4 h-4 text-amber-600" />
-              Valet Staffing
+              Valet Parking
             </span>
             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60">
-              Min {valetPricing.minStaffRequirement} Staff
+              {valetParkingTier.person} Person · {valetParkingTier.hours}h Tier
             </span>
           </div>
           <div className="text-2xl font-semibold text-slate-900 tracking-tight">
-            ₹{valetPricing.pricePerStaffPerHour}
-            <span className="text-xs text-slate-400 font-medium ml-1">/ staff / hr</span>
+            ₹{valetParkingTier.customerprice.toLocaleString('en-IN')}
+            <span className="text-xs text-slate-400 font-medium ml-1">/ package</span>
           </div>
           <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
             <span>
-              Surge: <span className="font-semibold text-slate-800">+{valetPricing.peakEventSurgePercent}%</span>
+              Driver: <span className="font-semibold text-slate-800">₹{valetParkingTier.driverprice}</span>
             </span>
-            <span className="text-amber-800 font-semibold">{valetPricing.minDurationHours}h notice</span>
+            <span className="text-amber-800 font-semibold">
+              ₹{valetParkingTier.customerprice - valetParkingTier.driverprice} margin ({valetParkingTier.customerprice > 0 ? Math.round(((valetParkingTier.customerprice - valetParkingTier.driverprice) / valetParkingTier.customerprice) * 100) : 0}%)
+            </span>
           </div>
         </div>
 
         {/* Metric 4: Surge Multipliers */}
-        <div className="bg-white rounded-md border border-slate-200/80 p-4 shadow-2xs hover:border-slate-300 transition-all space-y-2">
+        {/* <div className="bg-white rounded-md border border-slate-200/80 p-4 shadow-2xs hover:border-slate-300 transition-all space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span className="flex items-center gap-1.5 font-semibold text-slate-700">
               <Zap className="w-4 h-4 text-purple-600" />
@@ -1386,7 +1513,7 @@ export default function PricingManagementView() {
             <span>Dynamic Multipliers</span>
             <span className="text-purple-700 font-semibold">Operational</span>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* ====================================================================== */}
@@ -1426,10 +1553,10 @@ export default function PricingManagementView() {
             }`}
         >
           <Building2 className="w-3.5 h-3.5" />
-          <span>Valet Tariff</span>
+          <span>Valet Parking</span>
         </button>
 
-        <button
+        {/* <button
           type="button"
           onClick={() => setActiveTab('rules')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'rules'
@@ -1439,7 +1566,7 @@ export default function PricingManagementView() {
         >
           <Zap className="w-3.5 h-3.5" />
           <span>Surge Rules ({pricingRules.filter((r) => r.status === 'Active').length})</span>
-        </button>
+        </button> */}
       </div>
 
       {/* ====================================================================== */}
@@ -1642,12 +1769,12 @@ export default function PricingManagementView() {
       {activeTab === 'valet' && (
         <div className="space-y-6 animate-fadeIn">
           <ReadOnlyValetOverview
-            valetPricing={valetForm}
+            valetParkingTier={valetParkingTier}
             onEdit={() =>
               setEditModalTarget({
                 category: 'valet',
-                title: 'Valet Staffing & Event Operations',
-                subTitle: 'Chauffeur event staffing for corporate galas, weddings, hotels, and luxury private venues.',
+                title: 'Valet Parking & Event Operations',
+                subTitle: 'Chauffeur and valet parking attendant operations for venues, hotels, and luxury private events.',
               })
             }
           />
@@ -1783,9 +1910,11 @@ export default function PricingManagementView() {
           onClose={() => setEditModalTarget(null)}
           localTiers={localTiers}
           outstationTiers={outstationTiers}
+          valetParkingTier={valetParkingTier}
           valetPricing={valetForm}
           onSaveLocalTier={handleSaveLocalTier}
           onSaveOutstationTier={handleSaveOutstationTier}
+          onSaveValetParkingTier={handleSaveValetParkingTier}
           onSaveValet={handleSaveValet}
           isSaving={isSaving}
         />

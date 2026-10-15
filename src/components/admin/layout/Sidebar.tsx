@@ -193,11 +193,9 @@ export default function Sidebar() {
 
       {/* Main Sidebar Aside */}
       <aside
-        className={`fixed lg:sticky top-0 z-40 h-screen bg-white border-r border-stone-200/80 flex flex-col select-none shadow-xs transition-all duration-300 ease-in-out shrink-0 ${
-          isCollapsed ? 'w-20' : 'w-64'
-        } ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
+        className={`fixed lg:sticky top-0 z-40 h-screen bg-white border-r border-stone-200/80 flex flex-col select-none shadow-xs transition-all duration-300 ease-in-out shrink-0 ${isCollapsed ? 'w-20' : 'w-64'
+          } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
       >
         {/* Brand Header */}
         <div className="h-16 border-b border-[#e7dbc5]/60 flex items-center justify-between px-3 bg-gradient-to-r from-emerald-950 to-[#023526]">
@@ -206,9 +204,8 @@ export default function Sidebar() {
               onClick={() => {
                 if (isCollapsed) toggleCollapse();
               }}
-              className={`w-9 h-9 rounded-lg bg-gradient-to-br from-[#c5a880] via-[#b4966c] to-[#7e6542] flex items-center justify-center text-white shadow-md ring-2 ring-[#c5a880]/30 shrink-0 ${
-                isCollapsed ? 'cursor-pointer hover:scale-105 transition-transform' : ''
-              }`}
+              className={`w-9 h-9 rounded-lg bg-gradient-to-br from-[#c5a880] via-[#b4966c] to-[#7e6542] flex items-center justify-center text-white shadow-md ring-2 ring-[#c5a880]/30 shrink-0 ${isCollapsed ? 'cursor-pointer hover:scale-105 transition-transform' : ''
+                }`}
               title={isCollapsed ? 'Click to open sidebar' : 'DrivePulse Admin'}
             >
               <Crown className="w-5 h-5 text-amber-100 fill-amber-100" />
@@ -241,7 +238,7 @@ export default function Sidebar() {
             {!isCollapsed && (
               <button
                 onClick={toggleCollapse}
-                className="hidden lg:flex p-1.5 text-emerald-200 hover:text-white rounded-lg hover:bg-emerald-900/60 transition-colors"
+                className="hidden lg:flex p-1.5 text-white hover:text-white rounded-lg  transition-colors"
                 title="Collapse Sidebar"
               >
                 <PanelLeftClose className="w-4 h-4" />
@@ -280,16 +277,14 @@ export default function Sidebar() {
                         href="/admin/drivers"
                         onClick={() => setMobileOpen(false)}
                         title="Driver Management"
-                        className={`relative flex items-center justify-center w-12 h-10 mx-auto rounded-lg text-xs font-semibold transition-all group ${
-                          isDriversGroupActive
-                            ? 'bg-[#023526] text-white shadow-xs'
-                            : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
-                        }`}
+                        className={`relative flex items-center justify-center w-12 h-10 mx-auto rounded-lg text-xs font-semibold transition-all group ${isDriversGroupActive
+                          ? 'bg-[#023526] text-white shadow-xs'
+                          : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
+                          }`}
                       >
                         <Icon
-                          className={`w-5 h-5 transition-transform group-hover:scale-105 ${
-                            isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
-                          }`}
+                          className={`w-5 h-5 transition-transform group-hover:scale-105 ${isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
+                            }`}
                         />
                         {pendingDriversCount > 0 && (
                           <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-4 text-[9px] font-extrabold bg-amber-500 text-white rounded-full flex items-center justify-center ring-2 ring-white">
@@ -305,28 +300,25 @@ export default function Sidebar() {
                       <Link
                         href="/admin/drivers"
                         onClick={() => setIsDriversExpanded(true)}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
-                          isDriversGroupActive
-                            ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
-                            : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
-                        }`}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${isDriversGroupActive
+                          ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
+                          : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
+                          }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <Icon
-                            className={`w-4 h-4 transition-transform group-hover:scale-105 shrink-0 ${
-                              isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
-                            }`}
+                            className={`w-4 h-4 transition-transform group-hover:scale-105 shrink-0 ${isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
+                              }`}
                           />
                           <span className="tracking-tight truncate">{item.label}</span>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                           {pendingDriversCount > 0 && !isDriversExpanded && (
                             <span
-                              className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${
-                                isDriversGroupActive
-                                  ? 'bg-[#c5a880] text-slate-900 shadow-xs'
-                                  : 'bg-amber-100 text-amber-900 border border-amber-200'
-                              }`}
+                              className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${isDriversGroupActive
+                                ? 'bg-[#c5a880] text-slate-900 shadow-xs'
+                                : 'bg-amber-100 text-amber-900 border border-amber-200'
+                                }`}
                             >
                               {pendingDriversCount}
                             </span>
@@ -343,15 +335,13 @@ export default function Sidebar() {
                           >
                             {isDriversExpanded ? (
                               <ChevronDown
-                                className={`w-3.5 h-3.5 ${
-                                  isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400'
-                                }`}
+                                className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400'
+                                  }`}
                               />
                             ) : (
                               <ChevronRight
-                                className={`w-3.5 h-3.5 ${
-                                  isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400'
-                                }`}
+                                className={`w-3.5 h-3.5 ${isDriversGroupActive ? 'text-[#c5a880]' : 'text-slate-400'
+                                  }`}
                               />
                             )}
                           </span>
@@ -367,27 +357,24 @@ export default function Sidebar() {
                                 key={sub.href}
                                 href={sub.href}
                                 onClick={() => setMobileOpen(false)}
-                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-                                  isSubActive
-                                    ? 'bg-[#faf8f5] text-[#023526] font-bold border-l-2 border-[#c5a880] shadow-2xs'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                                }`}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${isSubActive
+                                  ? 'bg-[#faf8f5] text-[#023526] font-bold border-l-2 border-[#c5a880] shadow-2xs'
+                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                                  }`}
                               >
                                 <span className="flex items-center gap-1.5 truncate">
                                   <span
-                                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                      isSubActive ? 'bg-[#c5a880]' : 'bg-slate-300'
-                                    }`}
+                                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSubActive ? 'bg-[#c5a880]' : 'bg-slate-300'
+                                      }`}
                                   />
                                   <span className="truncate">{sub.label}</span>
                                 </span>
                                 {sub.count > 0 && (
                                   <span
-                                    className={`px-1.5 py-0.2 text-[9.5px] font-bold rounded shrink-0 ${
-                                      isSubActive
-                                        ? 'bg-[#023526] text-[#c5a880]'
-                                        : sub.badgeColor || 'bg-slate-100 text-slate-600'
-                                    }`}
+                                    className={`px-1.5 py-0.2 text-[9.5px] font-bold rounded shrink-0 ${isSubActive
+                                      ? 'bg-[#023526] text-[#c5a880]'
+                                      : sub.badgeColor || 'bg-slate-100 text-slate-600'
+                                      }`}
                                   >
                                     {sub.count}
                                   </span>
@@ -409,16 +396,14 @@ export default function Sidebar() {
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
                       title={item.label}
-                      className={`relative flex items-center justify-center w-12 h-10 mx-auto rounded-lg text-xs font-semibold transition-all group ${
-                        isActive
-                          ? 'bg-[#023526] text-white shadow-xs'
-                          : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
-                      }`}
+                      className={`relative flex items-center justify-center w-12 h-10 mx-auto rounded-lg text-xs font-semibold transition-all group ${isActive
+                        ? 'bg-[#023526] text-white shadow-xs'
+                        : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
+                        }`}
                     >
                       <Icon
-                        className={`w-5 h-5 transition-transform group-hover:scale-105 ${
-                          isActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
-                        }`}
+                        className={`w-5 h-5 transition-transform group-hover:scale-105 ${isActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
+                          }`}
                       />
                       {item.badge !== undefined && (
                         <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-4 text-[9px] font-extrabold bg-orange-500 text-white rounded-full flex items-center justify-center ring-2 ring-white">
@@ -435,27 +420,24 @@ export default function Sidebar() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
-                      isActive
-                        ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
-                        : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
-                    }`}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${isActive
+                      ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
+                      : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
+                      }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Icon
-                        className={`w-4 h-4 transition-transform group-hover:scale-105 shrink-0 ${
-                          isActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
-                        }`}
+                        className={`w-4 h-4 transition-transform group-hover:scale-105 shrink-0 ${isActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
+                          }`}
                       />
                       <span className="tracking-tight truncate">{item.label}</span>
                     </div>
                     {item.badge !== undefined && (
                       <span
-                        className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md shrink-0 ${
-                          isActive
-                            ? 'bg-[#c5a880] text-slate-900 shadow-xs'
-                            : 'bg-orange-100 text-orange-900 border border-orange-200'
-                        }`}
+                        className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md shrink-0 ${isActive
+                          ? 'bg-[#c5a880] text-slate-900 shadow-xs'
+                          : 'bg-orange-100 text-orange-900 border border-orange-200'
+                          }`}
                       >
                         {item.badge}
                       </span>

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
-import { ValetPricingConfig, PricingRule } from '@/types';
+import { ValetPricingConfig, PricingRule, ValetParkingPricingTier } from '@/types';
 import { initialValetPricing, initialPricingRules } from '@/data/mockData';
+
+export type { ValetParkingPricingTier };
 
 export interface TimePricingTier {
   hours: number;
@@ -42,6 +44,7 @@ export interface DriverPricingData {
   id?: string;
   local: LocalPricingTiers;
   outstation: OutstationPricingTiers;
+  valletparking?: ValetParkingPricingTier;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -113,6 +116,12 @@ export const defaultDriverPricingData: DriverPricingData = {
       },
     },
   },
+  valletparking: {
+    person: 1,
+    hours: 4,
+    customerprice: 600,
+    driverprice: 480,
+  },
 };
 
 interface PricingStoreState {
@@ -129,6 +138,9 @@ interface PricingStoreState {
   fetchDriverPricing: () => Promise<void>;
   saveDriverPricing: (
     payload: DriverPricingData
+  ) => Promise<{ success: boolean; message?: string; error?: string }>;
+  saveValetParkingTier: (
+    valletparking: ValetParkingPricingTier
   ) => Promise<{ success: boolean; message?: string; error?: string }>;
   updateValetPricing: (config: ValetPricingConfig) => void;
   addPricingRule: (rule: Omit<PricingRule, 'id'>) => void;
@@ -151,10 +163,18 @@ export const usePricingStore = create<PricingStoreState>((set, get) => ({
   fetchDriverPricing: async () => {
     set({ isLoading: true, error: null });
     try {
+      const token =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('token') ||
+            localStorage.getItem('admin_token') ||
+            document.cookie.split('; ').find((r) => r.startsWith('admin_token=') || r.startsWith('token='))?.split('=')[1]
+          : null;
+
       const res = await fetch('/api/admin/driver-pricing', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
 
@@ -167,6 +187,11 @@ export const usePricingStore = create<PricingStoreState>((set, get) => ({
           ? [json.data]
           : [];
         const current = list.length > 0 ? list[0] : defaultDriverPricingData;
+
+        // Ensure valletparking fallback if not yet configured in DB
+        if (!current.valletparking) {
+          current.valletparking = defaultDriverPricingData.valletparking;
+        }
 
         set({
           driverPricing: current,
@@ -191,10 +216,18 @@ export const usePricingStore = create<PricingStoreState>((set, get) => ({
   saveDriverPricing: async (payload: DriverPricingData) => {
     set({ isSaving: true, error: null });
     try {
+      const token =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('token') ||
+            localStorage.getItem('admin_token') ||
+            document.cookie.split('; ').find((r) => r.startsWith('admin_token=') || r.startsWith('token='))?.split('=')[1]
+          : null;
+
       const res = await fetch('/api/admin/driver-pricing', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(payload),
       });
@@ -232,6 +265,15 @@ export const usePricingStore = create<PricingStoreState>((set, get) => ({
         error: err.message || 'Network error while saving driver pricing.',
       };
     }
+  },
+
+  saveValetParkingTier: async (valletparking: ValetParkingPricingTier) => {
+    const current = get().driverPricing || defaultDriverPricingData;
+    const payload: DriverPricingData = {
+      ...current,
+      valletparking,
+    };
+    return get().saveDriverPricing(payload);
   },
 
   updateValetPricing: (config) => set({ valetPricing: config }),

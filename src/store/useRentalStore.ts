@@ -136,6 +136,7 @@ interface DriverAppStoreState {
 
   updateValetStaffStatus: (staffId: string, status: ValetStaff['status']) => void;
   addValetStaff: (staff: Omit<ValetStaff, 'id'>) => ValetStaff;
+  setValetStaff: (staff: ValetStaff[]) => void;
   toggleCustomerStatus: (customerId: string) => void;
 
   updateLocalPricing: (config: LocalPricingConfig) => void;
@@ -449,6 +450,11 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
     }));
     return newStaff;
   },
+
+  setValetStaff: (staff) =>
+    set({
+      valetStaff: staff,
+    }),
 
   toggleCustomerStatus: (customerId) =>
     set((state) => ({

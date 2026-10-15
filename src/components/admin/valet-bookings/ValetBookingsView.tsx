@@ -37,6 +37,7 @@ export default function ValetBookingsView() {
     isLoading,
     availableStaff,
     fetchValetBookings,
+    fetchAvailableStaff,
     updateValetBookingStatus,
     assignStaffToBooking,
     removeStaffFromBooking,
@@ -73,6 +74,11 @@ export default function ValetBookingsView() {
       search: debouncedSearch.trim() || undefined,
     });
   }, [currentPage, statusFilter, debouncedSearch, fetchValetBookings]);
+
+  // Load active valet staff roster from backend
+  useEffect(() => {
+    fetchAvailableStaff();
+  }, [fetchAvailableStaff]);
 
   const handleStatusChange = (newStatus: string) => {
     setStatusFilter(newStatus);
@@ -414,7 +420,7 @@ export default function ValetBookingsView() {
             title="Allocate Staff to Event"
           >
             <UserPlus className="w-3 h-3" />
-            Staff ({v.assignedStaffIds.length}/{v.requiredStaffCount})
+            Staff ({v.assignedStaffIds?.length || 0}/{v.requiredStaffCount})
           </button>
         </div>
       ),
@@ -428,8 +434,8 @@ export default function ValetBookingsView() {
         <div
           onClick={() => handleStatusChange('All')}
           className={`card-white p-4 space-y-1 cursor-pointer transition-all hover:shadow-xs ${statusFilter === 'All'
-              ? 'ring-2 ring-[#023526] border-transparent shadow-xs'
-              : 'hover:border-slate-300'
+            ? 'ring-2 ring-[#023526] border-transparent shadow-xs'
+            : 'hover:border-slate-300'
             }`}
           title="Click to view all events"
         >
@@ -450,8 +456,8 @@ export default function ValetBookingsView() {
         <div
           onClick={() => handleStatusChange('Pending')}
           className={`card-white p-4 space-y-1 cursor-pointer transition-all hover:shadow-xs ${statusFilter === 'Pending'
-              ? 'ring-2 ring-amber-500 border-transparent shadow-xs'
-              : 'hover:border-amber-200'
+            ? 'ring-2 ring-amber-500 border-transparent shadow-xs'
+            : 'hover:border-amber-200'
             }`}
           title="Click to filter pending allocation"
         >
@@ -472,8 +478,8 @@ export default function ValetBookingsView() {
         <div
           onClick={() => handleStatusChange('In Progress')}
           className={`card-white p-4 space-y-1 cursor-pointer transition-all hover:shadow-xs ${statusFilter === 'In Progress'
-              ? 'ring-2 ring-emerald-600 border-transparent shadow-xs'
-              : 'hover:border-emerald-200'
+            ? 'ring-2 ring-emerald-600 border-transparent shadow-xs'
+            : 'hover:border-emerald-200'
             }`}
           title="Click to filter active events"
         >
@@ -494,8 +500,8 @@ export default function ValetBookingsView() {
         <div
           onClick={() => handleStatusChange('Completed')}
           className={`card-white p-4 space-y-1 cursor-pointer transition-all hover:shadow-xs ${statusFilter === 'Completed'
-              ? 'ring-2 ring-sky-600 border-transparent shadow-xs'
-              : 'hover:border-sky-200'
+            ? 'ring-2 ring-sky-600 border-transparent shadow-xs'
+            : 'hover:border-sky-200'
             }`}
           title="Click to filter completed events"
         >
@@ -612,11 +618,10 @@ export default function ValetBookingsView() {
                     type="button"
                     disabled={(viewingBooking.assignedStaffIds?.length || 0) === 0}
                     onClick={() => handleUpdateStatus(viewingBooking.id, 'In Progress')}
-                    className={`px-2.5 py-1 font-bold rounded-lg transition-colors text-[10.5px] ${
-                      (viewingBooking.assignedStaffIds?.length || 0) > 0
+                    className={`px-2.5 py-1 font-bold rounded-lg transition-colors text-[10.5px] ${(viewingBooking.assignedStaffIds?.length || 0) > 0
                         ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
                         : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
-                    }`}
+                      }`}
                     title={
                       (viewingBooking.assignedStaffIds?.length || 0) > 0
                         ? 'Start Event Operations'

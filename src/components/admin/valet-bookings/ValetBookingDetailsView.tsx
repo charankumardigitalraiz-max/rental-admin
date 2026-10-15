@@ -43,6 +43,7 @@ export default function ValetBookingDetailsView({ bookingId }: ValetBookingDetai
     availableStaff,
     isLoading,
     fetchValetBookingById,
+    fetchAvailableStaff,
     updateValetBookingStatus,
     assignStaffToBooking,
     removeStaffFromBooking,
@@ -70,6 +71,11 @@ export default function ValetBookingDetailsView({ bookingId }: ValetBookingDetai
       isMounted = false;
     };
   }, [bookingId, fetchValetBookingById]);
+
+  // Load live valet staff members from backend
+  useEffect(() => {
+    fetchAvailableStaff();
+  }, [fetchAvailableStaff]);
 
   // Fallback to locally stored booking if available
   useEffect(() => {
@@ -168,6 +174,10 @@ export default function ValetBookingDetailsView({ bookingId }: ValetBookingDetai
 
       setSelectedStaffId('');
       toast.success('Staff Allocated', `${staffName} assigned to ${booking.eventName}`);
+      // Refresh fresh populated booking from backend
+      fetchValetBookingById(booking.id).then((fresh) => {
+        if (fresh) setBooking(fresh);
+      });
     } else {
       toast.error('Allocation Failed', 'Could not assign staff member');
     }
@@ -200,6 +210,9 @@ export default function ValetBookingDetailsView({ bookingId }: ValetBookingDetai
           : null
       );
       toast.info('Staff Removed', 'Valet staff unassigned from this event');
+      fetchValetBookingById(booking.id).then((fresh) => {
+        if (fresh) setBooking(fresh);
+      });
     } else {
       toast.error('Removal Failed', 'Could not remove staff member');
     }
@@ -541,17 +554,21 @@ export default function ValetBookingDetailsView({ bookingId }: ValetBookingDetai
                         key={staffId}
                         className="p-3 bg-slate-50 border border-slate-200/90 rounded-xl flex items-center justify-between gap-3 shadow-2xs hover:bg-slate-100/60 transition-colors"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-[#023526] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        <Link
+                          href={`/admin/valet-staff/${staffId}`}
+                          className="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition-opacity cursor-pointer group"
+                          title="View Valet Staff Profile"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-[#023526] text-white flex items-center justify-center font-bold text-xs shrink-0 group-hover:scale-105 transition-transform">
                             {staffName.charAt(0)}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-slate-900 truncate">{staffName}</h4>
+                            <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-[#023526] transition-colors">{staffName}</h4>
                             <span className="text-[10.5px] text-slate-500 flex items-center gap-1">
                               <Phone className="w-3 h-3 text-slate-400 shrink-0" /> {staffPhone}
                             </span>
                           </div>
-                        </div>
+                        </Link>
 
                         <button
                           type="button"

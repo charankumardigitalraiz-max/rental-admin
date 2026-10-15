@@ -324,6 +324,7 @@ export interface ValetBooking {
 
 export interface ValetStaff {
   id: string;
+  staffId?: string;
   name: string;
   phone: string;
   email: string;
@@ -350,6 +351,21 @@ export interface ValetStaff {
     bookingId: string;
     eventName: string;
     venue: string;
+    status?: string;
+    eventDate?: string;
+  };
+  bookings?: ValetBooking[];
+  bookingsPagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  bookingCounts?: {
+    all: number;
+    active: number;
+    completed: number;
+    cancelled: number;
   };
   earnings: {
     total: number;

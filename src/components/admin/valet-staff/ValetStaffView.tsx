@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRentalStore } from '@/store/useRentalStore';
 import { useValetBookingStore } from '@/store/useValetBookingStore';
+import { useValetStaffStore } from '@/store/useValetStaffStore';
 import { useToast } from '@/context/ToastContext';
 import Modal from '@/components/ui/Modal';
+import DataTable, { Column } from '@/components/ui/DataTable';
 import {
   Users,
   Search,
@@ -31,6 +33,9 @@ import {
   Upload,
   X,
   FileText,
+  Loader2,
+  RefreshCw,
+  RotateCcw,
 } from 'lucide-react';
 import { ValetStaff } from '@/types';
 
@@ -83,13 +88,33 @@ const getIdProofConfig = (type: string) => {
 };
 
 export default function ValetStaffView() {
-  const { valetStaff, updateValetStaffStatus, addValetStaff } = useRentalStore();
+  const { valetStaff, addValetStaff } = useRentalStore();
+  const {
+    staffList,
+    isLoading,
+    isSubmitting,
+    fetchStaff,
+    createStaff,
+    updateStaffStatus,
+    counts,
+    pagination,
+  } = useValetStaffStore();
   const { toast } = useToast();
 
+  // Dynamic Search & Filtering State
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [proofTypeFilter, setProofTypeFilter] = useState<string>('All');
+  const [bloodGroupFilter, setBloodGroupFilter] = useState<string>('All');
+  const [locationFilter, setLocationFilter] = useState<string>('All');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Modals & Selection
   const [selectedStaff, setSelectedStaff] = useState<ValetStaff | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [frontFile, setFrontFile] = useState<File | null>(null);
+  const [backFile, setBackFile] = useState<File | null>(null);
 
   // Form state for creating new staff member with dynamic single ID proof choice
   const [createFormData, setCreateFormData] = useState({
@@ -103,7 +128,6 @@ export default function ValetStaffView() {
     avatar: '',
     idProofType: 'Aadhaar Card',
     idProofNumber: '',
-    // Separate fields for front and back images of the ID proof
     idProofFrontImage: '',
     idProofBackImage: '',
     drivingLicenseNumber: '',
@@ -111,29 +135,100 @@ export default function ValetStaffView() {
     bloodGroup: 'O+',
   });
 
-  const filteredStaff = valetStaff.filter((staff) => {
-    const matchesSearch =
-      staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      staff.phone.includes(searchQuery) ||
-      staff.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (staff.address && staff.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (staff.idProofNumber && staff.idProofNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (staff.idProofType && staff.idProofType.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (staff.aadhaarNumber && staff.aadhaarNumber.includes(searchQuery)) ||
-      (staff.drivingLicenseNumber &&
-        staff.drivingLicenseNumber.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesStatus =
-      statusFilter === 'All'
-        ? true
-        : statusFilter === 'On Duty'
-          ? staff.status === 'On Duty' || staff.status === 'Assigned'
-          : staff.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Debounce search input (300ms) to ensure smooth live typing and prevent backend overloading
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
-  const availableCount = valetStaff.filter((s) => s.status === 'Available').length;
-  const onDutyCount = valetStaff.filter((s) => s.status === 'On Duty' || s.status === 'Assigned').length;
-  const avgRating = (valetStaff.reduce((acc, s) => acc + s.rating, 0) / (valetStaff.length || 1)).toFixed(1);
+  // Dynamically fetch staff from backend whenever search or any filter criteria changes
+  useEffect(() => {
+    fetchStaff({
+      page: currentPage,
+      limit: 50,
+      search: debouncedSearch.trim() || undefined,
+      status: statusFilter !== 'All' ? statusFilter : undefined,
+      proofType: proofTypeFilter !== 'All' ? proofTypeFilter : undefined,
+      bloodGroup: bloodGroupFilter !== 'All' ? bloodGroupFilter : undefined,
+      location: locationFilter !== 'All' ? locationFilter : undefined,
+    });
+  }, [debouncedSearch, statusFilter, proofTypeFilter, bloodGroupFilter, locationFilter, currentPage, fetchStaff]);
+
+  const currentStaffList = staffList.length > 0 ? staffList : valetStaff;
+
+  // Extract unique locations for the dynamic Base Hub filter dropdown
+  const uniqueLocations = React.useMemo(() => {
+    const locSet = new Set<string>();
+    currentStaffList.forEach((s) => {
+      if (s.location && s.location.trim()) {
+        locSet.add(s.location.trim());
+      }
+    });
+    return Array.from(locSet).sort();
+  }, [currentStaffList]);
+
+  // Client-side instant filter match for immediate feedback
+  const filteredStaff = React.useMemo(() => {
+    return currentStaffList.filter((staff) => {
+      if (statusFilter !== 'All') {
+        if (statusFilter === 'On Duty') {
+          if (staff.status !== 'On Duty' && staff.status !== 'Assigned') return false;
+        } else if (staff.status !== statusFilter) {
+          return false;
+        }
+      }
+      if (proofTypeFilter !== 'All') {
+        const pType = (staff.idProofType || '').toLowerCase();
+        const target = proofTypeFilter.toLowerCase().replace(/card|license/g, '').trim();
+        if (!pType.includes(target)) return false;
+      }
+      if (bloodGroupFilter !== 'All') {
+        if (staff.bloodGroup !== bloodGroupFilter) return false;
+      }
+      if (locationFilter !== 'All') {
+        const loc = (staff.location || staff.address || '').toLowerCase();
+        if (!loc.includes(locationFilter.toLowerCase())) return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const match =
+          staff.name.toLowerCase().includes(q) ||
+          staff.phone.toLowerCase().includes(q) ||
+          (staff.staffId || '').toLowerCase().includes(q) ||
+          (staff.email || '').toLowerCase().includes(q) ||
+          (staff.location || '').toLowerCase().includes(q) ||
+          (staff.address || '').toLowerCase().includes(q) ||
+          (staff.idProofNumber || '').toLowerCase().includes(q) ||
+          (staff.idProofType || '').toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [currentStaffList, statusFilter, proofTypeFilter, bloodGroupFilter, locationFilter, searchQuery]);
+
+  const totalCount = counts?.total ?? currentStaffList.length;
+  const availableCount = counts?.available ?? currentStaffList.filter((s) => s.status === 'Available').length;
+  const onDutyCount = counts?.onDuty ?? currentStaffList.filter((s) => s.status === 'On Duty' || s.status === 'Assigned').length;
+  const avgRating = (currentStaffList.reduce((acc, s) => acc + s.rating, 0) / (currentStaffList.length || 1)).toFixed(1);
+
+  const isFiltered =
+    searchQuery.trim() !== '' ||
+    statusFilter !== 'All' ||
+    proofTypeFilter !== 'All' ||
+    bloodGroupFilter !== 'All' ||
+    locationFilter !== 'All';
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setDebouncedSearch('');
+    setStatusFilter('All');
+    setProofTypeFilter('All');
+    setBloodGroupFilter('All');
+    setLocationFilter('All');
+    setCurrentPage(1);
+  };
 
   // Handle local file upload for ID proof front image
   const handleIdProofFrontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,6 +238,7 @@ export default function ValetStaffView() {
         toast.warning('File Too Large', 'Please upload an image smaller than 5MB');
         return;
       }
+      setFrontFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setCreateFormData((prev) => ({
@@ -162,6 +258,7 @@ export default function ValetStaffView() {
         toast.warning('File Too Large', 'Please upload an image smaller than 5MB');
         return;
       }
+      setBackFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setCreateFormData((prev) => ({
@@ -173,11 +270,16 @@ export default function ValetStaffView() {
     }
   };
 
-  // Handle Create Staff submission with dynamic ID proof validation
-  const handleCreateStaff = (e: React.FormEvent) => {
+  // Handle Create Staff submission with dynamic ID proof validation & API integration
+  const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createFormData.name.trim() || !createFormData.phone.trim() || !createFormData.location.trim()) {
-      toast.warning('Required Fields Missing', 'Please fill in name, phone, and operating location');
+    if (!createFormData.name.trim()) {
+      toast.warning('Full Name Required', 'Please enter the staff member’s full name');
+      return;
+    }
+
+    if (!createFormData.phone.trim()) {
+      toast.warning('Phone Number Required', 'Please enter a valid phone number');
       return;
     }
 
@@ -194,7 +296,7 @@ export default function ValetStaffView() {
       return;
     }
 
-    if (!createFormData.idProofFrontImage.trim()) {
+    if (!createFormData.idProofFrontImage.trim() && !frontFile) {
       toast.warning(
         'Front ID Image Required',
         `Please upload the front side image of the ${createFormData.idProofType}`
@@ -202,63 +304,58 @@ export default function ValetStaffView() {
       return;
     }
 
-    const defaultAvatar =
-      createFormData.avatar.trim() ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        createFormData.name
-      )}&background=023526&color=fff&bold=true`;
+    // Build FormData payload for POST /api/admin/valet-staff
+    const formData = new FormData();
+    formData.append('name', createFormData.name.trim());
+    formData.append('phone', createFormData.phone.trim());
+    if (createFormData.email.trim()) formData.append('email', createFormData.email.trim());
+    formData.append('address', createFormData.address.trim());
+    formData.append('location', createFormData.location.trim() || createFormData.address.trim());
+    formData.append('proofType', createFormData.idProofType);
+    formData.append('identityNumber', createFormData.idProofNumber.trim());
+    formData.append('bloodGroup', createFormData.bloodGroup || 'O+');
+    formData.append('status', 'active');
+    if (createFormData.experienceYears) {
+      formData.append('experienceYears', createFormData.experienceYears.toString());
+    }
 
-    const newStaff = addValetStaff({
-      name: createFormData.name.trim(),
-      phone: createFormData.phone.trim(),
-      email:
-        createFormData.email.trim() ||
-        `${createFormData.name.toLowerCase().replace(/\s+/g, '.')}@valet.com`,
-      location: createFormData.location.trim(),
-      address: createFormData.address.trim(),
-      experienceYears: Number(createFormData.experienceYears) || 1,
-      status: createFormData.status,
-      avatar: defaultAvatar,
-      rating: 5.0,
-      assignedEventsCount: 0,
-      idProofType: createFormData.idProofType,
-      idProofNumber: createFormData.idProofNumber.trim(),
-      // Store both front and back images + legacy idProofImage
-      idProofImage: createFormData.idProofFrontImage.trim(),
-      idProofFrontImage: createFormData.idProofFrontImage.trim(),
-      idProofBackImage: createFormData.idProofBackImage.trim(),
-      // Auto-map backward compatibility fields if Aadhaar was the chosen ID
-      aadhaarNumber:
-        createFormData.idProofType === 'Aadhaar Card'
-          ? createFormData.idProofNumber.trim()
-          : undefined,
-      aadhaarCardImage:
-        createFormData.idProofType === 'Aadhaar Card'
-          ? createFormData.idProofFrontImage.trim()
-          : undefined,
-      aadhaarCardFront:
-        createFormData.idProofType === 'Aadhaar Card'
-          ? createFormData.idProofFrontImage.trim()
-          : undefined,
-      aadhaarCardBack:
-        createFormData.idProofType === 'Aadhaar Card'
-          ? createFormData.idProofBackImage.trim()
-          : undefined,
-      drivingLicenseNumber:
-        createFormData.idProofType === 'Driving License'
-          ? createFormData.idProofNumber.trim()
-          : createFormData.drivingLicenseNumber.trim() || undefined,
-      emergencyContact: createFormData.emergencyContact.trim(),
-      bloodGroup: createFormData.bloodGroup,
-      earnings: { total: 0, pending: 0, paid: 0 },
-    });
+    if (frontFile) {
+      formData.append('proofImage', frontFile);
+    } else if (createFormData.idProofFrontImage) {
+      formData.append('proofImage', createFormData.idProofFrontImage);
+    }
 
-    // Sync to valet booking store roster as well
-    useValetBookingStore.setState((s) => ({
-      availableStaff: [newStaff, ...s.availableStaff],
-    }));
+    if (backFile) {
+      formData.append('proofImageBack', backFile);
+    } else if (createFormData.idProofBackImage) {
+      formData.append('proofImageBack', createFormData.idProofBackImage);
+    }
 
-    toast.success('Valet Staff Registered', `${newStaff.name} verified with ${createFormData.idProofType} & added to roster`);
+    if (createFormData.avatar) {
+      formData.append('profileImage', createFormData.avatar);
+    }
+
+    const result = await createStaff(formData);
+    if (!result.success) {
+      toast.error('Registration Failed', result.error || 'Failed to create staff');
+      return;
+    }
+
+    // Sync to legacy stores
+    if (result.data) {
+      addValetStaff(result.data);
+      useValetBookingStore.setState((s) => ({
+        availableStaff: [result.data!, ...s.availableStaff],
+      }));
+    }
+
+    toast.success(
+      'Valet Staff Registered',
+      `${result.data?.name || createFormData.name} verified with ${createFormData.idProofType} & saved to database`
+    );
+
+    setFrontFile(null);
+    setBackFile(null);
     setCreateFormData({
       name: '',
       phone: '',
@@ -279,9 +376,8 @@ export default function ValetStaffView() {
     setIsCreateModalOpen(false);
   };
 
-  // Handle status update for a staff member
-  const handleUpdateStatus = (staffId: string, status: ValetStaff['status']) => {
-    updateValetStaffStatus(staffId, status);
+  // Handle status update for a staff member via API
+  const handleUpdateStatus = async (staffId: string, status: ValetStaff['status']) => {
     if (selectedStaff && selectedStaff.id === staffId) {
       setSelectedStaff((prev) => (prev ? { ...prev, status } : null));
     }
@@ -290,17 +386,213 @@ export default function ValetStaffView() {
         staff.id === staffId ? { ...staff, status } : staff
       ),
     }));
-    toast.success('Status Updated', `Staff status changed to ${status}`);
+
+    const result = await updateStaffStatus(staffId, status);
+    if (result.success) {
+      toast.success('Status Updated', `Staff status changed to ${status}`);
+    } else {
+      toast.error('Update Failed', result.error || 'Failed to update status on server');
+    }
   };
 
   const idConfig = getIdProofConfig(createFormData.idProofType);
+
+  const columns: Column<ValetStaff>[] = [
+    {
+      key: 'name',
+      header: 'Attendant Profile',
+      className: 'min-w-[200px]',
+      render: (staff) => (
+        <Link
+          href={`/admin/valet-staff/${staff.id}`}
+          className="flex items-center gap-3 group/link"
+          title={`View ${staff.name}'s Profile`}
+        >
+          <div className="relative shrink-0">
+            <img
+              src={staff.avatar}
+              alt={staff.name}
+              className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 group-hover/link:ring-[#023526]/30 transition-all"
+            />
+            <span
+              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-1.5 ring-white ${staff.status === 'Available'
+                ? 'bg-emerald-500'
+                : staff.status === 'On Duty'
+                  ? 'bg-amber-500'
+                  : staff.status === 'Assigned'
+                    ? 'bg-sky-500'
+                    : 'bg-slate-400'
+                }`}
+            />
+          </div>
+          <div>
+            <span className="font-bold text-slate-900 group-hover/link:text-[#023526] transition-colors block text-xs">
+              {staff.name}
+            </span>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5">
+              <span className="font-mono text-[10px] text-slate-400">{staff.staffId}</span>
+              <span>•</span>
+              <span className="flex items-center gap-0.5 font-semibold text-amber-700">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                {staff.rating}
+              </span>
+              <span>•</span>
+              <span>{staff.experienceYears}y exp</span>
+            </div>
+          </div>
+        </Link>
+      ),
+    },
+    {
+      key: 'phone',
+      header: 'Contact & Station',
+      className: 'min-w-[170px]',
+      render: (staff) => (
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-slate-800 font-medium text-xs">
+            <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+            <span>{staff.phone}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
+            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+            <span className="truncate max-w-[160px]" title={staff.address || staff.location}>
+              {staff.location || 'Bengaluru Central'}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'idProof',
+      header: 'Government ID Proof',
+      className: 'min-w-[180px]',
+      render: (staff) => (
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 font-semibold text-slate-800 text-[11px]">
+            <CreditCard className="w-3 h-3 text-[#023526] shrink-0" />
+            <span>{staff.idProofType || 'Aadhaar Card'}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[10.5px] font-mono text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 inline-block">
+              {staff.idProofNumber || staff.aadhaarNumber || 'Verified'}
+            </span>
+            <span
+              title="KYC Verified"
+              className="bg-emerald-50 text-emerald-700 p-0.5 rounded border border-emerald-200 shrink-0"
+            >
+              <ShieldCheck className="w-3 h-3 text-emerald-600" />
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'currentAssignment',
+      header: 'Current Duty Assignment',
+      className: 'min-w-[180px]',
+      render: (staff) =>
+        staff.currentAssignment ? (
+          <div className="space-y-0.5 max-w-[190px]">
+            <span className="font-bold text-slate-900 block text-xs truncate">
+              {staff.currentAssignment.eventName}
+            </span>
+            <span className="text-[10.5px] text-slate-500 flex items-center gap-1 truncate">
+              <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+              {staff.currentAssignment.venue}
+            </span>
+            <span className="inline-block text-[9.5px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded font-semibold">
+              {staff.currentAssignment.bookingId}
+            </span>
+          </div>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+            Standby / Available
+          </span>
+        ),
+    },
+    {
+      key: 'earnings',
+      header: 'Events & Earnings',
+      className: 'min-w-[140px]',
+      render: (staff) => (
+        <div>
+          <span className="font-extrabold text-slate-900 text-xs block">
+            ₹{staff.earnings.total.toLocaleString('en-IN')}
+          </span>
+          <span className="text-[10px] text-slate-500 font-medium">
+            {staff.assignedEventsCount} events handled
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      className: 'min-w-[140px]',
+      render: (staff) => (
+        <div className="flex flex-col gap-1 w-fit">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${staff.status === 'Available'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
+              : staff.status === 'On Duty'
+                ? 'bg-amber-50 text-amber-900 border-amber-200/80'
+                : staff.status === 'Assigned'
+                  ? 'bg-sky-50 text-sky-800 border-sky-200/80'
+                  : 'bg-slate-100 text-slate-600 border-slate-200'
+              }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${staff.status === 'Available' || staff.status === 'On Duty'
+                ? 'bg-emerald-500 animate-pulse'
+                : staff.status === 'Assigned'
+                  ? 'bg-sky-500'
+                  : 'bg-slate-400'
+                }`}
+            />
+            {staff.status}
+          </span>
+
+          <select
+            value={staff.status}
+            onChange={(e) => handleUpdateStatus(staff.id, e.target.value as any)}
+            className="text-[11px] font-semibold bg-white border border-slate-200 rounded-md px-1.5 py-0.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#023526] cursor-pointer"
+          >
+            <option value="Available">Available</option>
+            <option value="Assigned">Assigned</option>
+            <option value="On Duty">On Duty</option>
+            <option value="Offline">Offline</option>
+            <option value="Suspended">Suspended</option>
+          </select>
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Action',
+      align: 'center',
+      render: (staff) => (
+        <Link
+          href={`/admin/valet-staff/${staff.id}`}
+          className="px-3 py-1.5 bg-[#023526] hover:bg-[#034431] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+          title="View Individual Valet Person Profile & Deployments Screen"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>View</span>
+        </Link>
+      ),
+    },
+  ];
 
   return (
     <div className="p-2 space-y-6 max-w-7xl mx-auto">
       {/* 4 Individual Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
-          onClick={() => setStatusFilter('All')}
+          onClick={() => {
+            setStatusFilter('All');
+            setCurrentPage(1);
+          }}
           className={`card-white p-4 space-y-1 cursor-pointer transition-all hover:shadow-xs ${statusFilter === 'All'
             ? 'ring-2 ring-[#023526] border-transparent shadow-xs'
             : 'hover:border-slate-300'
@@ -313,12 +605,15 @@ export default function ValetStaffView() {
             </span>
             {statusFilter === 'All' && <span className="w-2 h-2 rounded-full bg-[#023526]" />}
           </div>
-          <div className="text-xl font-bold text-slate-900 mt-1">{valetStaff.length}</div>
+          <div className="text-xl font-bold text-slate-900 mt-1">{totalCount}</div>
           <span className="text-[10px] text-slate-400 font-medium">Active roster staff</span>
         </div>
 
         <div
-          onClick={() => setStatusFilter(statusFilter === 'On Duty' ? 'All' : 'On Duty')}
+          onClick={() => {
+            setStatusFilter(statusFilter === 'On Duty' ? 'All' : 'On Duty');
+            setCurrentPage(1);
+          }}
           className={`card-white p-4 space-y-1 cursor-pointer transition-all hover:shadow-xs ${statusFilter === 'On Duty'
             ? 'ring-2 ring-emerald-600 border-transparent shadow-xs'
             : 'hover:border-emerald-200'
@@ -336,7 +631,10 @@ export default function ValetStaffView() {
         </div>
 
         <div
-          onClick={() => setStatusFilter(statusFilter === 'Available' ? 'All' : 'Available')}
+          onClick={() => {
+            setStatusFilter(statusFilter === 'Available' ? 'All' : 'Available');
+            setCurrentPage(1);
+          }}
           className={`card-white p-4 space-y-1 cursor-pointer transition-all hover:shadow-xs ${statusFilter === 'Available'
             ? 'ring-2 ring-sky-600 border-transparent shadow-xs'
             : 'hover:border-sky-200'
@@ -366,37 +664,246 @@ export default function ValetStaffView() {
         </div>
       </div>
 
-      {/* Main Roster Card (Search, Filters, Create & Cards Grid) */}
-      <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-xs space-y-5">
-        {/* Filter, Search, and Create Staff Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pb-4 border-b border-slate-100">
-          <div className="relative flex-1 sm:max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search staff by name, phone, location, address, ID proof..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50/50 hover:bg-white focus:bg-white focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] focus:outline-none transition-all shadow-2xs"
-            />
-          </div>
+      {/* Active Filter Badges Bar */}
+      {isFiltered && (
+        <div className="flex items-center gap-2 flex-wrap bg-slate-50 border border-slate-200/90 rounded-md p-3 text-xs shadow-2xs">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mr-1">
+            <Filter className="w-3.5 h-3.5 text-[#023526]" /> Active Filters:
+          </span>
 
-          <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+          {searchQuery.trim() && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 text-slate-800 rounded-lg text-xs font-semibold shadow-2xs">
+              Search: <span className="font-bold text-[#023526]">&quot;{searchQuery}&quot;</span>
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {statusFilter !== 'All' && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 text-slate-800 rounded-lg text-xs font-semibold shadow-2xs">
+              Status: <span className="font-bold text-[#023526]">{statusFilter}</span>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('All')}
+                className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                title="Clear status filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {proofTypeFilter !== 'All' && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 text-slate-800 rounded-lg text-xs font-semibold shadow-2xs">
+              Proof: <span className="font-bold text-[#023526]">{proofTypeFilter}</span>
+              <button
+                type="button"
+                onClick={() => setProofTypeFilter('All')}
+                className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                title="Clear proof filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {bloodGroupFilter !== 'All' && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 text-slate-800 rounded-lg text-xs font-semibold shadow-2xs">
+              Blood: <span className="font-bold text-[#023526]">{bloodGroupFilter}</span>
+              <button
+                type="button"
+                onClick={() => setBloodGroupFilter('All')}
+                className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                title="Clear blood group filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {locationFilter !== 'All' && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 text-slate-800 rounded-lg text-xs font-semibold shadow-2xs">
+              Hub: <span className="font-bold text-[#023526]">{locationFilter}</span>
+              <button
+                type="button"
+                onClick={() => setLocationFilter('All')}
+                className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                title="Clear location filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="text-xs text-rose-600 hover:text-rose-700 font-bold ml-auto flex items-center gap-1 hover:underline cursor-pointer"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Clear all filters</span>
+          </button>
+        </div>
+      )}
+
+      {/* Main Roster with Global DataTable */}
+      <DataTable<ValetStaff>
+        columns={columns}
+        data={filteredStaff}
+        keyExtractor={(staff) => staff.id}
+        pageSize={8}
+        isLoading={isLoading}
+        searchValue={searchQuery}
+        onSearchChange={(val) => {
+          setSearchQuery(val);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search staff by name, phone, location, address, ID proof number..."
+        searchFilterKeys={['name', 'phone', 'location', 'address', 'idProofNumber', 'idProofType', 'id', 'staffId']}
+        emptyMessage={
+          <div className="py-8 text-center space-y-2">
+            <Users className="w-8 h-8 text-slate-300 mx-auto" />
+            <p className="text-sm font-semibold text-slate-700">No valet staff found</p>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              No attendants matched your current search and filter criteria. Try clearing some filters.
+            </p>
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="mt-2 px-3 py-1.5 bg-[#023526] text-white text-xs font-bold rounded-lg hover:bg-[#034834] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset All Filters</span>
+              </button>
+            )}
+          </div>
+        }
+        headerActions={
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {/* Status Dropdown */}
             <div className="flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-xs font-semibold text-slate-600">Status:</span>
+              <span className="text-[11px] font-semibold text-slate-500">Status:</span>
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold bg-white text-slate-700 hover:border-slate-300 focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] focus:outline-none transition-all shadow-2xs cursor-pointer"
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold bg-white text-slate-700 hover:border-slate-300 focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] focus:outline-none transition-all shadow-2xs cursor-pointer"
               >
-                <option value="All">All Staff ({valetStaff.length})</option>
-                <option value="Available">Available</option>
-                <option value="Assigned">Assigned</option>
-                <option value="On Duty">On Duty</option>
+                <option value="All">All Statuses ({totalCount})</option>
+                <option value="Available">Available Standby</option>
+                <option value="On Duty">On Duty / Assigned</option>
+                <option value="Assigned">Assigned to Event</option>
                 <option value="Offline">Offline</option>
+                <option value="Suspended">Suspended</option>
               </select>
             </div>
+
+            {/* ID Proof Type Dropdown */}
+            {/* <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500">Proof:</span>
+              <select
+                value={proofTypeFilter}
+                onChange={(e) => {
+                  setProofTypeFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold bg-white text-slate-700 hover:border-slate-300 focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] focus:outline-none transition-all shadow-2xs cursor-pointer"
+              >
+                <option value="All">All ID Proofs</option>
+                <option value="Aadhaar Card">Aadhaar Card</option>
+                <option value="PAN Card">PAN Card</option>
+                <option value="Voter ID">Voter ID</option>
+                <option value="Driving License">Driving License</option>
+                <option value="Passport">Passport</option>
+              </select>
+            </div> */}
+
+            {/* Blood Group Dropdown */}
+            {/* <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500">Blood:</span>
+              <select
+                value={bloodGroupFilter}
+                onChange={(e) => {
+                  setBloodGroupFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold bg-white text-slate-700 hover:border-slate-300 focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] focus:outline-none transition-all shadow-2xs cursor-pointer"
+              >
+                <option value="All">All Blood Groups</option>
+                <option value="O+">O+ Positive</option>
+                <option value="O-">O- Negative</option>
+                <option value="A+">A+ Positive</option>
+                <option value="A-">A- Negative</option>
+                <option value="B+">B+ Positive</option>
+                <option value="B-">B- Negative</option>
+                <option value="AB+">AB+ Positive</option>
+                <option value="AB-">AB- Negative</option>
+              </select>
+            </div> */}
+
+            {/* Hub / Location Dropdown */}
+            {/* {uniqueLocations.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-slate-500">Hub:</span>
+                <select
+                  value={locationFilter}
+                  onChange={(e) => {
+                    setLocationFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold bg-white text-slate-700 hover:border-slate-300 focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] focus:outline-none transition-all shadow-2xs cursor-pointer max-w-[150px] truncate"
+                >
+                  <option value="All">All Base Hubs</option>
+                  {uniqueLocations.map((loc) => (
+                    <option key={loc} value={loc}>
+                      {loc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )} */}
+
+            {/* Reset Button */}
+            {/* {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                title="Reset all search filters"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset</span>
+              </button>
+            )} */}
+
+            <button
+              type="button"
+              onClick={() =>
+                fetchStaff({
+                  page: currentPage,
+                  limit: 50,
+                  search: debouncedSearch.trim() || undefined,
+                  status: statusFilter !== 'All' ? statusFilter : undefined,
+                  proofType: proofTypeFilter !== 'All' ? proofTypeFilter : undefined,
+                  bloodGroup: bloodGroupFilter !== 'All' ? bloodGroupFilter : undefined,
+                  location: locationFilter !== 'All' ? locationFilter : undefined,
+                })
+              }
+              disabled={isLoading}
+              className="p-2 border border-slate-200 hover:border-[#023526] hover:bg-slate-50 text-slate-600 rounded-xl transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+              title="Refresh Staff Roster"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-[#023526]' : ''}`} />
+            </button>
 
             <button
               type="button"
@@ -407,179 +914,8 @@ export default function ValetStaffView() {
               <span>Add Valet Staff</span>
             </button>
           </div>
-        </div>
-
-        {/* Empty State */}
-        {filteredStaff.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 space-y-2">
-            <Users className="w-8 h-8 text-slate-300 mx-auto" />
-            <p className="text-sm font-semibold text-slate-700">No valet staff found</p>
-            <p className="text-xs text-slate-400">
-              Try adjusting your search query or status filter, or register a new staff member.
-            </p>
-          </div>
-        ) : (
-          /* Roster Cards Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredStaff.map((staff) => (
-              <div
-                key={staff.id}
-                className="bg-slate-50/50 hover:bg-white border border-stone-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4 group hover:border-[#023526]/30"
-              >
-                {/* Top Profile Header */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <img
-                        src={staff.avatar}
-                        alt={staff.name}
-                        className="w-12 h-12 rounded-xl object-cover ring-2 ring-stone-100 group-hover:ring-[#023526]/20 transition-all"
-                      />
-                      <span className="absolute -bottom-1 -right-1 bg-[#023526] text-white p-0.5 rounded-full ring-2 ring-white">
-                        <ShieldCheck className="w-3 h-3 text-amber-300" />
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-sm tracking-tight group-hover:text-[#023526] transition-colors">
-                        {staff.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold mt-0.5">
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                        <span>{staff.rating}</span>
-                        <span className="text-slate-400 font-normal">({staff.assignedEventsCount} events)</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide uppercase border ${staff.status === 'Available'
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
-                      : staff.status === 'On Duty'
-                        ? 'bg-amber-50 text-amber-900 border-amber-200/80'
-                        : staff.status === 'Assigned'
-                          ? 'bg-sky-50 text-sky-800 border-sky-200/80'
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
-                      }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${staff.status === 'Available'
-                        ? 'bg-emerald-500 animate-pulse'
-                        : staff.status === 'On Duty'
-                          ? 'bg-amber-500 animate-pulse'
-                          : staff.status === 'Assigned'
-                            ? 'bg-sky-500'
-                            : 'bg-slate-400'
-                        }`}
-                    />
-                    {staff.status}
-                  </span>
-                </div>
-
-                {/* Info Grid with Phone, Location, Address & ID Proof Snippet */}
-                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50/70 p-3 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="truncate font-medium">{staff.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="truncate font-medium">{staff.location}</span>
-                  </div>
-
-                  {staff.address && (
-                    <div className="col-span-2 flex items-start gap-1.5 text-slate-500 text-[11px] pt-1 border-t border-slate-200/50">
-                      <span className="text-slate-400 shrink-0 font-medium">Address:</span>
-                      <span className="truncate" title={staff.address}>
-                        {staff.address}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="col-span-2 flex items-center justify-between gap-2 text-slate-700 pt-1.5 border-t border-slate-200/60">
-                    <div className="flex items-center gap-1.5 font-semibold text-slate-800 text-[11px]">
-                      <ShieldCheck className="w-3.5 h-3.5 text-[#023526] shrink-0" />
-                      <span>{staff.experienceYears} Yrs Exp</span>
-                    </div>
-
-                    <div
-                      className="flex items-center gap-1 text-[10px] font-mono text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200"
-                      title={
-                        staff.idProofNumber
-                          ? `${staff.idProofType || 'ID'}: ${staff.idProofNumber}`
-                          : staff.aadhaarNumber
-                            ? `Aadhaar: ${staff.aadhaarNumber}`
-                            : 'ID Verified'
-                      }
-                    >
-                      <CreditCard className="w-3 h-3 text-[#023526]" />
-                      <span>
-                        {staff.idProofType
-                          ? `${staff.idProofType.split(' ')[0]}: ••• ${(staff.idProofNumber || '').slice(-4) || 'OK'
-                          }`
-                          : staff.aadhaarNumber
-                            ? `Aadhaar: ••• ${staff.aadhaarNumber.replace(/\s+/g, '').slice(-4)}`
-                            : 'Verified'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Active Event Assignment Banner */}
-                {staff.currentAssignment ? (
-                  <div className="bg-gradient-to-r from-emerald-950 to-[#023526] text-white p-3 rounded-xl space-y-1 shadow-2xs">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-[#c5a880] uppercase tracking-wider">
-                      <span>Current Event Duty</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    </div>
-                    <p className="font-bold text-xs truncate text-white">{staff.currentAssignment.eventName}</p>
-                    <p className="text-[11px] text-emerald-200/80 truncate">@ {staff.currentAssignment.venue}</p>
-                  </div>
-                ) : (
-                  <div className="bg-slate-50 border border-dashed border-slate-200 p-2.5 rounded-xl text-[11px] text-slate-400 text-center font-medium">
-                    No active event assigned currently
-                  </div>
-                )}
-
-                {/* Card Footer: Earnings, View Button & Quick Status Selector */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
-                  <div>
-                    <span className="text-[9.5px] text-slate-400 uppercase font-bold tracking-wider block">
-                      Total Earnings
-                    </span>
-                    <p className="text-sm font-extrabold text-slate-900">
-                      ₹{staff.earnings.total.toLocaleString('en-IN')}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedStaff(staff)}
-                      className="px-2.5 py-1.5 bg-slate-100 hover:bg-[#023526] hover:text-white text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
-                      title="View Staff Profile & ID Proof Documents"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>View</span>
-                    </button>
-
-                    <select
-                      value={staff.status}
-                      onChange={(e) => handleUpdateStatus(staff.id, e.target.value as any)}
-                      className="px-2 py-1.5 text-xs font-bold bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-[#023526] focus:outline-none shadow-2xs cursor-pointer"
-                    >
-                      <option value="Available">Available</option>
-                      <option value="Assigned">Assigned</option>
-                      <option value="On Duty">On Duty</option>
-                      <option value="Offline">Offline</option>
-                      <option value="Suspended">Suspended</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        }
+      />
 
       {/* View Staff Profile & ID Proof Modal */}
       {selectedStaff && (
@@ -1264,44 +1600,6 @@ export default function ValetStaffView() {
                 </div>
               </div>
             </div>
-
-            {/* Additional Driving License & Emergency Contact if ID selected is not DL */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* {createFormData.idProofType !== 'Driving License' && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Driving License (DL) Number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. KA-03-20220008899"
-                    value={createFormData.drivingLicenseNumber}
-                    onChange={(e) =>
-                      setCreateFormData({
-                        ...createFormData,
-                        drivingLicenseNumber: e.target.value.toUpperCase(),
-                      })
-                    }
-                    className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 font-mono uppercase text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] transition-all shadow-2xs"
-                  />
-                </div>
-              )} */}
-
-              {/* <div className={createFormData.idProofType === 'Driving License' ? 'sm:col-span-2' : ''}>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Emergency Contact Phone
-                </label>
-                <input
-                  type="tel"
-                  placeholder="+91 98800 11223 (Kin/Spouse)"
-                  value={createFormData.emergencyContact}
-                  onChange={(e) =>
-                    setCreateFormData({ ...createFormData, emergencyContact: e.target.value })
-                  }
-                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] transition-all shadow-2xs"
-                />
-              </div> */}
-            </div>
           </div>
 
 
@@ -1316,10 +1614,20 @@ export default function ValetStaffView() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#023526] hover:bg-[#034834] text-white text-xs font-bold rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1.5 active:scale-[0.98]"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-[#023526] hover:bg-[#034834] text-white text-xs font-bold rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1.5 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Verify & Register Staff</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Verifying & Saving...</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Verify & Register Staff</span>
+                </>
+              )}
             </button>
           </div>
         </form>

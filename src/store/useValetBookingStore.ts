@@ -165,6 +165,7 @@ interface ValetBookingStoreState {
   // Actions
   fetchValetBookings: (params?: FetchValetBookingsParams) => Promise<void>;
   fetchValetBookingById: (id: string) => Promise<ValetBooking | null>;
+  fetchAvailableStaff: () => Promise<void>;
   createValetBooking: (payload: CreateValetBookingPayload) => Promise<ValetBooking | null>;
   updateValetBookingStatus: (id: string, status: ValetBookingStatus) => Promise<boolean>;
   assignStaffToBooking: (bookingId: string, staffId: string) => Promise<boolean>;
@@ -248,6 +249,39 @@ export const useValetBookingStore = create<ValetBookingStoreState>((set, get) =>
       set({ selectedValetBooking: local, selectedValetBookingId: local.id });
     }
     return local;
+  },
+
+  fetchAvailableStaff: async () => {
+    try {
+      const res = await fetch('/api/admin/valet-staff?limit=100', {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const staffRaw = json.data?.staff || json.data || [];
+        if (Array.isArray(staffRaw) && staffRaw.length > 0) {
+          const mapped: ValetStaff[] = staffRaw.map((s: any) => ({
+            id: s._id?.toString() || s.id || '',
+            staffId: s.staffId || '',
+            name: s.name || 'Valet Attendant',
+            phone: s.phone || '',
+            email: s.email || '',
+            location: s.location || s.address || 'Bengaluru',
+            address: s.address || '',
+            avatar: s.profileImage || s.avatar || '',
+            rating: s.rating ?? 5.0,
+            experienceYears: s.experienceYears ?? 3,
+            assignedEventsCount: s.assignedEventsCount ?? 0,
+            status: s.status === 'active' ? (s.isAvailable === false ? 'Assigned' : 'Available') : (s.status || 'Available'),
+            earnings: s.earnings || { total: 0, pending: 0, paid: 0 },
+          }));
+          set({ availableStaff: mapped });
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch live valet staff:', e);
+    }
   },
 
   createValetBooking: async (payload: CreateValetBookingPayload) => {
@@ -377,7 +411,9 @@ export const useValetBookingStore = create<ValetBookingStoreState>((set, get) =>
 
   assignStaffToBooking: async (bookingId: string, staffId: string) => {
     const state = get();
-    const booking = state.valetBookings.find((b) => b.id === bookingId);
+    const booking =
+      state.valetBookings.find((b) => b.id === bookingId) ||
+      (state.selectedValetBooking?.id === bookingId ? state.selectedValetBooking : null);
     if (!booking) return false;
 
     const staffMember = state.availableStaff.find((s) => s.id === staffId);
@@ -389,7 +425,7 @@ export const useValetBookingStore = create<ValetBookingStoreState>((set, get) =>
       updatedIds.length >= booking.requiredStaffCount ? 'Fully Assigned' : 'Partially Assigned';
 
     try {
-      await fetch(`/api/admin/valet-bookings/${bookingId}`, {
+      const res = await fetch(`/api/admin/valet-bookings/${bookingId}`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -397,6 +433,19 @@ export const useValetBookingStore = create<ValetBookingStoreState>((set, get) =>
           status: newStatus === 'Fully Assigned' ? 'fully_assigned' : 'partially_assigned',
         }),
       });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          const mapped = mapBackendValetBooking(json.data);
+          set((s) => ({
+            valetBookings: s.valetBookings.map((b) => (b.id === bookingId ? mapped : b)),
+            selectedValetBooking:
+              s.selectedValetBooking?.id === bookingId ? mapped : s.selectedValetBooking,
+          }));
+          return true;
+        }
+      }
     } catch (err) {
       console.warn('Backend staff assignment failed, applying locally:', err);
     }
@@ -427,7 +476,9 @@ export const useValetBookingStore = create<ValetBookingStoreState>((set, get) =>
 
   removeStaffFromBooking: async (bookingId: string, staffId: string) => {
     const state = get();
-    const booking = state.valetBookings.find((b) => b.id === bookingId);
+    const booking =
+      state.valetBookings.find((b) => b.id === bookingId) ||
+      (state.selectedValetBooking?.id === bookingId ? state.selectedValetBooking : null);
     if (!booking) return false;
 
     const staffIdx = booking.assignedStaffIds.indexOf(staffId);
@@ -437,7 +488,7 @@ export const useValetBookingStore = create<ValetBookingStoreState>((set, get) =>
       updatedIds.length === 0 ? 'Pending Assignment' : 'Partially Assigned';
 
     try {
-      await fetch(`/api/admin/valet-bookings/${bookingId}`, {
+      const res = await fetch(`/api/admin/valet-bookings/${bookingId}`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -445,6 +496,19 @@ export const useValetBookingStore = create<ValetBookingStoreState>((set, get) =>
           status: updatedIds.length === 0 ? 'pending_assignment' : 'partially_assigned',
         }),
       });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          const mapped = mapBackendValetBooking(json.data);
+          set((s) => ({
+            valetBookings: s.valetBookings.map((b) => (b.id === bookingId ? mapped : b)),
+            selectedValetBooking:
+              s.selectedValetBooking?.id === bookingId ? mapped : s.selectedValetBooking,
+          }));
+          return true;
+        }
+      }
     } catch (err) {
       console.warn('Backend staff removal failed, applying locally:', err);
     }

@@ -135,26 +135,96 @@ export async function GET(req: NextRequest) {
                 preserveNullAndEmptyArrays: true,
               },
             },
-            {
-              $lookup: {
-                from: "drivers",
-                localField: "assignedStaffIds",
-                foreignField: "_id",
-                as: "assignedStaff",
-                pipeline: [
-                  {
-                    $project: {
-                      firstName: 1,
-                      lastName: 1,
-                      phone: 1,
-                      driverId: 1,
-                      profilePicture: 1,
-                      rating: 1,
+              {
+                $lookup: {
+                  from: "valetstaffs",
+                  localField: "assignedStaffIds",
+                  foreignField: "_id",
+                  as: "valetStaffList",
+                  pipeline: [
+                    {
+                      $project: {
+                        name: 1,
+                        phone: 1,
+                        email: 1,
+                        staffId: 1,
+                        profileImage: 1,
+                        rating: 1,
+                        location: 1,
+                        status: 1,
+                      },
                     },
-                  },
-                ],
+                  ],
+                },
               },
-            },
+              {
+                $lookup: {
+                  from: "drivers",
+                  localField: "assignedStaffIds",
+                  foreignField: "_id",
+                  as: "driverList",
+                  pipeline: [
+                    {
+                      $project: {
+                        firstName: 1,
+                        lastName: 1,
+                        phone: 1,
+                        driverId: 1,
+                        profilePicture: 1,
+                        rating: 1,
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                $addFields: {
+                  assignedStaff: {
+                    $concatArrays: [
+                      {
+                        $map: {
+                          input: "$valetStaffList",
+                          as: "vs",
+                          in: {
+                            _id: "$$vs._id",
+                            name: "$$vs.name",
+                            phone: "$$vs.phone",
+                            email: "$$vs.email",
+                            staffId: "$$vs.staffId",
+                            driverId: "$$vs.staffId",
+                            profilePicture: "$$vs.profileImage",
+                            profileImage: "$$vs.profileImage",
+                            rating: "$$vs.rating",
+                            location: "$$vs.location",
+                            status: "$$vs.status",
+                          },
+                        },
+                      },
+                      {
+                        $map: {
+                          input: "$driverList",
+                          as: "d",
+                          in: {
+                            _id: "$$d._id",
+                            name: { $concat: ["$$d.firstName", " ", "$$d.lastName"] },
+                            phone: "$$d.phone",
+                            driverId: "$$d.driverId",
+                            profilePicture: "$$d.profilePicture",
+                            profileImage: "$$d.profilePicture",
+                            rating: "$$d.rating",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+              {
+                $project: {
+                  valetStaffList: 0,
+                  driverList: 0,
+                },
+              },
           ],
           filteredCount: [
             { $match: matchStage },

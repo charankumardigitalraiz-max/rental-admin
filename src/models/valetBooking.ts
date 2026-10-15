@@ -152,7 +152,7 @@ const valetBookingSchema: Schema = new Schema(
     assignedStaffIds: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Driver",
+        ref: "ValetStaff",
       },
     ],
 

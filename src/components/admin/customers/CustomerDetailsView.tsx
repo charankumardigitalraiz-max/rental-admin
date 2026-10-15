@@ -452,7 +452,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
 
           <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-center flex-1 md:flex-initial min-w-[110px]">
             <span className="text-[10px] text-emerald-800 font-bold block uppercase">Total Spent</span>
-            <span className="text-lg font-bold text-emerald-900">₹{customer.totalSpent.toLocaleString('en-IN')}</span>
+            <span className="text-lg font-bold text-emerald-900">₹{(totalSpentAmount || 0).toLocaleString('en-IN')}</span>
           </div>
         </div>
       </div>
@@ -461,19 +461,19 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-white p-4 space-y-1">
           <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Bookings</span>
-          <div className="text-xl font-bold text-slate-900">{customer.totalBookings}</div>
+          <div className="text-xl font-bold text-slate-900">{totalBookingsCount}</div>
           <p className="text-[10px] text-slate-500">Lifetime requested trips</p>
         </div>
 
         <div className="card-white p-4 space-y-1">
           <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">Completed Trips</span>
-          <div className="text-xl font-bold text-emerald-600">{customer.completedBookings}</div>
+          <div className="text-xl font-bold text-emerald-600">{completedTripsCount}</div>
           <p className="text-[10px] text-emerald-600 font-medium">Successfully fulfilled</p>
         </div>
 
         <div className="card-white p-4 space-y-1">
           <span className="text-[10.5px] font-bold uppercase tracking-wider text-rose-700 block">Cancelled Trips</span>
-          <div className="text-xl font-bold text-rose-600">{customer.cancelledBookings}</div>
+          <div className="text-xl font-bold text-rose-600">{cancelledTripsCount}</div>
           <p className="text-[10px] text-rose-600 font-medium">Cancelled orders</p>
         </div>
 

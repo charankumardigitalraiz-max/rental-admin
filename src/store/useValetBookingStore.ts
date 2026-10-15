@@ -169,6 +169,7 @@ interface ValetBookingStoreState {
   createValetBooking: (payload: CreateValetBookingPayload) => Promise<ValetBooking | null>;
   updateValetBookingStatus: (id: string, status: ValetBookingStatus) => Promise<boolean>;
   assignStaffToBooking: (bookingId: string, staffId: string) => Promise<boolean>;
+  assignMultipleStaffToBooking: (bookingId: string, staffIds: string[]) => Promise<boolean>;
   removeStaffFromBooking: (bookingId: string, staffId: string) => Promise<boolean>;
 }
 
@@ -448,6 +449,71 @@ export const useValetBookingStore = create<ValetBookingStoreState>((set, get) =>
       }
     } catch (err) {
       console.warn('Backend staff assignment failed, applying locally:', err);
+    }
+
+    set((s) => ({
+      valetBookings: s.valetBookings.map((b) =>
+        b.id === bookingId
+          ? {
+              ...b,
+              assignedStaffIds: updatedIds,
+              assignedStaffNames: updatedNames,
+              status: newStatus,
+            }
+          : b
+      ),
+      selectedValetBooking:
+        s.selectedValetBooking?.id === bookingId
+          ? {
+              ...s.selectedValetBooking,
+              assignedStaffIds: updatedIds,
+              assignedStaffNames: updatedNames,
+              status: newStatus,
+            }
+          : s.selectedValetBooking,
+    }));
+    return true;
+  },
+
+  assignMultipleStaffToBooking: async (bookingId: string, staffIds: string[]) => {
+    const state = get();
+    const booking =
+      state.valetBookings.find((b) => b.id === bookingId) ||
+      (state.selectedValetBooking?.id === bookingId ? state.selectedValetBooking : null);
+    if (!booking || staffIds.length === 0) return false;
+
+    const newStaffMembers = state.availableStaff.filter((s) => staffIds.includes(s.id));
+    const newStaffNames = newStaffMembers.map((s) => s.name);
+
+    const updatedIds = Array.from(new Set([...booking.assignedStaffIds, ...staffIds]));
+    const updatedNames = Array.from(new Set([...booking.assignedStaffNames, ...newStaffNames]));
+    const newStatus: ValetBookingStatus =
+      updatedIds.length >= booking.requiredStaffCount ? 'Fully Assigned' : 'Partially Assigned';
+
+    try {
+      const res = await fetch(`/api/admin/valet-bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          assignedStaffIds: updatedIds,
+          status: newStatus === 'Fully Assigned' ? 'fully_assigned' : 'partially_assigned',
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          const mapped = mapBackendValetBooking(json.data);
+          set((s) => ({
+            valetBookings: s.valetBookings.map((b) => (b.id === bookingId ? mapped : b)),
+            selectedValetBooking:
+              s.selectedValetBooking?.id === bookingId ? mapped : s.selectedValetBooking,
+          }));
+          return true;
+        }
+      }
+    } catch (err) {
+      console.warn('Backend multiple staff assignment failed, applying locally:', err);
     }
 
     set((s) => ({

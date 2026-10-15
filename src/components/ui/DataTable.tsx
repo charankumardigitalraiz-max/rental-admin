@@ -152,7 +152,7 @@ export default function DataTable<T>({
   const showLoader = externalLoading || localLoading || minLoaderActive;
 
   return (
-    <div className="card-white overflow-hidden">
+    <div className="card-white overflow-hidden isolate">
       {/* Table Header Bar with Search & Actions */}
       {(searchPlaceholder !== undefined || headerActions) && (
         <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-100 w-full bg-white">
@@ -177,11 +177,11 @@ export default function DataTable<T>({
       <div className="relative overflow-x-auto w-full min-h-[160px]">
         {/* Scoped Table Loader Overlay: ONLY covers rows below the header */}
         {showLoader && (
-          <TableLoader message="Updating records..." className="top-[38px]" />
+          <TableLoader message="Updating records..." className="top-[38px] z-[1]" />
         )}
 
         <table className="w-full text-left text-xs">
-          <thead className="bg-[#023526] text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-[#012319] relative z-20">
+          <thead className="bg-[#023526] text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-[#012319] relative z-[2]">
             <tr>
               {columns.map((col) => (
                 <th

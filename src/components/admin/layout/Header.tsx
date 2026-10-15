@@ -229,7 +229,7 @@ export default function Header() {
   const { isCollapsed, toggleSidebar } = useSidebarStore();
 
   return (
-    <header className="h-16 bg-white border-b border-[#e7dbc5]/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+    <header className="h-16 bg-white border-b border-[#e7dbc5]/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
       {/* Page Title & Subtitle + Sidebar Toggle */}
       <div className="flex items-center gap-3">
         <button

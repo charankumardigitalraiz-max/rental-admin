@@ -278,8 +278,22 @@ export default function ValetStaffView() {
       return;
     }
 
-    if (!createFormData.phone.trim()) {
-      toast.warning('Phone Number Required', 'Please enter a valid phone number');
+    const cleanPhone = createFormData.phone.replace(/\D/g, '').replace(/^91/, '');
+    if (!cleanPhone) {
+      toast.warning('Phone Number Required', 'Please enter a valid mobile number');
+      return;
+    }
+    if (cleanPhone.length !== 10) {
+      toast.warning('Invalid Phone Number', 'Mobile number must be exactly 10 digits');
+      return;
+    }
+    if (!/^[6-9]/.test(cleanPhone)) {
+      toast.warning('Invalid Phone Number', 'Mobile number must start with 6, 7, 8, or 9');
+      return;
+    }
+
+    if (createFormData.email.trim() && !/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(createFormData.email.trim())) {
+      toast.warning('Invalid Email Address', 'Please enter a valid email address (e.g. name@domain.com)');
       return;
     }
 
@@ -1341,25 +1355,69 @@ export default function ValetStaffView() {
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Phone Number <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="+91 98765 43210"
-                  value={createFormData.phone}
-                  onChange={(e) => setCreateFormData({ ...createFormData, phone: e.target.value })}
-                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] transition-all shadow-2xs"
-                />
+                <div className="relative">
+                  <input
+                    type="tel"
+                    required
+                    maxLength={10}
+                    placeholder="9876543210"
+                    value={createFormData.phone}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/\D/g, '');
+                      const digits = (cleaned.startsWith('91') && cleaned.length > 10 ? cleaned.slice(2) : cleaned).slice(0, 10);
+                      setCreateFormData({ ...createFormData, phone: digits });
+                    }}
+                    className={`w-full text-xs bg-white border rounded-xl px-3 py-2 pr-12 text-slate-800 focus:outline-none focus:ring-2 transition-all shadow-2xs ${
+                      createFormData.phone.length > 0 && createFormData.phone.length < 10
+                        ? 'border-amber-400 focus:ring-amber-200 focus:border-amber-500'
+                        : createFormData.phone.length === 10 && /^[6-9]/.test(createFormData.phone)
+                        ? 'border-emerald-400 focus:ring-emerald-200 focus:border-emerald-500'
+                        : createFormData.phone.length === 10 && !/^[6-9]/.test(createFormData.phone)
+                        ? 'border-rose-400 focus:ring-rose-200 focus:border-rose-500'
+                        : 'border-slate-200 focus:ring-[#023526]/20 focus:border-[#023526]'
+                    }`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 select-none">
+                    {createFormData.phone.length}/10
+                  </span>
+                </div>
+                {createFormData.phone.length > 0 && createFormData.phone.length < 10 && (
+                  <p className="text-[10px] text-amber-600 font-medium mt-1">
+                    Enter 10-digit mobile number ({10 - createFormData.phone.length} more digits needed)
+                  </p>
+                )}
+                {createFormData.phone.length === 10 && !/^[6-9]/.test(createFormData.phone) && (
+                  <p className="text-[10px] text-rose-500 font-medium mt-1">
+                    Mobile number must start with 6, 7, 8, or 9
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Email Address <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
                 <input
                   type="email"
                   placeholder="suresh.k@valet.com"
                   value={createFormData.email}
-                  onChange={(e) => setCreateFormData({ ...createFormData, email: e.target.value })}
-                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#023526]/20 focus:border-[#023526] transition-all shadow-2xs"
+                  onChange={(e) => setCreateFormData({ ...createFormData, email: e.target.value.trim() })}
+                  className={`w-full text-xs bg-white border rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 transition-all shadow-2xs ${
+                    createFormData.email.trim().length > 0 &&
+                    !/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(createFormData.email.trim())
+                      ? 'border-rose-400 focus:ring-rose-200 focus:border-rose-500'
+                      : createFormData.email.trim().length > 0 &&
+                        /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(createFormData.email.trim())
+                      ? 'border-emerald-400 focus:ring-emerald-200 focus:border-emerald-500'
+                      : 'border-slate-200 focus:ring-[#023526]/20 focus:border-[#023526]'
+                  }`}
                 />
+                {createFormData.email.trim().length > 0 &&
+                  !/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(createFormData.email.trim()) && (
+                    <p className="text-[10px] text-rose-500 font-medium mt-1">
+                      Please enter a valid email address (e.g. name@domain.com)
+                    </p>
+                  )}
               </div>
 
               <div>

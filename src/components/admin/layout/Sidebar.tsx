@@ -79,12 +79,12 @@ export default function Sidebar() {
     valetCounts != null
       ? (valetCounts.newRequests ?? 0) + (valetCounts.pendingAssignment ?? 0)
       : (valetBookings || []).filter(
-          (b) =>
-            b.status === 'New Request' ||
-            b.status === 'Pending Assignment' ||
-            b.status === 'Partially Assigned' ||
-            (b.status as string) === 'Pending'
-        ).length;
+        (b) =>
+          b.status === 'New Request' ||
+          b.status === 'Pending Assignment' ||
+          b.status === 'Partially Assigned' ||
+          (b.status as string) === 'Pending'
+      ).length;
   const pendingDriversCount = drivers.filter((d) => d.status === 'Pending Approval').length;
   const approvedDriversCount = drivers.filter((d) => d.status === 'Approved').length;
   const onlineDriversCount = drivers.filter((d) => d.dutyStatus === 'Online').length;
@@ -472,7 +472,7 @@ export default function Sidebar() {
         <div className="p-3 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-500">
           {!isCollapsed ? (
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              {/* <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                 <span className="font-semibold text-slate-700">Services Online</span>
               </div>
@@ -485,7 +485,7 @@ export default function Sidebar() {
                 >
                   <PanelLeftClose className="w-3.5 h-3.5" />
                 </button>
-              </div>
+              </div> */}
             </div>
           ) : (
             <button

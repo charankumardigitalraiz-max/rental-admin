@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { useRentalStore } from '@/store/useRentalStore';
+import { useDashboardStore } from '@/store/useDashboardStore';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { DriverBooking, DriverSubscription } from '@/types';
 import {
@@ -22,72 +22,38 @@ import {
   TrendingUp,
   ShieldAlert,
   Eye,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function DashboardView() {
-  const {
-    driverBookings,
-    valetBookings,
-    drivers,
-    valetStaff,
-    driverSubscriptions,
-    transactions,
-    setActiveTab,
-    setSelectedDriverBookingId,
-    setSelectedValetBookingId,
-    setSelectedDriverId,
-  } = useRentalStore();
+  const { data, isLoading, error, fetchDashboardData } = useDashboardStore();
 
-  // Metrics Calculations
-  const totalDriverBookings = driverBookings.length;
-  const totalValetBookings = valetBookings.length;
-  const totalBookings = totalDriverBookings + totalValetBookings;
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-  const activeDriverTrips = driverBookings.filter(
-    (b) => b.status === 'Driver Assigned' || b.status === 'Driver Arriving' || b.status === 'Service Started'
-  ).length;
+  const stats = data?.stats;
+  const recentDriverBookings = data?.recentDriverBookings || [];
+  const expiredOrExpiringSubscriptions = data?.expiredOrExpiringSubscriptions || [];
 
-  const searchingDriverBookings = driverBookings.filter((b) => b.status === 'Searching Driver' || b.status === 'Pending');
+  // Metrics from unified API
+  const totalBookings = stats?.totalBookings ?? 0;
+  const totalDriverBookings = stats?.totalDriverBookings ?? 0;
+  const totalValetBookings = stats?.totalValetBookings ?? 0;
 
-  const completedBookingsCount =
-    driverBookings.filter((b) => b.status === 'Completed').length +
-    valetBookings.filter((v) => v.status === 'Completed').length;
+  const activeDriverTrips = stats?.activeDriverTrips ?? 0;
+  const localDriverBookings = stats?.localDriverBookings ?? 0;
+  const outstationDriverBookings = stats?.outstationDriverBookings ?? 0;
 
-  const cancelledBookingsCount =
-    driverBookings.filter((b) => b.status === 'Cancelled').length +
-    valetBookings.filter((v) => v.status === 'Cancelled').length;
+  const activeDriversCount = stats?.activeDriversCount ?? 0;
+  const availableDriversCount = stats?.availableDriversCount ?? 0;
+  const busyDriversCount = stats?.busyDriversCount ?? 0;
 
-  const localDriverBookings = driverBookings.filter((b) => b.bookingType === 'Local').length;
-  const outstationDriverBookings = driverBookings.filter((b) => b.bookingType === 'Outstation').length;
+  const totalGrossRevenue = stats?.totalGrossRevenue ?? 0;
+  const totalPlatformCommission = stats?.totalPlatformCommission ?? 0;
+  const revenueGrowthText = stats?.revenueGrowthText ?? '+16.4% this month';
 
-  const totalGrossRevenue = transactions
-    .filter((t) => t.status === 'Success')
-    .reduce((acc, curr) => acc + curr.amount, 0);
-
-  const totalPlatformCommission = transactions
-    .filter((t) => t.status === 'Success')
-    .reduce((acc, curr) => acc + curr.platformCommission, 0);
-
-  const activeDriversCount = drivers.filter((d) => d.status === 'Approved').length;
-  const availableDriversCount = drivers.filter((d) => d.dutyStatus === 'Online' && d.availability === 'Available').length;
-  const busyDriversCount = drivers.filter((d) => d.availability === 'Busy').length;
-
-  const activeSubscribedDrivers = drivers.filter(
-    (d) => d.subscription.status === 'Active' || d.subscription.status === 'Expiring Soon'
-  ).length;
-
-  const expiredSubscribedDrivers = drivers.filter((d) => d.subscription.status === 'Expired').length;
-
-  const availableValetStaffCount = valetStaff.filter((s) => s.status === 'Available').length;
-  const assignedValetStaffCount = valetStaff.filter((s) => s.status === 'Assigned' || s.status === 'On Duty').length;
-
-  const pendingValetEvents = valetBookings.filter(
-    (v) => v.status === 'New Request' || v.status === 'Pending Assignment' || v.status === 'Partially Assigned'
-  );
-
-  const expiredOrExpiringSubscriptions = driverSubscriptions.filter(
-    (s) => s.subscriptionStatus === 'Expired' || s.subscriptionStatus === 'Expiring Soon'
-  );
+  const totalSubscriptions = stats?.totalSubscriptions ?? 0;
 
   const statsMetrics = [
     {
@@ -121,7 +87,7 @@ export default function DashboardView() {
       id: 'gross-value',
       label: 'Gross Booking Value',
       value: `₹${totalGrossRevenue.toLocaleString('en-IN')}`,
-      subtext: '+16.4% this month',
+      subtext: revenueGrowthText,
       subtextColor: 'text-emerald-600 font-semibold',
       icon: DollarSign,
       iconColor: 'text-indigo-600',
@@ -182,7 +148,7 @@ export default function DashboardView() {
       header: 'Amount',
       render: (b) => (
         <span className="font-bold text-slate-900">
-          ₹{b.pricing.totalCustomerAmount.toLocaleString('en-IN')}
+          ₹{(b.pricing?.totalCustomerAmount ?? (b as any).totalAmount ?? 0).toLocaleString('en-IN')}
         </span>
       ),
     },
@@ -231,7 +197,7 @@ export default function DashboardView() {
           <img
             src={sub.driverAvatar}
             alt={sub.driverName}
-            className="w-7 h-7 rounded-full object-cover shrink-0"
+            className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-slate-200"
           />
           <div>
             <span className="font-bold text-slate-900 block">{sub.driverName}</span>
@@ -276,7 +242,7 @@ export default function DashboardView() {
       render: (sub) => (
         <div className="flex justify-center">
           <Link
-            href={`/admin/drivers/${sub.driverId}`}
+            href={`/admin/drivers/${sub.driverMongoId || sub.driverId || sub.id}`}
             className="px-2.5 py-1 bg-primary hover:bg-primary-hover text-white text-[11px] font-bold rounded-md shadow-2xs hover:shadow-xs transition-all inline-flex items-center gap-1"
           >
             <UserCheck className="w-3 h-3 text-gold-300" />
@@ -298,7 +264,23 @@ export default function DashboardView() {
             Real-time driver matching, active subscription enforcement, and valet staff event allocation
           </p>
         </div>
+
+        <button
+          onClick={() => fetchDashboardData(true)}
+          disabled={isLoading}
+          className="relative z-10 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer shadow-xs self-start md:self-auto"
+          title="Refresh Dashboard"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-gold-300' : ''}`} />
+          <span>Refresh</span>
+        </button>
       </div>
+
+      {error && (
+        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-semibold">
+          {error}
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -317,58 +299,20 @@ export default function DashboardView() {
         })}
       </div>
 
-      {/* Grid 2: Service Breakdown & Subscription Health */}
+      {/* Grid 2: Expiring & Expired Driver Passes */}
       <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-        {/* Service Split & Driver Subscription Status */}
-        {/* <div className="card-white p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
-              <Award className="w-4 h-4 text-amber-500" /> Driver Subscription Eligibility
-            </h3>
-            <button
-              onClick={() => setActiveTab('driver-subscriptions')}
-              className="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5"
-            >
-              View All <ArrowUpRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-lg">
-              <span className="text-[10px] text-emerald-800 font-bold block">Active Subscriptions</span>
-              <span className="text-lg font-bold text-emerald-700">{activeSubscribedDrivers} Drivers</span>
-              <span className="text-[10px] text-emerald-600 block mt-0.5">Eligible for incoming requests</span>
-            </div>
-
-            <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-lg">
-              <span className="text-[10px] text-rose-800 font-bold block">Expired Subscriptions</span>
-              <span className="text-lg font-bold text-rose-700">{expiredSubscribedDrivers} Drivers</span>
-              <span className="text-[10px] text-rose-600 block mt-0.5">Blocked from new requests</span>
-            </div>
-          </div>
-
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-2">
-            <div className="flex justify-between font-medium">
-              <span className="text-slate-600">Local Driver Bookings:</span>
-              <span className="font-bold text-slate-900">{localDriverBookings} orders</span>
-            </div>
-            <div className="flex justify-between font-medium">
-              <span className="text-slate-600">Outstation Driver Bookings:</span>
-              <span className="font-bold text-slate-900">{outstationDriverBookings} orders</span>
-            </div>
-            <div className="flex justify-between font-medium pt-1 border-t border-slate-200">
-              <span className="text-slate-600">Valet Event Bookings:</span>
-              <span className="font-bold text-primary">{totalValetBookings} events</span>
-            </div>
-          </div>
-        </div> */}
-
-        {/* Expiring & Expired Driver Passes Table */}
         <DataTable<DriverSubscription>
           columns={subscriptionPassColumns}
           data={expiredOrExpiringSubscriptions}
           keyExtractor={(sub) => sub.id}
           pageSize={5}
+          isLoading={isLoading}
+          serverPagination={{
+            currentPage: 1,
+            totalPages: 0,
+            totalItems: 0,
+            onPageChange: (page) => { },
+          }}
           emptyMessage="No expired or expiring driver passes found."
           rowClassName={(sub) =>
             sub.subscriptionStatus === 'Expiring Soon'
@@ -389,7 +333,7 @@ export default function DashboardView() {
                 className="text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1.5 hover:underline transition-colors"
               >
                 <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>View All Subscriptions ({driverSubscriptions.length})</span>
+                <span>View All Subscriptions </span>
               </Link>
             </div>
           }
@@ -400,9 +344,16 @@ export default function DashboardView() {
       <div className="space-y-4">
         <DataTable<DriverBooking>
           columns={recentBookingColumns}
-          data={driverBookings.slice(0, 5)}
+          data={recentDriverBookings}
           keyExtractor={(b) => b.id}
           pageSize={5}
+          isLoading={isLoading}
+          serverPagination={{
+            currentPage: 1,
+            totalPages: 0,
+            totalItems: 0,
+            onPageChange: (page) => { },
+          }}
           emptyMessage="No recent driver bookings recorded."
           headerActions={
             <div className="flex items-center justify-between w-full">
@@ -414,7 +365,7 @@ export default function DashboardView() {
                 className="text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1.5 hover:underline transition-colors"
               >
                 <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>View All Driver Bookings ({driverBookings.length})</span>
+                <span>View All Driver Bookings</span>
               </Link>
             </div>
           }

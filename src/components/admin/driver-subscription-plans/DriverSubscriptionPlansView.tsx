@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRentalStore } from '@/store/useRentalStore';
 import { useSubscriptionStore } from '@/store/useSubscriptionStore';
+import { useDriverSubscriptionStore } from '@/store/useDriverSubscriptionStore';
 import { SubscriptionPlan, DriverSubscription } from '@/types';
 import Modal from '@/components/ui/Modal';
 import DataTable, { Column } from '@/components/ui/DataTable';
@@ -44,35 +44,63 @@ export default function DriverSubscriptionPlansView() {
     deleteSubscriptionPlan,
   } = useSubscriptionStore();
 
-  // Rental store for driver subscriptions dataset
+  // Driver Subscription store for dynamic backend pass subscriptions
   const {
-    driverSubscriptions,
-    setActiveTab,
-    setSelectedDriverId,
-  } = useRentalStore();
+    subscriptions,
+    stats: subscriptionStats,
+    pagination: subscriptionPagination,
+    isLoading: isSubscriptionsLoading,
+    fetchDriverSubscriptions,
+  } = useDriverSubscriptionStore();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<SubscriptionPlan | null>(null);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [subSearchQuery, setSubSearchQuery] = useState('');
+  const [debouncedSubSearch, setDebouncedSubSearch] = useState('');
 
   // Load plans on mount via Zustand store
   useEffect(() => {
     fetchSubscriptionPlans();
   }, [fetchSubscriptionPlans]);
 
-  const activeSubscribedDrivers = driverSubscriptions.filter((s) => s.subscriptionStatus === 'Active');
-  const expiringSoonSubscribedDrivers = driverSubscriptions.filter((s) => s.subscriptionStatus === 'Expiring Soon');
-  const expiredSubscribedDrivers = driverSubscriptions.filter((s) => s.subscriptionStatus === 'Expired');
+  // Debounce subscription search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSubSearch(subSearchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [subSearchQuery]);
 
-  const totalSubscriptionRevenue = driverSubscriptions
-    .filter((s) => s.paymentStatus === 'Successful')
-    .reduce((acc, s) => acc + (s.amount || 0), 0);
+  // Fetch driver subscriptions dynamically from useDriverSubscriptionStore
+  useEffect(() => {
+    fetchDriverSubscriptions({
+      page: 1,
+      limit: subscriptionPagination?.limit || 6,
+      search: debouncedSubSearch.trim() || undefined,
+      status: statusFilter,
+    });
+  }, [debouncedSubSearch, statusFilter, fetchDriverSubscriptions]);
 
-  const activeSubscriptionRevenue = activeSubscribedDrivers
-    .filter((s) => s.paymentStatus === 'Successful')
-    .reduce((acc, s) => acc + (s.amount || 0), 0);
+  // Dynamic pass metrics from backend API
+  const totalSubscribedDrivers = subscriptionStats?.totalSubscriptions ?? subscriptions.length;
+  const activeSubscribedCount =
+    subscriptionStats?.activePasses ?? subscriptions.filter((s) => s.subscriptionStatus === 'Active').length;
+  const expiringSoonSubscribedCount =
+    subscriptionStats?.expiringSoonPasses ??
+    subscriptions.filter((s) => s.subscriptionStatus === 'Expiring Soon').length;
+  const expiredSubscribedCount =
+    subscriptionStats?.expiredPasses ?? subscriptions.filter((s) => s.subscriptionStatus === 'Expired').length;
+
+  const totalSubscriptionRevenue =
+    subscriptionStats?.totalPassRevenue ??
+    subscriptions
+      .filter((s) => s.paymentStatus === 'Successful')
+      .reduce((acc, s) => acc + (s.amount || 0), 0);
+
+  const activeSubscriptionRevenue = subscriptionStats?.activePassRevenue ?? 0;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -179,9 +207,6 @@ export default function DriverSubscriptionPlansView() {
 
   const statuses = ['All', 'Active', 'Expiring Soon', 'Expired', 'Cancelled', 'Suspended'];
 
-  const filteredSubscriptions = driverSubscriptions.filter((sub) => {
-    return statusFilter === 'All' || sub.subscriptionStatus === statusFilter;
-  });
 
   const subscriptionColumns: Column<DriverSubscription>[] = [
     {
@@ -267,7 +292,7 @@ export default function DriverSubscriptionPlansView() {
       render: (sub) => (
         <div className="flex items-center justify-end gap-1.5">
           <Link
-            href={`/admin/drivers/${sub.id}`}
+            href={`/admin/drivers/${sub.driverMongoId || sub.driverId || sub.id}`}
             className="px-2.5 py-1 bg-primary hover:bg-primary-hover text-white text-[11px] font-bold rounded flex items-center gap-1.5 transition-colors shadow-xs"
             title="View Driver Profile"
           >
@@ -427,7 +452,7 @@ export default function DriverSubscriptionPlansView() {
         <div className="flex items-center justify-between ml-2">
           <div>
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Award className="w-5 h-5 text-primary" /> Subscribed Drivers ({driverSubscriptions.length})
+              <Award className="w-5 h-5 text-primary" /> Subscribed Drivers ({totalSubscribedDrivers})
             </h3>
             <p className="text-xs text-slate-500 font-medium">
               List of all drivers with active, expiring, or expired subscription passes.
@@ -443,7 +468,7 @@ export default function DriverSubscriptionPlansView() {
               Active Subscriptions
             </span>
             <div className="text-xl font-bold text-emerald-700">
-              {activeSubscribedDrivers.length} Active Drivers
+              {activeSubscribedCount} Active Drivers
             </div>
             <span className="text-[10px] text-emerald-600 font-semibold block">
               ₹{activeSubscriptionRevenue.toLocaleString('en-IN')} Active Pass Revenue
@@ -456,7 +481,7 @@ export default function DriverSubscriptionPlansView() {
               Expiring Soon
             </span>
             <div className="text-xl font-bold text-amber-700">
-              {expiringSoonSubscribedDrivers.length} Drivers
+              {expiringSoonSubscribedCount} Drivers
             </div>
             <span className="text-[10px] text-amber-600 font-medium block">Requires pass renewal</span>
           </div>
@@ -467,7 +492,7 @@ export default function DriverSubscriptionPlansView() {
               Expired Passes
             </span>
             <div className="text-xl font-bold text-rose-700">
-              {expiredSubscribedDrivers.length} Drivers
+              {expiredSubscribedCount} Drivers
             </div>
             <span className="text-[10px] text-rose-600 font-medium block">Blocked from dispatches</span>
           </div>
@@ -486,9 +511,16 @@ export default function DriverSubscriptionPlansView() {
 
         <DataTable<DriverSubscription>
           columns={subscriptionColumns}
-          data={filteredSubscriptions}
-          keyExtractor={(sub) => sub.id}
-          pageSize={6}
+          data={subscriptions}
+          keyExtractor={(sub) => sub.id || (sub as any)._id || String(Math.random())}
+          pageSize={subscriptionPagination?.limit || 6}
+          pageSizeOptions={[6, 12, 24]}
+          isLoading={isSubscriptionsLoading}
+          serverSearch={true}
+          searchValue={subSearchQuery}
+          onSearchChange={(val) => {
+            setSubSearchQuery(val);
+          }}
           rowClassName={(sub) =>
             sub.subscriptionStatus === 'Expiring Soon'
               ? 'bg-amber-50/60 hover:bg-amber-100/70 border-l-4 border-l-amber-500'
@@ -498,9 +530,31 @@ export default function DriverSubscriptionPlansView() {
                   ? 'bg-emerald-50/30 hover:bg-emerald-100/50 border-l-4 border-l-emerald-500'
                   : 'bg-slate-100/60 hover:bg-slate-200/60 border-l-4 border-l-slate-400'
           }
-          searchPlaceholder="Search driver name, plan title..."
-          searchFilterKeys={['driverName', 'planName']}
-          emptyMessage="No driver subscription records match the selected status."
+          searchPlaceholder="Search driver name, phone, plan title, driver ID..."
+          emptyMessage="No driver subscription records match the selected status or search."
+          serverPagination={
+            subscriptionPagination
+              ? {
+                currentPage: subscriptionPagination.page,
+                totalPages: subscriptionPagination.totalPages,
+                totalItems: subscriptionPagination.total,
+                onPageChange: (newPage) =>
+                  fetchDriverSubscriptions({
+                    page: newPage,
+                    limit: subscriptionPagination.limit,
+                    search: debouncedSubSearch.trim() || undefined,
+                    status: statusFilter,
+                  }),
+                onPageSizeChange: (newLimit) =>
+                  fetchDriverSubscriptions({
+                    page: 1,
+                    limit: newLimit,
+                    search: debouncedSubSearch.trim() || undefined,
+                    status: statusFilter,
+                  }),
+              }
+              : undefined
+          }
           headerActions={
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
@@ -509,7 +563,7 @@ export default function DriverSubscriptionPlansView() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
               >
                 {statuses.map((st) => (
                   <option key={st} value={st}>

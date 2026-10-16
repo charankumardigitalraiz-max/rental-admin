@@ -216,38 +216,22 @@ export default function DriverSubscriptionsView() {
     {
       key: 'subscriptionStatus',
       header: 'Pass Status',
-      render: (sub) => {
-        const isCurrentUpdating = updatingId === sub.id;
-        return (
-          <div className="relative inline-block group">
-            <select
-              value={sub.subscriptionStatus}
-              disabled={isCurrentUpdating || isUpdating}
-              onChange={(e) =>
-                handleStatusUpdate(sub, e.target.value as DriverSubscription['subscriptionStatus'])
-              }
-              aria-label={`Change status for ${sub.driverName}`}
-              className={`text-[10px] font-bold rounded px-2 py-1 border transition-all cursor-pointer appearance-none pr-5 ${sub.subscriptionStatus === 'Active'
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                : sub.subscriptionStatus === 'Expiring Soon'
-                  ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                  : sub.subscriptionStatus === 'Expired'
-                    ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-                    : sub.subscriptionStatus === 'Suspended'
-                      ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
-                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-                } ${isCurrentUpdating ? 'opacity-50 pointer-events-none' : ''}`}
-            >
-              <option value="Active">Active</option>
-              <option value="Expiring Soon">Expiring Soon</option>
-              <option value="Expired">Expired</option>
-              <option value="Suspended">Suspended</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-            <ChevronDown className="w-2.5 h-2.5 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />
-          </div>
-        );
-      },
+      render: (sub) => (
+        <span
+          className={`px-2 py-0.5 rounded text-[10px] font-bold ${sub.subscriptionStatus === 'Active'
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : sub.subscriptionStatus === 'Expiring Soon'
+                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                : sub.subscriptionStatus === 'Expired'
+                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                  : sub.subscriptionStatus === 'Suspended'
+                    ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                    : 'bg-slate-100 text-slate-700 border border-slate-200'
+            }`}
+        >
+          {sub.subscriptionStatus}
+        </span>
+      ),
     },
     {
       key: 'tripActivity',
@@ -461,13 +445,13 @@ export default function DriverSubscriptionsView() {
             </button>
 
             {/* Manage Subscription Plans */}
-            <Link
+            {/* <Link
               href="/admin/driver-subscription-plans"
               className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-xs transition-all w-full sm:w-auto justify-center cursor-pointer"
             >
               <Award className="w-4 h-4 text-gold-300" />
               <span>Subscription Plans</span>
-            </Link>
+            </Link> */}
           </div>
         }
       />

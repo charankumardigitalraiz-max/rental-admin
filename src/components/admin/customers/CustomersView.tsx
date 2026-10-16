@@ -24,16 +24,27 @@ export default function CustomersView() {
   const [statusConfirmCustomer, setStatusConfirmCustomer] = useState<Customer | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const PAGE_LIMIT = 10;
 
-  // Single effect — runs on mount and whenever page/filter changes
+  // Debounce search query to prevent excessive backend queries (300ms)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Dynamic server fetch — runs on mount and whenever page, filter, or search changes
   useEffect(() => {
     fetchCustomers({
       page: currentPage,
       limit: PAGE_LIMIT,
+      search: debouncedSearch.trim() || undefined,
       ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
     });
-  }, [currentPage, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentPage, statusFilter, debouncedSearch, fetchCustomers]);
 
   const handleStatusFilter = (val: 'all' | 'true' | 'false') => {
     setStatusFilter(val);
@@ -170,8 +181,13 @@ export default function CustomersView() {
         data={customers}
         keyExtractor={(c) => c.id}
         isLoading={isLoading}
-        searchPlaceholder="Search customer name, phone, email..."
-        searchFilterKeys={['name', 'phone', 'email', 'custId']}
+        searchPlaceholder="Search customer name, phone, email, customer ID..."
+        serverSearch={true}
+        searchValue={searchQuery}
+        onSearchChange={(val) => {
+          setSearchQuery(val);
+          setCurrentPage(1);
+        }}
         emptyMessage="No customer records found matching your search."
         serverPagination={{
           currentPage,
@@ -184,10 +200,15 @@ export default function CustomersView() {
             <button
               onClick={() => {
                 setCurrentPage(1);
-                fetchCustomers({ page: 1, limit: PAGE_LIMIT, ...(statusFilter !== 'all' ? { status: statusFilter } : {}) });
+                fetchCustomers({
+                  page: 1,
+                  limit: PAGE_LIMIT,
+                  search: debouncedSearch.trim() || undefined,
+                  ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+                });
               }}
               disabled={isLoading}
-              className="p-2 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50"
+              className="p-2 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
               title="Refresh Customers"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-primary' : ''}`} />
@@ -199,7 +220,7 @@ export default function CustomersView() {
             <select
               value={statusFilter}
               onChange={(e) => handleStatusFilter(e.target.value as 'all' | 'true' | 'false')}
-              className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
             >
               <option value="all">All Customers</option>
               <option value="true">Active Only</option>

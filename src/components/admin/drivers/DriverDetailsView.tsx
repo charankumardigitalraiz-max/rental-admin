@@ -55,31 +55,61 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
 
   const [selectedDocImage, setSelectedDocImage] = useState<{ title: string; url: string } | null>(null);
   const [copiedBankField, setCopiedBankField] = useState<string | null>(null);
+  const [tripSearchQuery, setTripSearchQuery] = useState('');
+  const [debouncedTripSearch, setDebouncedTripSearch] = useState('');
 
   const activeDriverId = driverId || selectedDriverId;
 
+  // Debounce driver trips search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedTripSearch(tripSearchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [tripSearchQuery]);
+
   useEffect(() => {
     if (activeDriverId) {
-      fetchDriverById(activeDriverId, { tripFilter: 'all', page: 1, limit: 5 });
+      fetchDriverById(activeDriverId, {
+        tripFilter: 'all',
+        page: 1,
+        limit: 5,
+        search: debouncedTripSearch.trim() || undefined,
+      });
     }
-  }, [activeDriverId, fetchDriverById]);
+  }, [activeDriverId, fetchDriverById, debouncedTripSearch]);
 
   const handleTripFilterChange = (newFilter: 'all' | 'completed' | 'active' | 'cancelled') => {
     setTripFilter(newFilter);
     if (activeDriverId) {
-      fetchDriverBookings(activeDriverId, { tripFilter: newFilter, page: 1, limit: bookingsPagination?.limit || 5 });
+      fetchDriverBookings(activeDriverId, {
+        tripFilter: newFilter,
+        page: 1,
+        limit: bookingsPagination?.limit || 5,
+        search: debouncedTripSearch.trim() || undefined,
+      });
     }
   };
 
   const handlePageChange = (newPage: number) => {
     if (activeDriverId) {
-      fetchDriverBookings(activeDriverId, { tripFilter, page: newPage, limit: bookingsPagination?.limit || 5 });
+      fetchDriverBookings(activeDriverId, {
+        tripFilter,
+        page: newPage,
+        limit: bookingsPagination?.limit || 5,
+        search: debouncedTripSearch.trim() || undefined,
+      });
     }
   };
 
   const handlePageSizeChange = (newLimit: number) => {
     if (activeDriverId) {
-      fetchDriverBookings(activeDriverId, { tripFilter, page: 1, limit: newLimit });
+      fetchDriverBookings(activeDriverId, {
+        tripFilter,
+        page: 1,
+        limit: newLimit,
+        search: debouncedTripSearch.trim() || undefined,
+      });
     }
   };
 
@@ -153,13 +183,12 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
         const isCancelled = trip.status === 'Cancelled';
         return (
           <span
-            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-              isCompleted
+            className={`px-2 py-0.5 rounded text-[10px] font-bold ${isCompleted
                 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                 : isCancelled
-                ? 'bg-rose-50 text-rose-800 border border-rose-200'
-                : 'bg-sky-50 text-sky-800 border border-sky-200'
-            }`}
+                  ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                  : 'bg-sky-50 text-sky-800 border border-sky-200'
+              }`}
           >
             {trip.status}
           </span>
@@ -686,50 +715,50 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
           isLoading={isBookingsLoading}
           emptyMessage="No trip records found for the selected filter option."
           searchPlaceholder="Search booking ref, customer, vehicle..."
-          searchFilterKeys={['bookingNumber', 'customerName', 'customerPhone', 'bookingType', 'status']}
+          serverSearch={true}
+          searchValue={tripSearchQuery}
+          onSearchChange={(val) => {
+            setTripSearchQuery(val);
+          }}
           headerActions={
             <div className="flex items-center gap-1.5 bg-stone-100 p-1 rounded-lg border border-stone-200 text-xs">
               <button
                 type="button"
                 onClick={() => handleTripFilterChange('all')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  tripFilter === 'all'
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${tripFilter === 'all'
                     ? 'bg-primary text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
-                }`}
+                  }`}
               >
                 All ({bookingsPagination?.total ?? driver.totalBookings ?? filteredTrips.length})
               </button>
               <button
                 type="button"
                 onClick={() => handleTripFilterChange('completed')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  tripFilter === 'completed'
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${tripFilter === 'completed'
                     ? 'bg-primary text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
-                }`}
+                  }`}
               >
                 Completed ({driver.completedBookings ?? 0})
               </button>
               <button
                 type="button"
                 onClick={() => handleTripFilterChange('active')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  tripFilter === 'active'
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${tripFilter === 'active'
                     ? 'bg-primary text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
-                }`}
+                  }`}
               >
                 Active ({driver.activeBookings ?? 0})
               </button>
               <button
                 type="button"
                 onClick={() => handleTripFilterChange('cancelled')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  tripFilter === 'cancelled'
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${tripFilter === 'cancelled'
                     ? 'bg-primary text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
-                }`}
+                  }`}
               >
                 Cancelled ({driver.cancelledBookings ?? 0})
               </button>
@@ -738,12 +767,12 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
           serverPagination={
             bookingsPagination
               ? {
-                  currentPage: bookingsPagination.page,
-                  totalPages: bookingsPagination.totalPages,
-                  totalItems: bookingsPagination.total,
-                  onPageChange: (newPage) => handlePageChange(newPage),
-                  onPageSizeChange: (newLimit) => handlePageSizeChange(newLimit),
-                }
+                currentPage: bookingsPagination.page,
+                totalPages: bookingsPagination.totalPages,
+                totalItems: bookingsPagination.total,
+                onPageChange: (newPage) => handlePageChange(newPage),
+                onPageSizeChange: (newLimit) => handlePageSizeChange(newLimit),
+              }
               : undefined
           }
         />

@@ -780,25 +780,7 @@ export default function ValetStaffView() {
         }}
         searchPlaceholder="Search staff by name, phone, location, address, ID proof number..."
         searchFilterKeys={['name', 'phone', 'location', 'address', 'idProofNumber', 'idProofType', 'id', 'staffId']}
-        emptyMessage={
-          <div className="py-8 text-center space-y-2">
-            <Users className="w-8 h-8 text-slate-300 mx-auto" />
-            <p className="text-sm font-semibold text-slate-700">No valet staff found</p>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              No attendants matched your current search and filter criteria. Try clearing some filters.
-            </p>
-            {isFiltered && (
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="mt-2 px-3 py-1.5 bg-[#023526] text-white text-xs font-bold rounded-lg hover:bg-[#034834] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reset All Filters</span>
-              </button>
-            )}
-          </div>
-        }
+
         headerActions={
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {/* Status Dropdown */}
@@ -1367,15 +1349,14 @@ export default function ValetStaffView() {
                       const digits = (cleaned.startsWith('91') && cleaned.length > 10 ? cleaned.slice(2) : cleaned).slice(0, 10);
                       setCreateFormData({ ...createFormData, phone: digits });
                     }}
-                    className={`w-full text-xs bg-white border rounded-xl px-3 py-2 pr-12 text-slate-800 focus:outline-none focus:ring-2 transition-all shadow-2xs ${
-                      createFormData.phone.length > 0 && createFormData.phone.length < 10
+                    className={`w-full text-xs bg-white border rounded-xl px-3 py-2 pr-12 text-slate-800 focus:outline-none focus:ring-2 transition-all shadow-2xs ${createFormData.phone.length > 0 && createFormData.phone.length < 10
                         ? 'border-amber-400 focus:ring-amber-200 focus:border-amber-500'
                         : createFormData.phone.length === 10 && /^[6-9]/.test(createFormData.phone)
-                        ? 'border-emerald-400 focus:ring-emerald-200 focus:border-emerald-500'
-                        : createFormData.phone.length === 10 && !/^[6-9]/.test(createFormData.phone)
-                        ? 'border-rose-400 focus:ring-rose-200 focus:border-rose-500'
-                        : 'border-slate-200 focus:ring-[#023526]/20 focus:border-[#023526]'
-                    }`}
+                          ? 'border-emerald-400 focus:ring-emerald-200 focus:border-emerald-500'
+                          : createFormData.phone.length === 10 && !/^[6-9]/.test(createFormData.phone)
+                            ? 'border-rose-400 focus:ring-rose-200 focus:border-rose-500'
+                            : 'border-slate-200 focus:ring-[#023526]/20 focus:border-[#023526]'
+                      }`}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 select-none">
                     {createFormData.phone.length}/10
@@ -1402,15 +1383,14 @@ export default function ValetStaffView() {
                   placeholder="suresh.k@valet.com"
                   value={createFormData.email}
                   onChange={(e) => setCreateFormData({ ...createFormData, email: e.target.value.trim() })}
-                  className={`w-full text-xs bg-white border rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 transition-all shadow-2xs ${
-                    createFormData.email.trim().length > 0 &&
-                    !/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(createFormData.email.trim())
+                  className={`w-full text-xs bg-white border rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 transition-all shadow-2xs ${createFormData.email.trim().length > 0 &&
+                      !/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(createFormData.email.trim())
                       ? 'border-rose-400 focus:ring-rose-200 focus:border-rose-500'
                       : createFormData.email.trim().length > 0 &&
                         /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(createFormData.email.trim())
-                      ? 'border-emerald-400 focus:ring-emerald-200 focus:border-emerald-500'
-                      : 'border-slate-200 focus:ring-[#023526]/20 focus:border-[#023526]'
-                  }`}
+                        ? 'border-emerald-400 focus:ring-emerald-200 focus:border-emerald-500'
+                        : 'border-slate-200 focus:ring-[#023526]/20 focus:border-[#023526]'
+                    }`}
                 />
                 {createFormData.email.trim().length > 0 &&
                   !/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(createFormData.email.trim()) && (

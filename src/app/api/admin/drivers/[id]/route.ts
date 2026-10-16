@@ -208,18 +208,62 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             query.bookingStatus = { $in: ["cancelled", "Cancelled", "canceled"] };
         }
 
-        if (search) {
-            const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-            query.$and = [
-                {
-                    $or: [
-                        { bookingId: { $regex: escaped, $options: "i" } },
-                        { vehicleNumber: { $regex: escaped, $options: "i" } },
-                        { "pickupLocation.address": { $regex: escaped, $options: "i" } },
-                        { "dropLocation.address": { $regex: escaped, $options: "i" } },
-                    ],
-                },
+        if (search && search.trim() !== "") {
+            const cleanSearch = search.trim();
+            const escaped = cleanSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const terms = cleanSearch.split(/\s+/).filter(Boolean);
+
+            const searchOr: any[] = [
+                { bookingId: { $regex: escaped, $options: "i" } },
+                { vehicleNumber: { $regex: escaped, $options: "i" } },
+                { "pickupLocation.address": { $regex: escaped, $options: "i" } },
+                { "dropLocation.address": { $regex: escaped, $options: "i" } },
             ];
+
+            try {
+                const customerConditions: any[] = [
+                    { firstName: { $regex: escaped, $options: "i" } },
+                    { lastName: { $regex: escaped, $options: "i" } },
+                    { phone: { $regex: escaped, $options: "i" } },
+                    { email: { $regex: escaped, $options: "i" } },
+                    { custId: { $regex: escaped, $options: "i" } },
+                    {
+                        $expr: {
+                            $regexMatch: {
+                                input: { $concat: [{ $ifNull: ["$firstName", ""] }, " ", { $ifNull: ["$lastName", ""] }] },
+                                regex: escaped,
+                                options: "i",
+                            },
+                        },
+                    },
+                ];
+
+                if (terms.length > 1) {
+                    customerConditions.push({
+                        $and: terms.map((term) => {
+                            const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            return {
+                                $or: [
+                                    { firstName: { $regex: escapedTerm, $options: "i" } },
+                                    { lastName: { $regex: escapedTerm, $options: "i" } },
+                                    { phone: { $regex: escapedTerm, $options: "i" } },
+                                    { email: { $regex: escapedTerm, $options: "i" } },
+                                    { custId: { $regex: escapedTerm, $options: "i" } },
+                                ],
+                            };
+                        }),
+                    });
+                }
+
+                const matchingCustomers = await Customer.find({ $or: customerConditions }).select("_id").lean();
+                if (matchingCustomers.length > 0) {
+                    searchOr.push({ userId: { $in: matchingCustomers.map((c: any) => c._id) } });
+                }
+            } catch (err) {
+                // Customer search fallback
+            }
+
+            query.$and = [{ $or: searchOr }];
         }
 
         const total = await DriverBooking.countDocuments(query);

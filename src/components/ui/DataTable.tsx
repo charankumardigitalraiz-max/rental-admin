@@ -100,19 +100,43 @@ export default function DataTable<T>({
   // Filter data by search query if keys are provided or search term exists
   const filteredData = React.useMemo(() => {
     if (!searchTerm.trim()) return data;
-    const term = searchTerm.toLowerCase();
+    const term = searchTerm.toLowerCase().trim();
+    const words = term.split(/\s+/).filter(Boolean);
 
     return data.filter((item) => {
       if (searchFilterKeys && searchFilterKeys.length > 0) {
-        return searchFilterKeys.some((k) => {
+        // Direct substring check on any key
+        const singleKeyMatch = searchFilterKeys.some((k) => {
           const val = item[k];
           return val !== null && val !== undefined && String(val).toLowerCase().includes(term);
         });
+        if (singleKeyMatch) return true;
+
+        // If multiple words (e.g., "Firstname Lastname" or "Make Model"), verify all words match across key fields
+        if (words.length > 1) {
+          const combinedKeysText = searchFilterKeys
+            .map((k) => {
+              const val = item[k];
+              return val !== null && val !== undefined ? String(val).toLowerCase() : '';
+            })
+            .join(' ');
+          return words.every((word) => combinedKeysText.includes(word));
+        }
+
+        return false;
       }
-      // Fallback: search across all object values
-      return Object.values(item as Record<string, unknown>).some(
-        (val) => val !== null && val !== undefined && String(val).toLowerCase().includes(term)
-      );
+
+      // Fallback: search across all non-null scalar values in item
+      const allVals = Object.values(item as Record<string, unknown>)
+        .filter((val) => val !== null && val !== undefined && typeof val !== 'object')
+        .map((val) => String(val).toLowerCase())
+        .join(' ');
+
+      if (allVals.includes(term)) return true;
+      if (words.length > 1) {
+        return words.every((word) => allVals.includes(word));
+      }
+      return false;
     });
   }, [data, searchTerm, searchFilterKeys]);
 

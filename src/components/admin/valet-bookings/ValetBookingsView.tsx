@@ -522,26 +522,17 @@ export default function ValetBookingsView() {
       <div>
         <DataTable<ValetBooking>
           columns={columns}
-          data={filteredValetBookings}
+          data={valetBookings}
           isLoading={isLoading}
           keyExtractor={(v) => v.id}
           pageSize={10}
           searchPlaceholder="Search by booking ref, event name, customer, phone, venue..."
+          serverSearch={true}
           searchValue={searchQuery}
           onSearchChange={(val) => {
             setSearchQuery(val);
             setCurrentPage(1);
           }}
-          searchFilterKeys={[
-            'bookingNumber',
-            'customerName',
-            'customerPhone',
-            'customerEmail',
-            'eventName',
-            'eventType',
-            'venue',
-            'venueAddress',
-          ]}
           emptyMessage="No valet event bookings found matching your search or filter."
           serverPagination={{
             currentPage,
@@ -619,8 +610,8 @@ export default function ValetBookingsView() {
                     disabled={(viewingBooking.assignedStaffIds?.length || 0) === 0}
                     onClick={() => handleUpdateStatus(viewingBooking.id, 'In Progress')}
                     className={`px-2.5 py-1 font-bold rounded-lg transition-colors text-[10.5px] ${(viewingBooking.assignedStaffIds?.length || 0) > 0
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
-                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                      : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
                       }`}
                     title={
                       (viewingBooking.assignedStaffIds?.length || 0) > 0

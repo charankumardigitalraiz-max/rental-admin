@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import DriverBooking from "@/models/driverBooking";
+import Customer from "@/models/customer";
+import Driver from "@/models/driver";
 import { verifyAdmin } from "@/lib/auth";
 import mongoose from "mongoose";
 
@@ -63,15 +65,107 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Search query for bookingId or vehicle number
+    // Search query for bookingId, vehicle number, customer info, or driver info
     const search = url.searchParams.get("search");
-    if (search) {
-      matchStage.$or = [
-        { bookingId: { $regex: search, $options: "i" } },
-        { vehicleNumber: { $regex: search, $options: "i" } },
-        { "pickupLocation.address": { $regex: search, $options: "i" } },
-        { "dropLocation.address": { $regex: search, $options: "i" } },
+    if (search && search.trim() !== "") {
+      const cleanSearch = search.trim();
+      const escapedSearch = cleanSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const terms = cleanSearch.split(/\s+/).filter(Boolean);
+
+      const orClauses: any[] = [
+        { bookingId: { $regex: escapedSearch, $options: "i" } },
+        { vehicleNumber: { $regex: escapedSearch, $options: "i" } },
+        { "pickupLocation.address": { $regex: escapedSearch, $options: "i" } },
+        { "dropLocation.address": { $regex: escapedSearch, $options: "i" } },
       ];
+
+      try {
+        const customerConditions: any[] = [
+          { firstName: { $regex: escapedSearch, $options: "i" } },
+          { lastName: { $regex: escapedSearch, $options: "i" } },
+          { phone: { $regex: escapedSearch, $options: "i" } },
+          { email: { $regex: escapedSearch, $options: "i" } },
+          { custId: { $regex: escapedSearch, $options: "i" } },
+          {
+            $expr: {
+              $regexMatch: {
+                input: { $concat: [{ $ifNull: ["$firstName", ""] }, " ", { $ifNull: ["$lastName", ""] }] },
+                regex: escapedSearch,
+                options: "i",
+              },
+            },
+          },
+        ];
+
+        if (terms.length > 1) {
+          customerConditions.push({
+            $and: terms.map((term) => {
+              const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              return {
+                $or: [
+                  { firstName: { $regex: escapedTerm, $options: "i" } },
+                  { lastName: { $regex: escapedTerm, $options: "i" } },
+                  { phone: { $regex: escapedTerm, $options: "i" } },
+                  { email: { $regex: escapedTerm, $options: "i" } },
+                  { custId: { $regex: escapedTerm, $options: "i" } },
+                ],
+              };
+            }),
+          });
+        }
+
+        const matchedCustomers = await Customer.find({ $or: customerConditions }).select("_id").lean();
+        if (matchedCustomers.length > 0) {
+          orClauses.push({ userId: { $in: matchedCustomers.map((c: any) => c._id) } });
+        }
+      } catch (cErr) {
+        // Customer lookup fallback
+      }
+
+      try {
+        const driverConditions: any[] = [
+          { firstName: { $regex: escapedSearch, $options: "i" } },
+          { lastName: { $regex: escapedSearch, $options: "i" } },
+          { phone: { $regex: escapedSearch, $options: "i" } },
+          { email: { $regex: escapedSearch, $options: "i" } },
+          { driverId: { $regex: escapedSearch, $options: "i" } },
+          {
+            $expr: {
+              $regexMatch: {
+                input: { $concat: [{ $ifNull: ["$firstName", ""] }, " ", { $ifNull: ["$lastName", ""] }] },
+                regex: escapedSearch,
+                options: "i",
+              },
+            },
+          },
+        ];
+
+        if (terms.length > 1) {
+          driverConditions.push({
+            $and: terms.map((term) => {
+              const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              return {
+                $or: [
+                  { firstName: { $regex: escapedTerm, $options: "i" } },
+                  { lastName: { $regex: escapedTerm, $options: "i" } },
+                  { phone: { $regex: escapedTerm, $options: "i" } },
+                  { email: { $regex: escapedTerm, $options: "i" } },
+                  { driverId: { $regex: escapedTerm, $options: "i" } },
+                ],
+              };
+            }),
+          });
+        }
+
+        const matchedDrivers = await Driver.find({ $or: driverConditions }).select("_id").lean();
+        if (matchedDrivers.length > 0) {
+          orClauses.push({ driverId: { $in: matchedDrivers.map((d: any) => d._id) } });
+        }
+      } catch (dErr) {
+        // Driver lookup fallback
+      }
+
+      matchStage.$or = orClauses;
     }
 
     // Aggregation pipeline using $facet to fetch paginated data, total counts, and summary metrics in a single query

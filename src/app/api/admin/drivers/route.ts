@@ -18,13 +18,46 @@ export async function GET(req: NextRequest) {
         const matchQuery: any = {};
 
         const search = url.searchParams.get("search");
-        if (search) {
-            matchQuery.$or = [
-                { firstName: { $regex: search, $options: "i" } },
-                { lastName: { $regex: search, $options: "i" } },
-                { email: { $regex: search, $options: "i" } },
-                { driverId: { $regex: search, $options: "i" } }
+        if (search && search.trim() !== "") {
+            const cleanSearch = search.trim();
+            const escapedSearch = cleanSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const terms = cleanSearch.split(/\s+/).filter(Boolean);
+
+            const searchOrConditions: any[] = [
+                { firstName: { $regex: escapedSearch, $options: "i" } },
+                { lastName: { $regex: escapedSearch, $options: "i" } },
+                { email: { $regex: escapedSearch, $options: "i" } },
+                { phone: { $regex: escapedSearch, $options: "i" } },
+                { driverId: { $regex: escapedSearch, $options: "i" } },
+                {
+                    $expr: {
+                        $regexMatch: {
+                            input: { $concat: [{ $ifNull: ["$firstName", ""] }, " ", { $ifNull: ["$lastName", ""] }] },
+                            regex: escapedSearch,
+                            options: "i"
+                        }
+                    }
+                }
             ];
+
+            if (terms.length > 1) {
+                searchOrConditions.push({
+                    $and: terms.map(term => {
+                        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        return {
+                            $or: [
+                                { firstName: { $regex: escapedTerm, $options: "i" } },
+                                { lastName: { $regex: escapedTerm, $options: "i" } },
+                                { email: { $regex: escapedTerm, $options: "i" } },
+                                { phone: { $regex: escapedTerm, $options: "i" } },
+                                { driverId: { $regex: escapedTerm, $options: "i" } }
+                            ]
+                        };
+                    })
+                });
+            }
+
+            matchQuery.$or = searchOrConditions;
         }
 
         const status = url.searchParams.get("status");

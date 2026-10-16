@@ -44,6 +44,8 @@ export default function DriverBookingsView() {
   const [typeFilter, setTypeFilter] = useState<'All' | 'Local' | 'Outstation'>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const PAGE_LIMIT = 10;
 
   // Assign / Reassign Driver Modal State
@@ -55,21 +57,32 @@ export default function DriverBookingsView() {
   const [cancellingBooking, setCancellingBooking] = useState<DriverBooking | null>(null);
   const [cancelReason, setCancelReason] = useState<string>('Customer requested cancellation');
 
-  // Load bookings and available drivers on mount
+  // Debounce search query to prevent excessive backend queries (300ms)
   useEffect(() => {
-    fetchDriverBookings({ page: 1, limit: PAGE_LIMIT });
-    fetchAvailableDrivers();
-  }, [fetchDriverBookings, fetchAvailableDrivers]);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
-  // Re-fetch when filters or page changes
+  // Load available drivers on mount
   useEffect(() => {
-    fetchDriverBookings({
-      page: currentPage,
-      limit: PAGE_LIMIT,
-      ...(typeFilter !== 'All' ? { serviceType: typeFilter } : {}),
-      ...(statusFilter !== 'All' ? { status: statusFilter } : {}),
-    }, false);
-  }, [currentPage, typeFilter, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchAvailableDrivers();
+  }, [fetchAvailableDrivers]);
+
+  // Dynamic server fetch — runs whenever page, typeFilter, statusFilter, or search changes
+  useEffect(() => {
+    fetchDriverBookings(
+      {
+        page: currentPage,
+        limit: PAGE_LIMIT,
+        search: debouncedSearch.trim() || undefined,
+        ...(typeFilter !== 'All' ? { serviceType: typeFilter } : {}),
+        ...(statusFilter !== 'All' ? { status: statusFilter } : {}),
+      },
+      false
+    );
+  }, [currentPage, typeFilter, statusFilter, debouncedSearch, fetchDriverBookings]);
 
   const statuses: string[] = [
     'All',
@@ -337,13 +350,18 @@ export default function DriverBookingsView() {
 
       <DataTable<DriverBooking>
         columns={columns}
-        data={filteredBookings}
+        data={driverBookings}
         keyExtractor={(b) => b.id}
         isLoading={isLoading}
-        searchPlaceholder="Search booking #, customer, driver..."
-        searchFilterKeys={['bookingNumber', 'customerName', 'driverName', 'pickupLocation']}
+        searchPlaceholder="Search booking #, customer, driver, vehicle..."
+        serverSearch={true}
+        searchValue={searchQuery}
+        onSearchChange={(val) => {
+          setSearchQuery(val);
+          setCurrentPage(1);
+        }}
         emptyMessage={
-          isLoading ? 'Loading driver bookings from database...' : 'No driver bookings match the current filter criteria.'
+          isLoading ? 'Loading driver bookings from database...' : 'No driver bookings match the current filter or search criteria.'
         }
         serverPagination={{
           currentPage,
@@ -356,11 +374,20 @@ export default function DriverBookingsView() {
             <button
               onClick={() => {
                 setCurrentPage(1);
-                fetchDriverBookings({ page: 1, limit: PAGE_LIMIT }, false);
+                fetchDriverBookings(
+                  {
+                    page: 1,
+                    limit: PAGE_LIMIT,
+                    search: debouncedSearch.trim() || undefined,
+                    ...(typeFilter !== 'All' ? { serviceType: typeFilter } : {}),
+                    ...(statusFilter !== 'All' ? { status: statusFilter } : {}),
+                  },
+                  false
+                );
                 fetchAvailableDrivers();
               }}
               disabled={isLoading}
-              className="p-2 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50"
+              className="p-2 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
               title="Refresh Bookings"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-primary' : ''}`} />

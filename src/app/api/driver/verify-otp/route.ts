@@ -50,11 +50,14 @@ export async function POST(request: Request) {
 
     // If fcmToken is passed in verify-otp, save it and subscribe to topics
     if (fcmToken) {
-      driver = await Driver.findByIdAndUpdate(
+      const updated = await Driver.findByIdAndUpdate(
         driver._id,
         { $set: { fcmToken } },
         { new: true }
       );
+      if (updated) {
+        driver = updated;
+      }
       try {
         const { subscribeTokensToTopic } = await import("@/lib/firebase-admin");
         await subscribeTokensToTopic([fcmToken], "drivers");

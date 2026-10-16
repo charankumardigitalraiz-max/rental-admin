@@ -28,8 +28,28 @@ export async function GET(req: NextRequest) {
         }
 
         const status = url.searchParams.get("status");
-        if (status !== null && status !== "") {
-            matchQuery.status = status;
+        if (status && status !== "all" && status !== "All") {
+            const s = status.toLowerCase();
+            if (s === "pending" || s === "pending approval" || s === "pending-approval") {
+                matchQuery.status = "pending";
+            } else if (s === "approved" || s === "verified") {
+                matchQuery.status = "verified";
+            } else if (s === "online" || s === "duty") {
+                matchQuery.isOnline = true;
+            } else if (s === "offline") {
+                matchQuery.isOnline = false;
+            } else if (s === "suspended") {
+                matchQuery.status = { $in: ["suspended", "rejected"] };
+            } else if (s === "rejected") {
+                matchQuery.status = "rejected";
+            } else {
+                matchQuery.status = status;
+            }
+        }
+
+        const isOnlineParam = url.searchParams.get("isOnline");
+        if (isOnlineParam !== null) {
+            matchQuery.isOnline = isOnlineParam === "true";
         }
 
         const pipeline: any[] = [
@@ -94,10 +114,12 @@ export async function GET(req: NextRequest) {
             }
         ];
 
-        const [aggregateResult, totalDrivers, activeDrivers, inactiveDrivers] = await Promise.all([
+        const [aggregateResult, totalDrivers, activeDrivers, pendingDrivers, onlineDrivers, suspendedDrivers] = await Promise.all([
             Driver.aggregate(pipeline),
             Driver.countDocuments(),
             Driver.countDocuments({ status: "verified" }),
+            Driver.countDocuments({ status: "pending" }),
+            Driver.countDocuments({ isOnline: true }),
             Driver.countDocuments({ status: { $in: ["suspended", "rejected"] } })
         ]);
 
@@ -115,8 +137,12 @@ export async function GET(req: NextRequest) {
                 drivers,
                 counts: {
                     total: totalDrivers,
+                    approved: activeDrivers,
+                    pending: pendingDrivers,
+                    online: onlineDrivers,
+                    suspended: suspendedDrivers,
                     active: activeDrivers,
-                    inactive: inactiveDrivers,
+                    inactive: suspendedDrivers,
                     newThisMonth: newDriversThisMonth
                 },
                 pagination: {

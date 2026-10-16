@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRentalStore } from '@/store/useRentalStore';
+import { useDriverStore } from '@/store/useDriverStore';
 import Link from 'next/link';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { Driver } from '@/types';
@@ -22,16 +23,53 @@ import {
   Clock,
   AlertCircle,
   Star,
+  Filter,
+  ChevronDown,
 } from 'lucide-react';
 
 interface DriversViewProps {
   filter?: string;
 }
 
+const mapFilterToTab = (f?: string): string => {
+  if (!f || f === 'all') return 'All';
+  const lower = f.toLowerCase().trim();
+  if (
+    lower === 'pending' ||
+    lower === 'pending approval' ||
+    lower === 'pending-approval' ||
+    lower === 'drivers-pending'
+  ) {
+    return 'Pending Approval';
+  }
+  if (lower === 'approved' || lower === 'verified' || lower === 'drivers-approved') {
+    return 'Approved';
+  }
+  if (
+    lower === 'online' ||
+    lower === 'online duty' ||
+    lower === 'duty' ||
+    lower === 'drivers-online'
+  ) {
+    return 'Online';
+  }
+  if (
+    lower === 'suspended' ||
+    lower === 'rejected' ||
+    lower === 'drivers-suspended'
+  ) {
+    return 'Suspended';
+  }
+  if (lower === 'offline') return 'Offline';
+  if (lower === 'available') return 'Available';
+  if (lower === 'busy') return 'Busy';
+  return 'All';
+};
+
 export default function DriversView({ filter }: DriversViewProps = {}) {
   const {
     activeTab,
-    drivers,
+    drivers: fallbackDrivers,
     approveDriver,
     rejectDriver,
     suspendDriver,
@@ -40,97 +78,81 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
     setSelectedDriverId,
   } = useRentalStore();
 
-  const [activeTabFilter, setActiveTabFilter] = useState<string>('All');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [dbDrivers, setDbDrivers] = useState<any[]>([]);
+  const {
+    drivers: storeDrivers,
+    pagination,
+    counts,
+    isLoading: isStoreLoading,
+    fetchDrivers,
+    updateDriverStatus,
+  } = useDriverStore();
 
-  const handleUpdateDriverStatus = async (id: string, newStatus: string) => {
-    try {
-      const dbStatus = newStatus === 'Approved' ? 'verified' : newStatus.toLowerCase();
-      const res = await fetch(`/api/admin/drivers/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: dbStatus })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setDbDrivers((prev) =>
-          prev.map((d) =>
-            d.id === id
-              ? {
-                ...d,
-                status: newStatus,
-                verification: {
-                  ...d.verification,
-                  status: newStatus === 'Approved' ? 'Verified' : d.verification.status
-                }
-              }
-              : d
-          )
-        );
-      }
-    } catch (err) {
-      console.error('Failed to update driver status:', err);
+  const [activeTabFilter, setActiveTabFilter] = useState<string>(() =>
+    mapFilterToTab(filter || activeTab)
+  );
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const mapTabToApiStatus = (tab: string): string => {
+    switch (tab) {
+      case 'Pending Approval':
+        return 'pending';
+      case 'Approved':
+        return 'approved';
+      case 'Online':
+        return 'online';
+      case 'Offline':
+        return 'offline';
+      case 'Suspended':
+        return 'suspended';
+      case 'Rejected':
+        return 'rejected';
+      default:
+        return 'all';
     }
   };
 
-  // Fetch real drivers from API
+  const dbDrivers: Driver[] = storeDrivers.length > 0 ? storeDrivers : fallbackDrivers;
+
+  const handleUpdateDriverStatus = async (id: string, newStatus: string) => {
+    await updateDriverStatus(id, newStatus);
+    fetchDrivers({
+      page: currentPage,
+      limit: pageSize,
+      search: searchQuery.trim() || undefined,
+      status: mapTabToApiStatus(activeTabFilter),
+    });
+  };
+
+  // Keep active tab filter in sync when filter prop or store activeTab changes
   useEffect(() => {
-    const fetchDrivers = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/admin/drivers');
-        const json = await res.json();
-        if (json.success && json.data.drivers) {
-          const mappedDrivers = json.data.drivers.map((d: any) => ({
-            id: d._id || d.driverId,
-            name: `${d.firstName || ''} ${d.lastName || ''}`.trim(),
-            phone: d.phone || '',
-            email: d.email || '',
-            avatar: d.selfie || 'https://i.pravatar.cc/150',
-            status: d.status === 'pending' ? 'Pending Approval' :
-              d.status === 'verified' ? 'Approved' :
-                d.status === 'suspended' ? 'Suspended' :
-                  d.status === 'rejected' ? 'Rejected' : d.status,
-            dutyStatus: d.isOnline ? 'Online' : 'Offline',
-            availability: 'Available',
-            rating: 5.0,
-            completedBookings: 0,
-            earnings: { total: 0 },
-            subscription: { status: 'None', planName: '' },
-            verification: {
-              status: d.status === 'verified' ? 'Verified' : 'Pending',
-              licenseNumber: d.licenseNumber || ''
-            }
-          }));
-          setDbDrivers(mappedDrivers);
-        }
-      } catch (error) {
-        console.error('Error fetching drivers:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDrivers();
+    const newTab = mapFilterToTab(filter || activeTab);
+    setActiveTabFilter(newTab);
+    setCurrentPage(1);
   }, [filter, activeTab]);
+
+  // Dynamic server-side API filtering: fetches directly from backend whenever status, search, or page changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchDrivers({
+        page: currentPage,
+        limit: pageSize,
+        search: searchQuery.trim() || undefined,
+        status: mapTabToApiStatus(activeTabFilter),
+      });
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [activeTabFilter, currentPage, pageSize, searchQuery, fetchDrivers]);
 
   const handleTabFilterChange = (tab: string) => {
     if (tab === activeTabFilter) return;
-    setIsLoading(true);
     setActiveTabFilter(tab);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 250);
+    setCurrentPage(1);
   };
 
-  // Determine effective filter status
-  let effectiveStatus = activeTabFilter;
-  if (filter === 'pending' || activeTab === 'drivers-pending') effectiveStatus = 'Pending Approval';
-  else if (filter === 'approved' || activeTab === 'drivers-approved') effectiveStatus = 'Approved';
-  else if (filter === 'online' || activeTab === 'drivers-online') effectiveStatus = 'Online';
-  else if (filter === 'suspended' || activeTab === 'drivers-suspended') effectiveStatus = 'Suspended';
-
-  const isDedicatedScreen = !!filter || activeTab !== 'drivers';
+  const effectiveStatus = activeTabFilter;
 
   const filterTabs = [
     'All',
@@ -138,34 +160,9 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
     'Approved',
     'Online',
     'Offline',
-    'Available',
-    'Busy',
     'Suspended',
     'Rejected',
   ];
-
-  const filteredDrivers = dbDrivers.filter((d) => {
-    switch (effectiveStatus) {
-      case 'Pending Approval':
-        return d.status === 'Pending Approval';
-      case 'Approved':
-        return d.status === 'Approved';
-      case 'Online':
-        return d.dutyStatus === 'Online';
-      case 'Offline':
-        return d.dutyStatus === 'Offline';
-      case 'Available':
-        return d.availability === 'Available';
-      case 'Busy':
-        return d.availability === 'Busy';
-      case 'Suspended':
-        return d.status === 'Suspended' || d.status === 'Rejected';
-      case 'Rejected':
-        return d.status === 'Rejected';
-      default:
-        return true;
-    }
-  });
 
   const columns: Column<Driver>[] = [
     {
@@ -286,7 +283,7 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
             <Eye className="w-3.5 h-3.5" />
           </Link>
 
-          {d.status === 'Pending Approval' && (
+          {/* {d.status === 'Pending Approval' && (
             <>
               <button
                 onClick={() => {
@@ -309,9 +306,9 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
                 Reject
               </button>
             </>
-          )}
+          )} */}
 
-          {d.status === 'Approved' && (
+          {/* {d.status === 'Approved' && (
             <button
               onClick={() => {
                 suspendDriver(d.id);
@@ -322,9 +319,9 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
             >
               Suspend
             </button>
-          )}
+          )} */}
 
-          {d.status === 'Suspended' && (
+          {/* {d.status === 'Suspended' && (
             <button
               onClick={() => {
                 activateDriver(d.id);
@@ -335,267 +332,363 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
             >
               Activate
             </button>
-          )}
+          )} */}
         </div>
       ),
     },
   ];
 
-  // Dynamic Header Info per Screen Tab
+  // Dynamic Header Info per Active Filter
   let headerTag = 'Driver Management • Fleet Directory';
   let headerTitle = 'All Driver Profiles & Fleet Roster';
   let headerSubtitle = 'Manage driver accounts, background verification status, duty availability, and pass subscriptions.';
 
-  if (filter === 'pending' || activeTab === 'drivers-pending') {
+  if (effectiveStatus === 'Pending Approval') {
     headerTag = 'Driver Onboarding • Verification Queue';
     headerTitle = 'Pending Driver Applications';
     headerSubtitle = 'Review driving license documents, ID proofs, and approve or reject driver onboarding requests.';
-  } else if (filter === 'approved' || activeTab === 'drivers-approved') {
+  } else if (effectiveStatus === 'Approved') {
     headerTag = 'Active Fleet • Verified Drivers';
     headerTitle = 'Approved & Active Driver Directory';
     headerSubtitle = 'Monitor active subscription passes, completed trips, and driver profile details.';
-  } else if (filter === 'online' || activeTab === 'drivers-online') {
+  } else if (effectiveStatus === 'Online') {
     headerTag = 'Live Duty • Dispatch Roster';
     headerTitle = 'Online Duty Drivers';
     headerSubtitle = 'Real-time duty availability, GPS locations, and current trip assignment status.';
-  } else if (filter === 'suspended' || activeTab === 'drivers-suspended') {
+  } else if (effectiveStatus === 'Suspended' || effectiveStatus === 'Rejected') {
     headerTag = 'Account Security • Blocked Fleet';
     headerTitle = 'Suspended & Rejected Driver Accounts';
     headerSubtitle = 'Manage blocked drivers, failed DL verifications, and reactivate accounts.';
   }
 
-  // Dynamic Metrics depending on Screen Tab
-  const pendingDrivers = dbDrivers.filter((d) => d.status === 'Pending Approval');
-  const approvedDrivers = dbDrivers.filter((d) => d.status === 'Approved');
-  const onlineDrivers = dbDrivers.filter((d) => d.dutyStatus === 'Online');
-  const suspendedDrivers = dbDrivers.filter((d) => d.status === 'Suspended' || d.status === 'Rejected');
+  // Dynamic Metrics depending on Active Filter
+  const totalCount = counts?.total ?? dbDrivers.length;
+  const pendingCount =
+    counts?.pending ??
+    dbDrivers.filter((d) => d.status === 'Pending Approval' || (d as any).status === 'pending').length;
+  const approvedCount =
+    counts?.approved ??
+    dbDrivers.filter((d) => d.status === 'Approved' || (d as any).status === 'verified').length;
+  const onlineCount =
+    counts?.online ??
+    dbDrivers.filter((d) => d.dutyStatus === 'Online' || (d as any).isOnline === true).length;
+  const suspendedCount =
+    counts?.suspended ??
+    dbDrivers.filter(
+      (d) =>
+        d.status === 'Suspended' ||
+        d.status === 'Rejected' ||
+        (d as any).status === 'suspended' ||
+        (d as any).status === 'rejected'
+    ).length;
 
   const renderTopStats = () => {
-    if (filter === 'pending' || activeTab === 'drivers-pending') {
+    if (effectiveStatus === 'Pending Approval') {
       return (
-        <div className="card-white p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
-            <div className="sm:px-3 space-y-1">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Pending Applications</span>
-                <UserCheck className="w-4 h-4 text-amber-500" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Applications</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+                <UserCheck className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-amber-700">{pendingDrivers.length}</h3>
-              <p className="text-[10px] text-amber-600 mt-0.5">Awaiting verification</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">DL Verified</span>
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <div>
+              <h3 className="text-2xl font-extrabold text-amber-700 tracking-tight">{pendingCount}</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Awaiting verification</p>
+            </div>
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">DL Verified</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+                <ShieldCheck className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-emerald-700">
-                {pendingDrivers.filter((d) => d.verification.status === 'Verified').length}
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-emerald-700 tracking-tight">
+                {dbDrivers.filter((d) => d.verification.status === 'Verified').length}
               </h3>
-              <p className="text-[10px] text-emerald-600 mt-0.5">Ready for final approval</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Ready for final approval</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">DL Review Pending</span>
-                <Clock className="w-4 h-4 text-sky-600" />
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">DL Review Pending</span>
+              <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-200/60 flex items-center justify-center text-sky-600">
+                <Clock className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-sky-700">
-                {pendingDrivers.filter((d) => d.verification.status === 'Pending').length}
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-sky-700 tracking-tight">
+                {dbDrivers.filter((d) => d.verification.status === 'Pending').length}
               </h3>
-              <p className="text-[10px] text-sky-600 mt-0.5">Documents under review</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Documents under review</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Required Action</span>
-                <AlertCircle className="w-4 h-4 text-rose-500" />
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Required Action</span>
+              <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-200/60 flex items-center justify-center text-rose-600">
+                <AlertCircle className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-rose-700">{pendingDrivers.length} Drivers</h3>
-              <p className="text-[10px] text-rose-600 mt-0.5">Approve or Reject</p>
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-rose-700 tracking-tight">{pendingCount} Drivers</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Approve or Reject</p>
             </div>
           </div>
         </div>
       );
     }
 
-    if (filter === 'approved' || activeTab === 'drivers-approved') {
+    if (effectiveStatus === 'Approved') {
       return (
-        <div className="card-white p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
-            <div className="sm:px-3 space-y-1">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Approved Fleet</span>
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Approved Fleet</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+                <ShieldCheck className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-emerald-700">{approvedDrivers.length}</h3>
-              <p className="text-[10px] text-emerald-600 mt-0.5">Fully verified drivers</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Active Subscriptions</span>
-                <Award className="w-4 h-4 text-emerald-600" />
-              </div>
-              <h3 className="text-xl font-bold mt-1 text-emerald-700">
-                {approvedDrivers.filter((d) => d.subscription.status === 'Active').length}
-              </h3>
-              <p className="text-[10px] text-emerald-600 mt-0.5">Eligible for bookings</p>
+            <div>
+              <h3 className="text-2xl font-extrabold text-emerald-700 tracking-tight">{approvedCount}</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Fully verified drivers</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Expiring Passes</span>
-                <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Subscriptions</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+                <Award className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-amber-700">
-                {approvedDrivers.filter((d) => d.subscription.status === 'Expiring Soon').length}
-              </h3>
-              <p className="text-[10px] text-amber-600 mt-0.5">Requires pass renewal</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Total Completed Trips</span>
-                <CheckCircle2 className="w-4 h-4 text-slate-600" />
-              </div>
-              <h3 className="text-xl font-bold mt-1 text-slate-900">
-                {approvedDrivers.reduce((acc, d) => acc + d.completedBookings, 0)} Trips
+            <div>
+              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                {dbDrivers.filter((d) => d.subscription?.status === 'Active').length}
               </h3>
-              <p className="text-[10px] text-slate-500 mt-0.5">Lifetime fulfilled</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Eligible for bookings</p>
+            </div>
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Expiring Passes</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+                <Clock className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-amber-700 tracking-tight">
+                {dbDrivers.filter((d) => d.subscription?.status === 'Expiring Soon').length}
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Requires pass renewal</p>
+            </div>
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Completed Trips</span>
+              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-600">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                {dbDrivers.reduce((acc, d) => acc + (d.completedBookings || 0), 0)} Trips
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Lifetime fulfilled</p>
             </div>
           </div>
         </div>
       );
     }
 
-    if (filter === 'online' || activeTab === 'drivers-online') {
+    if (effectiveStatus === 'Online') {
       const avgRating =
-        onlineDrivers.length > 0
-          ? (onlineDrivers.reduce((a, b) => a + b.rating, 0) / onlineDrivers.length).toFixed(1)
+        dbDrivers.length > 0
+          ? (dbDrivers.reduce((a, b) => a + (b.rating || 5), 0) / dbDrivers.length).toFixed(1)
           : '5.0';
       return (
-        <div className="card-white p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
-            <div className="sm:px-3 space-y-1">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Online Duty Fleet</span>
-                <Car className="w-4 h-4 text-sky-600 animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Online Duty Fleet</span>
+              <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-200/60 flex items-center justify-center text-sky-600">
+                <Car className="w-4 h-4 animate-pulse" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-sky-700">{onlineDrivers.length}</h3>
-              <p className="text-[10px] text-sky-600 mt-0.5">Currently active online</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Available Drivers</span>
-                <UserCheck className="w-4 h-4 text-emerald-600" />
+            <div>
+              <h3 className="text-2xl font-extrabold text-sky-700 tracking-tight">{onlineCount}</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Currently active online</p>
+            </div>
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Available Drivers</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+                <UserCheck className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-emerald-700">
-                {onlineDrivers.filter((d) => d.availability === 'Available').length}
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-emerald-700 tracking-tight">
+                {dbDrivers.filter((d) => d.availability === 'Available').length}
               </h3>
-              <p className="text-[10px] text-emerald-600 mt-0.5">Ready for immediate dispatch</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Ready for immediate dispatch</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">On Trip / Busy</span>
-                <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">On Trip / Busy</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+                <Clock className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-amber-700">
-                {onlineDrivers.filter((d) => d.availability === 'Busy').length}
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-amber-700 tracking-tight">
+                {dbDrivers.filter((d) => d.availability === 'Busy').length}
               </h3>
-              <p className="text-[10px] text-amber-600 mt-0.5">Fulfilling active booking</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Fulfilling active booking</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Avg Duty Rating</span>
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Avg Duty Rating</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-500">
+                <Star className="w-4 h-4 fill-amber-400" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-amber-600">⭐ {avgRating}</h3>
-              <p className="text-[10px] text-slate-500 mt-0.5">Active fleet rating</p>
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-amber-600 tracking-tight">⭐ {avgRating}</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Active fleet rating</p>
             </div>
           </div>
         </div>
       );
     }
 
-    if (filter === 'suspended' || activeTab === 'drivers-suspended') {
+    if (effectiveStatus === 'Suspended' || effectiveStatus === 'Rejected') {
       return (
-        <div className="card-white p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
-            <div className="sm:px-3 space-y-1">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Suspended Accounts</span>
-                <UserX className="w-4 h-4 text-amber-500" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Suspended Accounts</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+                <UserX className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-amber-700">
-                {dbDrivers.filter((d) => d.status === 'Suspended').length}
-              </h3>
-              <p className="text-[10px] text-amber-600 mt-0.5">Temporarily blocked</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Rejected Applications</span>
-                <AlertCircle className="w-4 h-4 text-rose-500" />
-              </div>
-              <h3 className="text-xl font-bold mt-1 text-rose-700">
-                {dbDrivers.filter((d) => d.status === 'Rejected').length}
+            <div>
+              <h3 className="text-2xl font-extrabold text-amber-700 tracking-tight">
+                {dbDrivers.filter((d) => d.status === 'Suspended' || (d as any).status === 'suspended').length}
               </h3>
-              <p className="text-[10px] text-rose-600 mt-0.5">Failed DL verification</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Temporarily blocked</p>
             </div>
-            <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Total Blocked Drivers</span>
-                <UserX className="w-4 h-4 text-slate-700" />
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rejected Applications</span>
+              <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-200/60 flex items-center justify-center text-rose-600">
+                <AlertCircle className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-bold mt-1 text-slate-900">{suspendedDrivers.length}</h3>
-              <p className="text-[10px] text-slate-500 mt-0.5">Not eligible for duty</p>
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-rose-700 tracking-tight">
+                {dbDrivers.filter((d) => d.status === 'Rejected' || (d as any).status === 'rejected').length}
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Failed DL verification</p>
+            </div>
+          </div>
+
+          <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Blocked Drivers</span>
+              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-700">
+                <UserX className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">{suspendedCount}</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Not eligible for duty</p>
             </div>
           </div>
         </div>
       );
     }
 
-    // Default 'drivers' (All Drivers) Stats Band
+    // Default 'All Drivers' Individual Cards Grid
     return (
-      <div className="card-white p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
-          <div className="sm:px-3 space-y-1">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[10px] font-bold uppercase tracking-wider">Total Fleet</span>
-              <Users className="w-4 h-4 text-primary" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Fleet</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-primary">
+              <Users className="w-4 h-4" />
             </div>
-            <h3 className="text-xl font-bold mt-1 text-slate-900">{dbDrivers.length}</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">All registered drivers</p>
           </div>
-
-          <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[10px] font-bold uppercase tracking-wider">Approved</span>
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            </div>
-            <h3 className="text-xl font-bold mt-1 text-emerald-700">{approvedDrivers.length}</h3>
-            <p className="text-[10px] text-emerald-600 mt-0.5">Verified & active</p>
+          <div>
+            <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">{totalCount}</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">All registered drivers</p>
           </div>
+        </div>
 
-          <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[10px] font-bold uppercase tracking-wider">Pending</span>
-              <UserCheck className="w-4 h-4 text-amber-500" />
+        <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Approved</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+              <ShieldCheck className="w-4 h-4" />
             </div>
-            <h3 className="text-xl font-bold mt-1 text-amber-700">{pendingDrivers.length}</h3>
-            <p className="text-[10px] text-amber-600 mt-0.5">Awaiting verification</p>
           </div>
-
-          <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[10px] font-bold uppercase tracking-wider">Online Duty</span>
-              <Car className="w-4 h-4 text-sky-600 animate-pulse" />
-            </div>
-            <h3 className="text-xl font-bold mt-1 text-sky-700">{onlineDrivers.length}</h3>
-            <p className="text-[10px] text-sky-600 mt-0.5">Ready for requests</p>
+          <div>
+            <h3 className="text-2xl font-extrabold text-emerald-700 tracking-tight">{approvedCount}</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">Verified & active</p>
           </div>
+        </div>
 
-          <div className="sm:px-3 space-y-1 pt-3 sm:pt-0">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-[10px] font-bold uppercase tracking-wider">Suspended</span>
-              <UserX className="w-4 h-4 text-rose-500" />
+        <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending</span>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+              <UserCheck className="w-4 h-4" />
             </div>
-            <h3 className="text-xl font-bold mt-1 text-rose-700">{suspendedDrivers.length}</h3>
-            <p className="text-[10px] text-rose-600 mt-0.5">Inactive or blocked</p>
+          </div>
+          <div>
+            <h3 className="text-2xl font-extrabold text-amber-700 tracking-tight">{pendingCount}</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">Awaiting verification</p>
+          </div>
+        </div>
+
+        <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Online Duty</span>
+            <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-200/60 flex items-center justify-center text-sky-600">
+              <Car className="w-4 h-4 animate-pulse" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-2xl font-extrabold text-sky-700 tracking-tight">{onlineCount}</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">Ready for requests</p>
+          </div>
+        </div>
+
+        <div className="card-white p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm transition-all border border-stone-200/80 rounded-xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Suspended</span>
+            <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-200/60 flex items-center justify-center text-rose-600">
+              <UserX className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-2xl font-extrabold text-rose-700 tracking-tight">{suspendedCount}</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">Inactive or blocked</p>
           </div>
         </div>
       </div>
@@ -604,35 +697,73 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
 
   return (
     <div className="space-y-6 pb-10">
+      {/* Header Summary Banner */}
+      {/* <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span className="text-[11px] font-bold text-[#c5a880] uppercase tracking-wider">
+            {headerTag}
+          </span>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">{headerTitle}</h2>
+          <p className="text-xs text-slate-500 mt-0.5">{headerSubtitle}</p>
+        </div>
+      </div> */}
+
       {/* Top Stats Band */}
       {renderTopStats()}
 
       <DataTable<Driver>
         columns={columns}
-        data={filteredDrivers}
+        data={storeDrivers.length > 0 ? storeDrivers : (isStoreLoading ? [] : fallbackDrivers)}
         keyExtractor={(d) => d.id}
-        pageSize={8}
-        isLoading={isLoading}
-        searchPlaceholder="Search driver name, phone, email..."
-        searchFilterKeys={['name', 'phone', 'email']}
+        pageSize={pageSize}
+        isLoading={isStoreLoading}
+        minLoadingDurationMs={200}
+        searchPlaceholder="Search driver name, phone, email, driver ID..."
+        serverSearch={true}
+        searchValue={searchQuery}
+        onSearchChange={(val) => {
+          setSearchQuery(val);
+          setCurrentPage(1);
+        }}
+        serverPagination={{
+          currentPage: pagination?.page || currentPage,
+          totalPages: pagination?.totalPages || 1,
+          totalItems: pagination?.total ?? (storeDrivers.length || fallbackDrivers.length),
+          onPageChange: (newPage) => setCurrentPage(newPage),
+          onPageSizeChange: (newPageSize) => {
+            setPageSize(newPageSize);
+            setCurrentPage(1);
+          },
+        }}
         emptyMessage={`No drivers found for ${effectiveStatus === 'All' ? 'the current list' : effectiveStatus}.`}
         headerActions={
-          !isDedicatedScreen ? (
-            <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-100/80 rounded-lg max-w-full">
-              {filterTabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => handleTabFilterChange(tab)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition-all ${activeTabFilter === tab
-                    ? 'bg-white text-primary shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                >
-                  {tab}
-                </button>
-              ))}
+          <div className="relative inline-flex items-center">
+            <div className="relative">
+              <select
+                value={effectiveStatus}
+                onChange={(e) => handleTabFilterChange(e.target.value)}
+                className="appearance-none bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg pl-8 pr-8 py-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer shadow-2xs transition-all"
+                title="Filter by status"
+              >
+                {filterTabs.map((tab) => {
+                  let count: number | undefined = undefined;
+                  if (tab === 'All') count = totalCount;
+                  else if (tab === 'Pending Approval') count = pendingCount;
+                  else if (tab === 'Approved') count = approvedCount;
+                  else if (tab === 'Online') count = onlineCount;
+                  else if (tab === 'Suspended') count = suspendedCount;
+
+                  return (
+                    <option key={tab} value={tab} className="py-1 text-slate-800">
+                      {tab}
+                    </option>
+                  );
+                })}
+              </select>
+              <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-          ) : undefined
+          </div>
         }
       />
     </div>

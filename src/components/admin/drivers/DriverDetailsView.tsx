@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
+import { useDriverStore } from '@/store/useDriverStore';
 import Link from 'next/link';
 import Modal from '@/components/ui/Modal';
+import DataTable, { Column } from '@/components/ui/DataTable';
 import {
   ArrowLeft,
   User,
@@ -26,6 +28,8 @@ import {
   CreditCard,
   Ban,
   Check,
+  Landmark,
+  Copy,
 } from 'lucide-react';
 
 interface DriverDetailsViewProps {
@@ -34,134 +38,159 @@ interface DriverDetailsViewProps {
 
 export default function DriverDetailsView({ driverId }: DriverDetailsViewProps = {}) {
   const router = useRouter();
+  const { selectedDriverId, driverBookings: fallbackBookings } = useRentalStore();
   const {
-    selectedDriverId,
+    currentDriver: driver,
+    driverStats,
     driverBookings,
-    approveDriver,
-    suspendDriver,
-    activateDriver,
-  } = useRentalStore();
+    bookingsPagination,
+    isLoading,
+    isBookingsLoading,
+    tripFilter,
+    setTripFilter,
+    fetchDriverById,
+    fetchDriverBookings,
+    updateDriverStatus,
+  } = useDriverStore();
 
-  const [tripFilter, setTripFilter] = useState<'all' | 'completed' | 'active' | 'cancelled'>('all');
   const [selectedDocImage, setSelectedDocImage] = useState<{ title: string; url: string } | null>(null);
+  const [copiedBankField, setCopiedBankField] = useState<string | null>(null);
 
-  const [dbDriver, setDbDriver] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const activeDriverId = driverId || selectedDriverId;
 
   useEffect(() => {
-    const fetchDriver = async () => {
-      const idToFetch = driverId || selectedDriverId;
-      if (!idToFetch) {
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const res = await fetch(`/api/admin/drivers/${idToFetch}`);
-        const json = await res.json();
-        if (json.success && json.data.driver) {
-          const d = json.data.driver;
+    if (activeDriverId) {
+      fetchDriverById(activeDriverId, { tripFilter: 'all', page: 1, limit: 5 });
+    }
+  }, [activeDriverId, fetchDriverById]);
 
-          const safeUrl = (url: any, fallback: string) => {
-            if (!url || url === 'undefined' || url === 'null' || url === '') return fallback;
-            return url;
-          };
-
-          setDbDriver({
-            id: d._id || d.driverId,
-            name: `${d.firstName || ''} ${d.lastName || ''}`.trim(),
-            phone: d.phone || '',
-            email: d.email || '',
-            avatar: d.selfie || 'https://i.pravatar.cc/150',
-            status: d.status === 'pending' ? 'Pending Approval' :
-              d.status === 'verified' ? 'Approved' :
-                d.status === 'suspended' ? 'Suspended' :
-                  d.status === 'rejected' ? 'Rejected' : d.status,
-            dutyStatus: d.isOnline ? 'Online' : 'Offline',
-            availability: 'Available',
-            rating: 5.0,
-            completedBookings: 0,
-            totalBookings: 0,
-            cancelledBookings: 0,
-            earnings: { total: 0, pending: 0 },
-            currentLocation: d.address || 'Location unavailable',
-            subscription: {
-              status: 'None',
-              planName: 'No Plan',
-              startDate: '-',
-              expiryDate: '-',
-              daysRemaining: 0,
-              localEligible: false,
-              outstationEligible: false
-            },
-            verification: {
-              status: d.status === 'verified' ? 'Verified' : 'Pending',
-              licenseNumber: d.licenseNumber || 'Not provided',
-              licenseExpiry: 'Not provided',
-              licenseImage: safeUrl(d.drivingLicense, 'https://placehold.co/400x250/e2e8f0/475569?text=License+Image'),
-              idProofType: 'Aadhaar',
-              idProofNumber: d.aadhaarNumber || 'Not provided',
-              idProofImage: safeUrl(d.aadhaarCardFront, 'https://placehold.co/400x250/e2e8f0/475569?text=ID+Front'),
-              idProofImageBack: safeUrl(d.aadhaarCardBack, 'https://placehold.co/400x250/e2e8f0/475569?text=ID+Back'),
-              panNumber: d.pancardNumber || 'Not provided',
-              panImage: safeUrl(d.pancard, 'https://placehold.co/400x250/e2e8f0/475569?text=PAN+Card'),
-              passportNumber: d.passportId || 'Not provided',
-              passportImage: safeUrl(d.passport, 'https://placehold.co/400x250/e2e8f0/475569?text=Passport'),
-            }
-          });
-        }
-      } catch (e) {
-        console.error('Error fetching driver details:', e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDriver();
-  }, [driverId, selectedDriverId]);
-
-  const driver = dbDriver;
-
-  const handleStatusUpdate = async (newStatus: string) => {
-    try {
-      const dbStatus = newStatus === 'Approved' ? 'verified' : newStatus.toLowerCase();
-      const res = await fetch(`/api/admin/drivers/${driver.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: dbStatus })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setDbDriver((prev: any) => ({ ...prev, status: newStatus }));
-      }
-    } catch (e) {
-      console.error("Failed to update status", e);
+  const handleTripFilterChange = (newFilter: 'all' | 'completed' | 'active' | 'cancelled') => {
+    setTripFilter(newFilter);
+    if (activeDriverId) {
+      fetchDriverBookings(activeDriverId, { tripFilter: newFilter, page: 1, limit: bookingsPagination?.limit || 5 });
     }
   };
 
-  if (isLoading) {
-    return <div className="p-8 text-center text-slate-500">Loading driver details...</div>;
-  }
+  const handlePageChange = (newPage: number) => {
+    if (activeDriverId) {
+      fetchDriverBookings(activeDriverId, { tripFilter, page: newPage, limit: bookingsPagination?.limit || 5 });
+    }
+  };
 
-  if (!driver) {
+  const handlePageSizeChange = (newLimit: number) => {
+    if (activeDriverId) {
+      fetchDriverBookings(activeDriverId, { tripFilter, page: 1, limit: newLimit });
+    }
+  };
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    if (driver?.id) {
+      await updateDriverStatus(driver.id, newStatus);
+    }
+  };
+
+  const tripColumns: Column<any>[] = [
+    {
+      key: 'bookingNumber',
+      header: 'Booking Ref',
+      render: (trip) => (
+        <span className="font-mono font-bold text-slate-900">{trip.bookingNumber}</span>
+      ),
+    },
+    {
+      key: 'bookingDate',
+      header: 'Date & Time',
+      render: (trip) => (
+        <div className="text-slate-600 text-[11px]">
+          <div>{trip.bookingDate}</div>
+          <div className="text-[10px] text-slate-400 font-mono">{trip.bookingTime}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'customerName',
+      header: 'Customer',
+      render: (trip) => (
+        <div>
+          <span className="font-bold text-slate-900 block">{trip.customerName}</span>
+          <span className="text-[10px] text-slate-400">{trip.customerPhone}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'bookingType',
+      header: 'Type / Duration',
+      render: (trip) => (
+        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+          {trip.bookingType} ({trip.durationHours}h)
+        </span>
+      ),
+    },
+    {
+      key: 'vehicleInfo',
+      header: 'Customer Vehicle',
+      render: (trip) => (
+        <div className="text-slate-700">
+          <span className="font-semibold block">{trip.vehicleInfo?.model || 'Vehicle'}</span>
+          <span className="text-[10px] text-slate-400 font-mono">{trip.vehicleInfo?.plateNumber || '-'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'driverEarnings',
+      header: 'Driver Earnings',
+      render: (trip) => (
+        <span className="font-bold text-emerald-700">
+          ₹{(trip.pricing?.driverEarnings ?? trip.driverEarnings ?? 0).toLocaleString('en-IN')}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Trip Status',
+      render: (trip) => {
+        const isCompleted = trip.status === 'Completed';
+        const isCancelled = trip.status === 'Cancelled';
+        return (
+          <span
+            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+              isCompleted
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : isCancelled
+                ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                : 'bg-sky-50 text-sky-800 border border-sky-200'
+            }`}
+          >
+            {trip.status}
+          </span>
+        );
+      },
+    },
+  ];
+
+  const filteredTrips = driverBookings && driverBookings.length > 0
+    ? driverBookings
+    : fallbackBookings.filter((b) => b.driverId === driver?.id);
+
+  if (isLoading) {
     return (
-      <div className="card-white p-8 text-center text-slate-500">
-        Driver profile not found.{' '}
-        <button onClick={() => router.back()} className="text-primary font-bold underline">
-          Back
-        </button>
+      <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-medium">Loading driver profile...</span>
       </div>
     );
   }
 
-  const driverTripsHistory = driverBookings.filter((b) => b.driverId === driver.id);
-
-  const filteredTrips = driverTripsHistory.filter((trip) => {
-    if (tripFilter === 'completed') return trip.status === 'Completed';
-    if (tripFilter === 'active')
-      return trip.status === 'Service Started' || trip.status === 'Driver Arriving' || trip.status === 'Driver Assigned';
-    if (tripFilter === 'cancelled') return trip.status === 'Cancelled';
-    return true;
-  });
+  if (!driver) {
+    return (
+      <div className="card-white p-8 text-center text-slate-500 space-y-2">
+        <p className="font-semibold text-slate-800">Driver profile not found.</p>
+        <button onClick={() => router.back()} className="text-primary font-bold underline text-xs cursor-pointer">
+          Go back to Drivers list
+        </button>
+      </div>
+    );
+  }
 
   const completionRate =
     driver.totalBookings > 0 ? Math.round((driver.completedBookings / driver.totalBookings) * 100) : 100;
@@ -307,14 +336,14 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
         </div>
       </div>
 
-      {/* HORIZONTAL GRID: Verification Docs & Subscription */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* HORIZONTAL GRID: Verification Docs, Bank Details & Subscription */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: Driving License Details */}
         <div className="card-white p-5 space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <FileText className="w-4.5 h-4.5 text-emerald-600" /> Driving License Details
+                <FileText className="w-4.5 h-4.5 text-emerald-600" /> Driving License
               </h3>
               <span
                 className={`px-2 py-0.5 rounded text-[10px] font-bold ${driver.verification.status === 'Verified'
@@ -340,7 +369,7 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
 
               {/* DL Image Thumbnail */}
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block">License Photo Document:</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase block">License Photo:</span>
                 <div
                   onClick={() =>
                     setSelectedDocImage({
@@ -348,7 +377,7 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
                       url: driver.verification.licenseImage,
                     })
                   }
-                  className="relative h-32 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                  className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
                 >
                   <img
                     src={driver.verification.licenseImage}
@@ -356,7 +385,7 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                    <ZoomIn className="w-4 h-4" /> Preview License Image
+                    <ZoomIn className="w-4 h-4" /> Preview
                   </div>
                 </div>
               </div>
@@ -369,7 +398,7 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <User className="w-4.5 h-4.5 text-sky-600" /> {driver.verification.idProofType} Proof
+                <User className="w-4.5 h-4.5 text-sky-600" /> {driver.verification.idProofType}
               </h3>
               <span
                 className={`px-2 py-0.5 rounded text-[10px] font-bold ${driver.verification.status === 'Verified'
@@ -396,11 +425,13 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
               {/* ID Proof Image Thumbnails */}
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Govt ID (Front):</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">
+                    {driver.verification.idProofImageBack ? `${driver.verification.idProofType} (Front):` : 'Document Photo:'}
+                  </span>
                   <div
                     onClick={() =>
                       setSelectedDocImage({
-                        title: `${driver.verification.idProofType} (Front) - ${driver.verification.idProofNumber}`,
+                        title: `${driver.verification.idProofType} ${driver.verification.idProofImageBack ? '(Front)' : ''} - ${driver.verification.idProofNumber}`,
                         url: driver.verification.idProofImage,
                       })
                     }
@@ -408,7 +439,7 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
                   >
                     <img
                       src={driver.verification.idProofImage}
-                      alt="Govt ID Front"
+                      alt={`${driver.verification.idProofType} Front`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
@@ -417,20 +448,119 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
                   </div>
                 </div>
 
+                {driver.verification.idProofImageBack && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase block">
+                      {driver.verification.idProofType} (Back):
+                    </span>
+                    <div
+                      onClick={() =>
+                        setSelectedDocImage({
+                          title: `${driver.verification.idProofType} (Back) - ${driver.verification.idProofNumber}`,
+                          url: driver.verification.idProofImageBack,
+                        })
+                      }
+                      className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                    >
+                      <img
+                        src={driver.verification.idProofImageBack}
+                        alt={`${driver.verification.idProofType} Back`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                        <ZoomIn className="w-4 h-4" /> Preview
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Bank Details & Payout */}
+        <div className="card-white p-5 space-y-4 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <Landmark className="w-4.5 h-4.5 text-indigo-600" /> Bank & Payout
+              </h3>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                {driver.bankDetails?.status || 'Active'}
+              </span>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Bank Name:</span>
+                  <span className="font-bold text-slate-900">{driver.bankDetails?.bankName || 'HDFC Bank'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">A/C Holder:</span>
+                  <span className="font-medium text-slate-800 truncate max-w-[150px]">{driver.bankDetails?.accountHolderName || driver.name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Account #:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-bold text-slate-900">{driver.bankDetails?.accountNumber || '50100482910482'}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (driver.bankDetails?.accountNumber) {
+                          navigator.clipboard.writeText(driver.bankDetails.accountNumber);
+                          setCopiedBankField('acc');
+                          setTimeout(() => setCopiedBankField(null), 2000);
+                        }
+                      }}
+                      className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      title="Copy Account Number"
+                    >
+                      {copiedBankField === 'acc' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">IFSC Code:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-bold text-slate-900 uppercase">{driver.bankDetails?.ifscCode || 'HDFC0001234'}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (driver.bankDetails?.ifscCode) {
+                          navigator.clipboard.writeText(driver.bankDetails.ifscCode);
+                          setCopiedBankField('ifsc');
+                          setTimeout(() => setCopiedBankField(null), 2000);
+                        }
+                      }}
+                      className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      title="Copy IFSC"
+                    >
+                      {copiedBankField === 'ifsc' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">UPI ID:</span>
+                  <span className="font-mono text-emerald-700 font-semibold">{driver.bankDetails?.upiId || `${driver.phone}@upi`}</span>
+                </div>
+              </div>
+
+              {driver.bankDetails?.passbookImage ? (
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Govt ID (Back):</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Passbook / Cheque:</span>
                   <div
                     onClick={() =>
                       setSelectedDocImage({
-                        title: `${driver.verification.idProofType} (Back) - ${driver.verification.idProofNumber}`,
-                        url: driver.verification.idProofImageBack,
+                        title: `Bank Passbook - ${driver.bankDetails?.bankName}`,
+                        url: driver.bankDetails.passbookImage,
                       })
                     }
-                    className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                    className="relative h-20 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
                   >
                     <img
-                      src={driver.verification.idProofImageBack}
-                      alt="Govt ID Back"
+                      src={driver.bankDetails.passbookImage}
+                      alt="Bank Passbook"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
@@ -438,96 +568,17 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-2.5 bg-emerald-50/70 border border-emerald-200/80 rounded-lg flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-[11px] text-emerald-900 font-medium">Bank account linked for automatic weekly settlements</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Card 2.5: PAN Card Details */}
-        <div className="card-white p-5 space-y-4 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <FileText className="w-4.5 h-4.5 text-blue-600" /> PAN Card
-              </h3>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">PAN Number:</span>
-                  <span className="font-bold font-mono text-slate-900">{driver.verification.panNumber}</span>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block">PAN Document:</span>
-                <div
-                  onClick={() =>
-                    setSelectedDocImage({
-                      title: `PAN Card - ${driver.panNumber}`,
-                      url: driver.verification.panImage,
-                    })
-                  }
-                  className="relative h-32 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
-                >
-                  <img
-                    src={driver.verification.panImage}
-                    alt="PAN Card"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                    <ZoomIn className="w-4 h-4" /> Preview PAN Card
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2.6: Passport Details */}
-        <div className="card-white p-5 space-y-4 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <FileText className="w-4.5 h-4.5 text-indigo-600" /> Passport
-              </h3>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Passport Number:</span>
-                  <span className="font-bold font-mono text-slate-900">{driver.verification.passportNumber}</span>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block">Passport Document:</span>
-                <div
-                  onClick={() =>
-                    setSelectedDocImage({
-                      title: `Passport - ${driver.verification.passportNumber}`,
-                      url: driver.verification.passportImage,
-                    })
-                  }
-                  className="relative h-32 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
-                >
-                  <img
-                    src={driver.verification.passportImage}
-                    alt="Passport"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                    <ZoomIn className="w-4 h-4" /> Preview Passport
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Subscription Pass Status */}
+        {/* Card 4: Subscription Pass Status */}
         <div className="card-white p-5 space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
@@ -613,119 +664,89 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
         </div>
       </div>
 
-      {/* FULL WIDTH: Driver Orders & Trip History Table */}
-      <div className="card-white p-5 space-y-4 w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
+      {/* FULL WIDTH: Driver Orders & Trip History Table using Global DataTable */}
+      <div className="space-y-3 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
           <div>
             <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-              <Car className="w-5 h-5 text-primary" /> Driver Orders & Trip History ({filteredTrips.length})
+              <Car className="w-5 h-5 text-primary" /> Driver Orders & Trip History
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Detailed ledger of all completed, in-progress, and cancelled customer bookings
             </p>
           </div>
-
-          {/* Trip Table Filter Buttons */}
-          <div className="flex items-center gap-1.5 bg-stone-100 p-1 rounded-lg border border-stone-200 text-xs">
-            <button
-              onClick={() => setTripFilter('all')}
-              className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'all'
-                ? 'bg-primary text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
-                }`}
-            >
-              All ({driverTripsHistory.length})
-            </button>
-            <button
-              onClick={() => setTripFilter('completed')}
-              className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'completed'
-                ? 'bg-primary text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
-                }`}
-            >
-              Completed
-            </button>
-            <button
-              onClick={() => setTripFilter('active')}
-              className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'active'
-                ? 'bg-primary text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
-                }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setTripFilter('cancelled')}
-              className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'cancelled'
-                ? 'bg-primary text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
-                }`}
-            >
-              Cancelled
-            </button>
-          </div>
         </div>
 
-        {filteredTrips.length === 0 ? (
-          <div className="p-8 text-center text-slate-400 text-xs font-medium">
-            No trip records found for the selected filter option.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-primary text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-emerald-900/40">
-                <tr>
-                  <th className="py-2.5 px-3">Booking Ref</th>
-                  <th className="py-2.5 px-3">Date & Time</th>
-                  <th className="py-2.5 px-3">Customer</th>
-                  <th className="py-2.5 px-3">Type / Duration</th>
-                  <th className="py-2.5 px-3">Customer Vehicle</th>
-                  <th className="py-2.5 px-3">Driver Earnings</th>
-                  <th className="py-2.5 px-3">Trip Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredTrips.map((trip) => (
-                  <tr key={trip.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-3 font-mono font-bold text-slate-900">{trip.bookingNumber}</td>
-                    <td className="py-3 px-3 text-slate-600 text-[11px]">
-                      <div>{trip.bookingDate}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">{trip.bookingTime}</div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="font-bold text-slate-900 block">{trip.customerName}</span>
-                      <span className="text-[10px] text-slate-400">{trip.customerPhone}</span>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        {trip.bookingType} ({trip.durationHours}h)
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-slate-700">
-                      <span className="font-semibold block">{trip.vehicleInfo.model}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">{trip.vehicleInfo.plateNumber}</span>
-                    </td>
-                    <td className="py-3 px-3 font-bold text-emerald-700">
-                      ₹{trip.pricing.driverEarnings.toLocaleString('en-IN')}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${trip.status === 'Completed'
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                          : trip.status === 'Cancelled'
-                            ? 'bg-rose-50 text-rose-800 border border-rose-200'
-                            : 'bg-sky-50 text-sky-800 border border-sky-200'
-                          }`}
-                      >
-                        {trip.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataTable<any>
+          columns={tripColumns}
+          data={filteredTrips}
+          keyExtractor={(trip) => trip.id || trip._id || trip.bookingNumber || String(Math.random())}
+          pageSize={bookingsPagination?.limit || 5}
+          pageSizeOptions={[5, 10, 20, 50]}
+          isLoading={isBookingsLoading}
+          emptyMessage="No trip records found for the selected filter option."
+          searchPlaceholder="Search booking ref, customer, vehicle..."
+          searchFilterKeys={['bookingNumber', 'customerName', 'customerPhone', 'bookingType', 'status']}
+          headerActions={
+            <div className="flex items-center gap-1.5 bg-stone-100 p-1 rounded-lg border border-stone-200 text-xs">
+              <button
+                type="button"
+                onClick={() => handleTripFilterChange('all')}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  tripFilter === 'all'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
+                }`}
+              >
+                All ({bookingsPagination?.total ?? driver.totalBookings ?? filteredTrips.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTripFilterChange('completed')}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  tripFilter === 'completed'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
+                }`}
+              >
+                Completed ({driver.completedBookings ?? 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTripFilterChange('active')}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  tripFilter === 'active'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
+                }`}
+              >
+                Active ({driver.activeBookings ?? 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTripFilterChange('cancelled')}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  tripFilter === 'cancelled'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/60'
+                }`}
+              >
+                Cancelled ({driver.cancelledBookings ?? 0})
+              </button>
+            </div>
+          }
+          serverPagination={
+            bookingsPagination
+              ? {
+                  currentPage: bookingsPagination.page,
+                  totalPages: bookingsPagination.totalPages,
+                  totalItems: bookingsPagination.total,
+                  onPageChange: (newPage) => handlePageChange(newPage),
+                  onPageSizeChange: (newLimit) => handlePageSizeChange(newLimit),
+                }
+              : undefined
+          }
+        />
       </div>
 
       {/* DOCUMENT IMAGE PREVIEW MODAL */}

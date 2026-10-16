@@ -211,6 +211,15 @@ export interface Driver {
     idProofNumber: string;
     idProofImage: string;
   };
+  bankDetails?: {
+    bankName: string;
+    accountHolderName: string;
+    accountNumber: string;
+    ifscCode: string;
+    upiId?: string;
+    passbookImage?: string;
+    status?: string;
+  };
   earnings: {
     total: number;
     pending: number;
@@ -243,6 +252,7 @@ export interface DriverSubscription {
   driverId: string;
   driverName: string;
   driverAvatar: string;
+  driverMongoId?: string;
   planId: string;
   planName: string;
   startDate: string;

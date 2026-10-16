@@ -208,7 +208,7 @@ export const useRentalStore = create<DriverAppStoreState>((set) => ({
         b.id === bookingId ? { ...b, status } : b
       ),
     })),
-  drivers: initialDrivers,
+  drivers: [],
   subscriptionPlans: initialSubscriptionPlans,
   driverSubscriptions: initialDriverSubscriptions,
   subscriptionPayments: initialSubscriptionPayments,

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRentalStore } from '@/store/useRentalStore';
+import { useDriverStore } from '@/store/useDriverStore';
 import { useValetBookingStore } from '@/store/useValetBookingStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import {
@@ -43,12 +44,13 @@ export default function Sidebar() {
   const pathname = usePathname();
   const {
     driverBookings,
-    drivers,
+    drivers: mockDrivers,
     customers,
     supportTickets,
     valetStaff,
   } = useRentalStore();
   const { valetBookings, counts: valetCounts } = useValetBookingStore();
+  const { drivers: storeDrivers, fetchDrivers: fetchStoreDrivers } = useDriverStore();
 
   const {
     isCollapsed,
@@ -59,6 +61,11 @@ export default function Sidebar() {
   } = useSidebarStore();
 
   const [isDriversExpanded, setIsDriversExpanded] = useState(true);
+
+  // Fetch real drivers from API on mount
+  useEffect(() => {
+    fetchStoreDrivers();
+  }, [fetchStoreDrivers]);
 
   // Restore saved collapse preference on client mount
   useEffect(() => {
@@ -71,6 +78,8 @@ export default function Sidebar() {
       console.error('Failed to read sidebar preference', e);
     }
   }, [setCollapsed]);
+
+  const activeDrivers = storeDrivers.length > 0 ? storeDrivers : mockDrivers;
 
   const pendingDriverBookings = driverBookings.filter(
     (b) => b.status === 'Searching Driver' || b.status === 'Pending'
@@ -85,14 +94,26 @@ export default function Sidebar() {
           b.status === 'Partially Assigned' ||
           (b.status as string) === 'Pending'
       ).length;
-  const pendingDriversCount = drivers.filter((d) => d.status === 'Pending Approval').length;
-  const approvedDriversCount = drivers.filter((d) => d.status === 'Approved').length;
-  const onlineDriversCount = drivers.filter((d) => d.dutyStatus === 'Online').length;
-  const suspendedDriversCount = drivers.filter((d) => d.status === 'Suspended').length;
+  const pendingDriversCount = activeDrivers.filter(
+    (d) => d.status === 'Pending Approval' || (d as any).status === 'pending'
+  ).length;
+  const approvedDriversCount = activeDrivers.filter(
+    (d) => d.status === 'Approved' || (d as any).status === 'verified'
+  ).length;
+  const onlineDriversCount = activeDrivers.filter(
+    (d) => d.dutyStatus === 'Online' || (d as any).isOnline === true
+  ).length;
+  const suspendedDriversCount = activeDrivers.filter(
+    (d) =>
+      d.status === 'Suspended' ||
+      d.status === 'Rejected' ||
+      (d as any).status === 'suspended' ||
+      (d as any).status === 'rejected'
+  ).length;
   const openSupportTicketsCount = supportTickets?.filter((t) => t.status === 'Open').length || 0;
 
   const driverSubItems: { href: string; label: string; count: number; badgeColor?: string }[] = [
-    { href: '/admin/drivers', label: 'All Drivers', count: drivers.length },
+    { href: '/admin/drivers', label: 'All Drivers', count: activeDrivers.length },
     {
       href: '/admin/drivers/pending',
       label: 'Pending Approval',

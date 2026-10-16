@@ -267,7 +267,7 @@ export default function DriverSubscriptionPlansView() {
       render: (sub) => (
         <div className="flex items-center justify-end gap-1.5">
           <Link
-            href={`/admin/drivers/${sub.driverId}`}
+            href={`/admin/drivers/${sub.id}`}
             className="px-2.5 py-1 bg-primary hover:bg-primary-hover text-white text-[11px] font-bold rounded flex items-center gap-1.5 transition-colors shadow-xs"
             title="View Driver Profile"
           >

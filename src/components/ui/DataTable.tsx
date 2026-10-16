@@ -39,6 +39,8 @@ interface DataTableProps<T> {
   onSearchChange?: (term: string) => void;
   /** Controlled search value from parent */
   searchValue?: string;
+  /** When true, search is handled dynamically by server and client-side filtering/slicing is bypassed */
+  serverSearch?: boolean;
   /** Minimum duration in milliseconds the loader remains visible (defaults to 1500ms) */
   minLoadingDurationMs?: number;
 }
@@ -58,6 +60,7 @@ export default function DataTable<T>({
   serverPagination,
   onSearchChange,
   searchValue,
+  serverSearch,
   minLoadingDurationMs = 1500,
 }: DataTableProps<T>) {
   const [internalPageSize, setInternalPageSize] = useState(pageSize);
@@ -130,7 +133,8 @@ export default function DataTable<T>({
 
   // Server-side vs client-side calculations
   const isServerPaginated = !!serverPagination;
-  const isSearching = !!searchTerm.trim();
+  const isServerSearch = isServerPaginated && (!!onSearchChange || !!serverSearch);
+  const isSearching = !isServerSearch && !!searchTerm.trim();
 
   const totalItems = isServerPaginated
     ? (isSearching ? filteredData.length : serverPagination!.totalItems)

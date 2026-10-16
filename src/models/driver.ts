@@ -17,6 +17,12 @@ export interface DriverInterface extends Document {
     selfie?: string;
     passportId?: string;
     passport?: string;
+    bankName?: string;
+    accountHolderName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    upiId?: string;
+    passbookImage?: string;
     status: string;
     isOnline?: boolean;
     isVerified?: boolean;
@@ -43,6 +49,12 @@ const driverSchema: Schema = new Schema(
         selfie: { type: String },
         passportId: { type: String },
         passport: { type: String },
+        bankName: { type: String },
+        accountHolderName: { type: String },
+        accountNumber: { type: String },
+        ifscCode: { type: String },
+        upiId: { type: String },
+        passbookImage: { type: String },
         status: { type: String, default: "pending" },
         isOnline: { type: Boolean, default: false },
         isVerified: { type: Boolean, default: false },

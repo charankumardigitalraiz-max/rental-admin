@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest) {
     const { id } = authResult.decoded!;
 
     const body = await request.json();
-    const { firstName, lastName, email, phone, address } = body;
+    const { firstName, lastName, email, phone, address, fcmToken } = body;
 
     await connectToDatabase();
 
@@ -87,10 +87,21 @@ export async function PUT(request: NextRequest) {
           ...(email && { email }),
           ...(phone && { phone }),
           ...(address && { address }),
+          ...(fcmToken && { fcmToken }),
         },
       },
       { new: true, runValidators: true }
     ).select("-__v");
+
+    if (fcmToken) {
+      try {
+        const { subscribeTokensToTopic } = await import("@/lib/firebase-admin");
+        await subscribeTokensToTopic([fcmToken], "customers");
+        await subscribeTokensToTopic([fcmToken], "all");
+      } catch (err: any) {
+        console.warn("Could not subscribe customer FCM token to topics:", err?.message);
+      }
+    }
 
     if (!updatedCustomer) {
       return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });

@@ -5,7 +5,7 @@ import Otp from "@/models/otp";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { phone } = body;
+    const { phone, fcmToken } = body;
 
     if (!phone) {
       return NextResponse.json(
@@ -31,6 +31,23 @@ export async function POST(request: Request) {
       { phone, otp, createdAt: new Date() },
       { upsert: true, new: true }
     );
+
+    // If fcmToken is provided during login, update the customer record immediately
+    if (fcmToken) {
+      const Customer = (await import("@/models/customer")).default;
+      await Customer.findOneAndUpdate(
+        { phone },
+        { $set: { fcmToken } }
+      );
+      try {
+        const { subscribeTokensToTopic } = await import("@/lib/firebase-admin");
+        await subscribeTokensToTopic([fcmToken], "customers");
+        await subscribeTokensToTopic([fcmToken], "all");
+      } catch (err: any) {
+        console.warn("Could not subscribe customer token on login:", err?.message);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: "OTP sent successfully to user",

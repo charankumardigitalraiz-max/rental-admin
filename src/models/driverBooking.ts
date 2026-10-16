@@ -70,6 +70,14 @@ export interface DriverBookingInterface extends Document {
     cancellationReason?: string;
     cancelledAt?: Date | null;
     
+    rejectedDrivers?: {
+        _id?: mongoose.Types.ObjectId | string;
+        id?: string;
+        driverId: mongoose.Types.ObjectId;
+        reason?: string;
+        rejectTime?: Date;
+    }[];
+    
     userNotes?: string;
     adminNotes?: string;
     
@@ -374,6 +382,24 @@ const driverBookingSchema: Schema = new Schema(
             type: Date,
             default: null
         },
+
+        rejectedDrivers: [
+            {
+                driverId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "Driver",
+                    required: true,
+                },
+                reason: {
+                    type: String,
+                    default: "Driver declined the ride",
+                },
+                rejectTime: {
+                    type: Date,
+                    default: Date.now,
+                },
+            }
+        ],
 
         userNotes: {
             type: String,

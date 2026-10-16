@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { phone, otp } = body;
+    const { phone, otp, fcmToken } = body;
 
     if (!phone || !otp) {
       return NextResponse.json(
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     await Otp.deleteOne({ phone });
 
     // Check if driver exists
-    const driver = await Driver.findOne({ phone });
+    let driver = await Driver.findOne({ phone });
 
     if (!driver) {
       return NextResponse.json({
@@ -48,9 +48,25 @@ export async function POST(request: Request) {
       });
     }
 
+    // If fcmToken is passed in verify-otp, save it and subscribe to topics
+    if (fcmToken) {
+      driver = await Driver.findByIdAndUpdate(
+        driver._id,
+        { $set: { fcmToken } },
+        { new: true }
+      );
+      try {
+        const { subscribeTokensToTopic } = await import("@/lib/firebase-admin");
+        await subscribeTokensToTopic([fcmToken], "drivers");
+        await subscribeTokensToTopic([fcmToken], "all");
+      } catch (err: any) {
+        console.warn("Could not subscribe driver token on verify-otp:", err?.message);
+      }
+    }
+
     // Driver exists, generate token
     const token = jwt.sign(
-      { id: driver._id, role: "driver" },
+      { id: driver!._id, role: "driver" },
       process.env.JWT_SECRET || "fallback",
       { expiresIn: "7d" }
     );

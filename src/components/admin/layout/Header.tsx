@@ -153,7 +153,7 @@ export default function Header() {
       subtitle: 'Manage professional valet drivers, duty status, shift assignments, and ratings',
     },
     '/admin/pricing': {
-      title: 'Pricing & Dynamic Surge Rules',
+      title: 'Driver & Vallet Prices',
       subtitle: 'Configure hourly tariffs, outstation rates, valet pricing, and surge multipliers',
     },
     '/admin/payouts': {
@@ -305,16 +305,14 @@ export default function Header() {
                     <div
                       key={n.id}
                       onClick={() => handleNotificationClick(n.id)}
-                      className={`p-3 transition-colors cursor-pointer flex items-start gap-3 ${
-                        n.read ? 'bg-white hover:bg-slate-50/80' : 'bg-emerald-50/40 hover:bg-emerald-50/70'
-                      }`}
+                      className={`p-3 transition-colors cursor-pointer flex items-start gap-3 ${n.read ? 'bg-white hover:bg-slate-50/80' : 'bg-emerald-50/40 hover:bg-emerald-50/70'
+                        }`}
                     >
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                          n.read
+                        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${n.read
                             ? 'bg-slate-100 text-slate-500'
                             : 'bg-primary-light text-primary border border-primary/20'
-                        }`}
+                          }`}
                       >
                         <Bell className="w-3.5 h-3.5" />
                       </div>
@@ -370,9 +368,8 @@ export default function Header() {
               <span className="text-[10px] text-[#9c7f56] font-bold">{currentAdmin.role}</span>
             </div>
             <ChevronDown
-              className={`w-3.5 h-3.5 text-slate-400 hidden lg:block transition-transform duration-200 ${
-                isProfileMenuOpen ? 'rotate-180' : ''
-              }`}
+              className={`w-3.5 h-3.5 text-slate-400 hidden lg:block transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''
+                }`}
             />
           </button>
 
@@ -431,11 +428,11 @@ export default function Header() {
               {/* Logout Option */}
               <div className="p-1">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setIsProfileMenuOpen(false);
-                    authLogout();
+                    await authLogout();
                     toast.info('Logged Out Successfully', 'You have been signed out of the admin portal.');
-                    router.push('/admin/login');
+                    router.replace('/admin/login');
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                 >

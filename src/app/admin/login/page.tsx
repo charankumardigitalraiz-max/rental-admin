@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/context/ToastContext';
-import { Crown, Lock, Mail, Eye, EyeOff, KeyRound, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
+import { getOrGenerateFcmToken, syncFcmTokenToBackend } from '@/lib/fcm-client';
+import { Crown, Lock, Mail, Eye, EyeOff, KeyRound, ArrowRight, Loader2, ShieldCheck, BellOff } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -15,10 +16,14 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [notificationPermission, setNotificationPermission] = useState<string>('default');
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       router.replace('/admin/dashboard');
+    }
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -31,8 +36,27 @@ export default function AdminLoginPage() {
       return;
     }
 
-    const success = await login(email, password);
+    // Generate FCM token on login click and send to backend
+    let fcmToken: string | undefined;
+    try {
+      const token = await getOrGenerateFcmToken();
+      if (token) {
+        fcmToken = token;
+      } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied') {
+        toast.warning(
+          'Notifications Blocked',
+          'Notifications are blocked in your browser. Click the site settings icon in the address bar and choose Allow.'
+        );
+      }
+    } catch (tokenErr) {
+      console.warn('FCM token generation notice:', tokenErr);
+    }
+
+    const success = await login(email, password, fcmToken);
     if (success) {
+      if (fcmToken) {
+        syncFcmTokenToBackend(fcmToken, email).catch(() => { });
+      }
       toast.success('Welcome Back!', 'Logged into Admin Management Portal.');
       router.replace('/admin/dashboard');
     }
@@ -84,6 +108,18 @@ export default function AdminLoginPage() {
           </div>
 
         </div>
+
+        {notificationPermission === 'denied' && (
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-2xs">
+            <BellOff className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="font-bold text-[11px] text-amber-950 uppercase tracking-wide">Notifications Blocked in Browser</p>
+              <p className="text-[11px] text-amber-800 leading-snug">
+                To generate your device FCM token, click the site icon (tune/lock <span className="font-mono bg-amber-100 px-1 py-0.5 rounded text-[10px]">🔒</span>) in your address bar and change Notifications to <strong className="font-bold text-amber-950">Allow</strong>.
+              </p>
+            </div>
+          </div>
+        )}
 
         {activeErrorMessage && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">

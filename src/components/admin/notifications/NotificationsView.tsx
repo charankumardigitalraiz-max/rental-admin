@@ -29,6 +29,8 @@ import {
   Copy,
   Check,
   Key,
+  Clock,
+  ChevronRight,
 } from 'lucide-react';
 import { NotificationRecord } from '@/types';
 import { useNotificationStore } from '@/store/useNotificationStore';
@@ -203,165 +205,178 @@ export default function NotificationsView() {
     General: Bell,
   };
 
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Top Banner / Title */}
-      <div className="card-white p-6 shadow-sm border border-slate-200/80">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center text-primary shadow-sm border border-primary/20">
-                <Bell className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                  Firebase Notification & Dispatch Center
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    FCM v1 Active
-                  </span>
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Firebase Cloud Messaging (FCM) live push dispatcher, audience broadcasting, and dispatch telemetry
-                </p>
-              </div>
-            </div>
-          </div>
+  const typeStyleMap: Record<string, { bg: string; text: string; border: string }> = {
+    Booking: { bg: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-200/80' },
+    Payment: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200/80' },
+    Subscription: { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200/80' },
+    Assignment: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200/80' },
+    Alert: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200/80' },
+    General: { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200/80' },
+  };
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={() => setIsTestModalOpen(true)}
-              className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100/80 transition-all flex items-center gap-1.5 shadow-xs"
-              id="test-push-btn"
-            >
-              <Sparkles className="w-4 h-4 text-amber-500" /> Test FCM Push
-            </button>
-            <button
-              onClick={handleMarkAllRead}
-              className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-1.5"
-            >
-              <CheckCheck className="w-4 h-4" /> Mark All as Read
-            </button>
-            <button
-              onClick={() => setIsDispatchModalOpen(true)}
-              className="px-4 py-2 text-xs font-bold rounded-lg bg-primary hover:bg-primary-hover text-white shadow-md shadow-primary/20 transition-all flex items-center gap-1.5"
-              id="dispatch-notification-btn"
-            >
-              <Send className="w-4 h-4" /> Dispatch Push Notification
-            </button>
+  return (
+    <div className="space-y-4 max-w-7xl mx-auto pb-10 animate-fadeIn">
+      {/* ====================================================================== */}
+      {/* 1. COMPACT PAGE HEADER & QUICK ACTIONS */}
+      {/* ====================================================================== */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+              Push Notifications & Alerts
+            </h1>
+            <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              FCM Active
+            </span>
           </div>
+          <p className="text-[11.5px] text-slate-500 mt-0.5">
+            Real-time Firebase Cloud Messaging broadcasting, push feeds, and delivery logs.
+          </p>
         </div>
 
-        {/* Firebase Live Diagnostics Bar */}
-        <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-600">Project ID:</span>
-              <span className="font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-medium">
-                {firebaseStatus.projectId || 'driverbooking-4b700'}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-600">Service Account:</span>
-              <span className="text-slate-500 truncate max-w-xs" title={firebaseStatus.clientEmail}>
-                {firebaseStatus.clientEmail || 'firebase-adminsdk-fbsvc@driverbooking-4b700.iam.gserviceaccount.com'}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-600">Engine:</span>
-              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-medium border border-emerald-100">
-                Firebase Admin SDK 13.x
-              </span>
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
           <button
+            type="button"
             onClick={() => fetchNotifications({ search, audience: selectedAudience, type: selectedType })}
-            className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 font-medium transition-colors"
+            disabled={loading}
+            title="Refresh Notification Feed"
+            className="p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 disabled:opacity-50 cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh Feed
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{loading ? 'Syncing...' : 'Refresh'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleMarkAllRead}
+            title="Mark all notifications as read"
+            className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
+          >
+            <CheckCheck className="w-3.5 h-3.5 text-slate-500" />
+            <span>Mark All Read</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsTestModalOpen(true)}
+            className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span>Test Push</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsDispatchModalOpen(true)}
+            className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-primary hover:bg-primary-hover text-white transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Dispatch Push</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card-white p-4 flex items-center gap-3.5 border-l-4 border-l-primary">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Radio className="w-5 h-5" />
+      {/* ====================================================================== */}
+      {/* 2. COMPACT KPI METRIC TILES */}
+      {/* ====================================================================== */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
+              <Radio className="w-3.5 h-3.5 text-primary" /> Total Dispatches
+            </span>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">
+              {(stats.total || notifications.length).toLocaleString('en-IN')}
+            </div>
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Dispatches</p>
-            <h3 className="text-xl font-bold text-slate-900">{stats.total || notifications.length}</h3>
-          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">All Time</span>
         </div>
 
-        <div className="card-white p-4 flex items-center gap-3.5 border-l-4 border-l-emerald-500">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
+        <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> FCM Delivered
+            </span>
+            <div className="text-xl font-bold text-emerald-700 tracking-tight">
+              {(stats.sent || notifications.filter(n => n.status !== 'failed').length).toLocaleString('en-IN')}
+            </div>
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Delivered (FCM)</p>
-            <h3 className="text-xl font-bold text-slate-900">{stats.sent || notifications.filter(n => n.status !== 'failed').length}</h3>
-          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/60">
+            {stats.total ? Math.round(((stats.sent || 0) / stats.total) * 100) : 100}%
+          </span>
         </div>
 
-        <div className="card-white p-4 flex items-center gap-3.5 border-l-4 border-l-amber-500">
-          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <Layers className="w-5 h-5" />
+        <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-sky-600" /> Active Channels
+            </span>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">
+              4 Audiences
+            </div>
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Active Topics</p>
-            <h3 className="text-xl font-bold text-slate-900">4 Topics</h3>
-            <span className="text-[10px] text-slate-400">drivers, customers, valet, all</span>
-          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 font-semibold border border-sky-200/60">FCM Topics</span>
         </div>
 
-        <div className="card-white p-4 flex items-center gap-3.5 border-l-4 border-l-indigo-500">
-          <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-            <Bell className="w-5 h-5" />
+        <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
+              <Bell className="w-3.5 h-3.5 text-amber-500" /> Unread Alerts
+            </span>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">
+              {stats.unread || notifications.filter(n => !n.read).length}
+            </div>
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Unread Alerts</p>
-            <h3 className="text-xl font-bold text-slate-900">{stats.unread || notifications.filter(n => !n.read).length}</h3>
-          </div>
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border ${(stats.unread || notifications.filter(n => !n.read).length) > 0
+            ? 'bg-amber-50 text-amber-800 border-amber-200'
+            : 'bg-slate-100 text-slate-500 border-slate-200'
+            }`}>
+            Inbox
+          </span>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="card-white p-4 flex flex-col md:flex-row items-center justify-between gap-3 shadow-xs">
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* ====================================================================== */}
+      {/* 3. COMPACT FILTER & SEARCH TOOLBAR */}
+      {/* ====================================================================== */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="relative flex-1 sm:max-w-md">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search by title, message or audience..."
+            placeholder="Search title, message, topic..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:bg-white"
+            className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200/90 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 shadow-2xs transition-all"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
-            <Filter className="w-3.5 h-3.5" /> Filter Audience:
-          </div>
-          {['All', 'Drivers', 'Customers', 'Valet Staff'].map((aud) => (
-            <button
-              key={aud}
-              onClick={() => setSelectedAudience(aud)}
-              className={`px-2.5 py-1 text-xs rounded-md font-medium transition-all ${
-                selectedAudience === aud
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
-              }`}
-            >
-              {aud}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedAudience}
+            onChange={(e) => setSelectedAudience(e.target.value)}
+            className="text-xs bg-white border border-slate-200/90 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:border-primary shadow-2xs cursor-pointer"
+          >
+            <option value="All">All Audiences</option>
+            <option value="Drivers">Drivers</option>
+            <option value="Customers">Customers</option>
+            <option value="Valet Staff">Valet Staff</option>
+          </select>
 
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="text-xs bg-slate-50 border border-slate-200 rounded-md px-2 py-1 text-slate-700 focus:outline-none focus:border-primary"
+            className="text-xs bg-white border border-slate-200/90 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:border-primary shadow-2xs cursor-pointer shrink-0"
           >
             <option value="All">All Types</option>
             <option value="Booking">Booking</option>
@@ -374,113 +389,181 @@ export default function NotificationsView() {
         </div>
       </div>
 
-      {/* Notifications List */}
-      <div className="space-y-3">
+      {/* ====================================================================== */}
+      {/* 4. UNIFIED NOTIFICATION INBOX FEED */}
+      {/* ====================================================================== */}
+      {/* ====================================================================== */}
+      {/* 4. COMPACT NOTIFICATION INBOX FEED */}
+      {/* ====================================================================== */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        {/* Compact Header Bar */}
+        <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              Notification Activity Feed
+            </h3>
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.2 rounded-full bg-slate-200/70 text-slate-700">
+              {notifications.length}
+            </span>
+          </div>
+
+          <span className="text-[10.5px] text-slate-400 hidden sm:inline">
+            Click row for dispatch telemetry
+          </span>
+        </div>
+
+        {/* Content list */}
         {loading ? (
-          <div className="card-white p-12 text-center text-slate-400">
-            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-            <p className="text-xs">Loading notifications telemetry...</p>
+          <div className="p-12 text-center text-slate-400">
+            <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-primary" />
+            <p className="text-xs font-medium">Loading notifications telemetry...</p>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="card-white p-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
-              <Bell className="w-6 h-6" />
+          <div className="p-12 text-center">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mx-auto mb-2 text-slate-400">
+              <Bell className="w-5 h-5" />
             </div>
-            <h4 className="text-sm font-bold text-slate-800">No Notifications Found</h4>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              There are no notifications matching your search or filters. You can dispatch a new notification via Firebase above.
+            <h4 className="text-xs font-bold text-slate-800">No Notifications Found</h4>
+            <p className="text-[11px] text-slate-500 mt-0.5 max-w-sm mx-auto">
+              There are no notifications matching your search or filters.
             </p>
+            <button
+              type="button"
+              onClick={() => setIsDispatchModalOpen(true)}
+              className="mt-3 px-3 py-1.5 text-xs font-bold rounded-lg bg-primary text-white shadow-2xs hover:bg-primary-hover transition-all inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Send className="w-3 h-3" /> Dispatch New Notification
+            </button>
           </div>
         ) : (
-          notifications.map((n) => {
-            const IconComp = iconTypeMap[n.type] || Bell;
-            return (
-              <div
-                key={n.id || n._id}
-                onClick={() => setSelectedDetail(n)}
-                className={`card-white p-4.5 flex items-start gap-4 cursor-pointer transition-all border ${
-                  !n.read
-                    ? 'bg-primary-light/30 border-primary/30 hover:border-primary/50'
-                    : 'border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/50'
-                }`}
-              >
-                {/* Icon */}
+          <div className="divide-y divide-slate-100">
+            {notifications.map((n) => {
+              const IconComp = iconTypeMap[n.type] || Bell;
+              const style = typeStyleMap[n.type] || typeStyleMap.General;
+              const isUnread = !n.read;
+
+              return (
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
-                    n.type === 'Booking'
-                      ? 'bg-blue-100 text-blue-700'
-                      : n.type === 'Payment' || n.type === 'Subscription'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : n.type === 'Alert'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-indigo-100 text-indigo-700'
-                  }`}
+                  key={n.id || n._id}
+                  onClick={() => setSelectedDetail(n)}
+                  className={`group relative px-3.5 py-2.5 sm:px-4 sm:py-3 transition-colors cursor-pointer flex items-center gap-3 ${isUnread
+                    ? 'bg-emerald-50/20 hover:bg-emerald-50/40'
+                    : 'hover:bg-slate-50/80'
+                    }`}
                 >
-                  <IconComp className="w-5 h-5" />
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <h4 className={`text-xs font-bold ${!n.read ? 'text-slate-950 font-extrabold' : 'text-slate-800'}`}>
-                        {n.title}
-                      </h4>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                        {n.targetAudience}
-                      </span>
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100/80 text-slate-500">
-                        {n.type}
-                      </span>
-                      {n.status === 'failed' ? (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700 flex items-center gap-1">
-                          <XCircle className="w-3 h-3" /> Failed
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 flex items-center gap-1 border border-emerald-100">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> FCM Sent
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[11px] text-slate-400 font-mono shrink-0">{n.sentAt}</span>
-                  </div>
-
-                  <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">{n.message}</p>
-
-                  {/* Metadata line */}
-                  <div className="mt-2.5 flex flex-wrap items-center gap-4 text-[11px] text-slate-400">
-                    {n.fcmMessageId && (
-                      <span className="font-mono text-slate-500">
-                        FCM ID: {n.fcmMessageId.substring(0, 22)}...
-                      </span>
-                    )}
-                    {n.topic && <span>Topic: #{n.topic}</span>}
-                    {n.sentBy && <span>Sent by: {n.sentBy}</span>}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0 self-center">
-                  {!n.read && (
-                    <button
-                      onClick={(e) => handleMarkAsRead(n.id || (n._id as string), e)}
-                      title="Mark as Read"
-                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
-                    >
-                      <CheckCheck className="w-4 h-4" />
-                    </button>
+                  {/* Unread Accent Line */}
+                  {isUnread && (
+                    <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-primary" />
                   )}
-                  <button
-                    onClick={(e) => handleDeleteNotification(n.id || (n._id as string), e)}
-                    title="Delete Record"
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+
+                  {/* Compact Themed Icon */}
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border shadow-2xs ${style.bg} ${style.text} ${style.border}`}
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <IconComp className="w-4 h-4" />
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Line 1: Title + Badges + Time + Quick Actions */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        {isUnread && (
+                          <span
+                            title="Unread"
+                            className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/20 shrink-0"
+                          />
+                        )}
+                        <h4
+                          className={`text-xs sm:text-[13px] truncate ${isUnread
+                            ? 'font-bold text-slate-900 group-hover:text-primary'
+                            : 'font-semibold text-slate-700 group-hover:text-slate-900'
+                            }`}
+                        >
+                          {n.title}
+                        </h4>
+
+                        <span
+                          className={`text-[9.5px] font-semibold px-1.5 py-0.2 rounded border shrink-0 ${n.targetAudience === 'Drivers'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200/70'
+                            : n.targetAudience === 'Customers'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200/70'
+                              : n.targetAudience === 'Valet Staff'
+                                ? 'bg-amber-50 text-amber-800 border-amber-200/70'
+                                : 'bg-slate-100 text-slate-700 border-slate-200/70'
+                            }`}
+                        >
+                          {n.targetAudience}
+                        </span>
+
+                        <span className="text-[9.5px] font-medium px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200/60 shrink-0 hidden sm:inline-block">
+                          {n.type}
+                        </span>
+
+                        {n.status === 'failed' ? (
+                          <span className="text-[9.5px] font-semibold text-rose-700 flex items-center gap-0.5 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Failed
+                          </span>
+                        ) : (
+                          <span className="text-[9.5px] font-semibold text-emerald-700 flex items-center gap-0.5 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> FCM Sent
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Right side: Time & Action buttons */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          {n.sentAt}
+                        </span>
+
+                        <div className="flex items-center gap-0.5 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                          {isUnread && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleMarkAsRead(n.id || (n._id as string), e)}
+                              title="Mark as Read"
+                              className="p-1 text-slate-400 hover:text-primary hover:bg-slate-100 rounded transition-colors cursor-pointer"
+                            >
+                              <CheckCheck className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteNotification(n.id || (n._id as string), e)}
+                            title="Delete Record"
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Line 2: Message preview + Inline Meta */}
+                    <div className="flex items-center justify-between gap-3 mt-0.5 text-xs text-slate-500">
+                      <p className="truncate text-slate-500 flex-1 min-w-0 text-[11.5px]">
+                        {n.message}
+                      </p>
+
+                      <div className="flex items-center gap-2.5 text-[10.5px] text-slate-400 shrink-0">
+                        {n.topic && <span>#{n.topic}</span>}
+                        {n.fcmMessageId && (
+                          <span className="font-mono text-[10px] text-slate-400 hidden md:inline">
+                            FCM: {n.fcmMessageId.substring(0, 14)}...
+                          </span>
+                        )}
+                        <span className="text-slate-400 group-hover:text-primary transition-colors flex items-center">
+                          <ChevronRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -533,11 +616,10 @@ export default function NotificationsView() {
                               targetAudience: item.key as any,
                             })
                           }
-                          className={`p-2.5 rounded-lg border text-left flex flex-col gap-1 transition-all ${
-                            active
-                              ? 'border-primary bg-primary-light/40 text-primary font-bold shadow-xs'
-                              : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
-                          }`}
+                          className={`p-2.5 rounded-lg border text-left flex flex-col gap-1 transition-all ${active
+                            ? 'border-primary bg-primary-light/40 text-primary font-bold shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                            }`}
                         >
                           <Icon className={`w-4 h-4 ${active ? 'text-primary' : 'text-slate-500'}`} />
                           <span className="text-[11px] leading-tight">{item.label}</span>
@@ -826,9 +908,8 @@ export default function NotificationsView() {
 
               {testResult && (
                 <div
-                  className={`p-3 rounded-lg text-xs font-mono leading-relaxed overflow-x-auto ${
-                    testResult.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
-                  }`}
+                  className={`p-3 rounded-lg text-xs font-mono leading-relaxed overflow-x-auto ${testResult.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}
                 >
                   <p className="font-bold font-sans mb-1">
                     {testResult.success ? '✓ FCM Message Sent' : '✗ Dispatch Error'}
@@ -910,9 +991,8 @@ export default function NotificationsView() {
                 <div>
                   <span className="font-semibold text-slate-400 block mb-0.5">Status</span>
                   <span
-                    className={`font-semibold ${
-                      selectedDetail.status === 'failed' ? 'text-red-600' : 'text-emerald-600'
-                    }`}
+                    className={`font-semibold ${selectedDetail.status === 'failed' ? 'text-red-600' : 'text-emerald-600'
+                      }`}
                   >
                     {selectedDetail.status?.toUpperCase() || 'SENT'}
                   </span>

@@ -1085,283 +1085,283 @@ function EditPricingModal({
             {/* LOCAL TIER FIELDS */}
             {target.category === 'local' && (
               <div className="space-y-4">
-              {/* Shift Switcher */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <span className="text-xs font-semibold text-slate-700">Active Shift:</span>
-                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg">
-                  <button
-                    type="button"
-                    onClick={() => handleShiftSwitch('morningHours')}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${localShift === 'morningHours'
-                      ? 'bg-white text-slate-900 shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-900'
-                      }`}
-                  >
-                    <Sun className="w-3.5 h-3.5 text-amber-600" />
-                    Day Shift
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleShiftSwitch('nightHours')}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${localShift === 'nightHours'
-                      ? 'bg-slate-900 text-white shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-900'
-                      }`}
-                  >
-                    <Moon className="w-3.5 h-3.5 text-indigo-400" />
-                    Night Shift
-                  </button>
-                </div>
-              </div>
-
-              {/* Active Time Window */}
-              <TimeWindowPicker
-                label="Active Time Window (Clock Shift)"
-                value={draftLocalTier.timeRange}
-                onChange={(val) => setDraftLocalTier({ ...draftLocalTier, timeRange: val })}
-                presets={
-                  localShift === 'morningHours'
-                    ? ['06:00-18:00', '08:00-20:00', '07:00-19:00', '09:00-21:00']
-                    : ['18:00-06:00', '20:00-08:00', '22:00-06:00', '21:00-07:00']
-                }
-              />
-
-              {/* Charge Type Field (Billing Basis) */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11.5px] font-semibold text-slate-700 tracking-tight flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
-                    Charge Type (Billing Basis)
-                  </label>
-                  <span className="text-[10.5px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    {draftLocalTier.chargeType || `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`}
-                  </span>
-                </div>
-
-                <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all">
-                  <span className="px-2.5 py-2.5 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center shrink-0">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                  </span>
-                  <select
-                    value={
-                      isCustomLocalBilling
-                        ? 'custom'
-                        : (draftLocalTier.chargeType || `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`)
-                    }
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === 'custom') {
-                        setIsCustomLocalBilling(true);
-                        if (
-                          !draftLocalTier.chargeType ||
-                          LOCAL_PRESET_CHARGES.includes(draftLocalTier.chargeType)
-                        ) {
-                          setDraftLocalTier({
-                            ...draftLocalTier,
-                            chargeType: `Per ${draftLocalTier.hours || 2} Hours`,
-                          });
-                        }
-                      } else {
-                        setIsCustomLocalBilling(false);
-                        const match = val.match(/\d+/);
-                        const hrs = match ? parseInt(match[0], 10) : draftLocalTier.hours;
-                        setDraftLocalTier({
-                          ...draftLocalTier,
-                          chargeType: val,
-                          hours: hrs,
-                        });
-                      }
-                    }}
-                    className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-transparent focus:outline-none cursor-pointer appearance-none pr-8"
-                  >
-                    {LOCAL_PRESET_CHARGES.map((preset) => (
-                      <option key={preset} value={preset}>
-                        {preset === 'Per 24 Hours' ? 'Per 24 Hours (Full Day)' : preset}
-                      </option>
-                    ))}
-                    <option value="custom">Custom Billing Basis...</option>
-                  </select>
-                  <div className="pointer-events-none absolute right-3 flex items-center text-slate-400">
-                    <ChevronDown className="w-4 h-4" />
+                {/* Shift Switcher */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-700">Active Shift:</span>
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => handleShiftSwitch('morningHours')}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${localShift === 'morningHours'
+                        ? 'bg-white text-slate-900 shadow-2xs'
+                        : 'text-slate-500 hover:text-slate-900'
+                        }`}
+                    >
+                      <Sun className="w-3.5 h-3.5 text-amber-600" />
+                      Day Shift
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleShiftSwitch('nightHours')}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${localShift === 'nightHours'
+                        ? 'bg-slate-900 text-white shadow-2xs'
+                        : 'text-slate-500 hover:text-slate-900'
+                        }`}
+                    >
+                      <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                      Night Shift
+                    </button>
                   </div>
                 </div>
 
-                {/* Direct text input when custom billing basis is selected */}
-                {isCustomLocalBilling && (
-                  <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all mt-1.5 animate-fadeIn">
-                    <span className="px-2.5 py-2 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center shrink-0">
-                      <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                {/* Active Time Window */}
+                <TimeWindowPicker
+                  label="Active Time Window (Clock Shift)"
+                  value={draftLocalTier.timeRange}
+                  onChange={(val) => setDraftLocalTier({ ...draftLocalTier, timeRange: val })}
+                  presets={
+                    localShift === 'morningHours'
+                      ? ['06:00-18:00', '08:00-20:00', '07:00-19:00', '09:00-21:00']
+                      : ['18:00-06:00', '20:00-08:00', '22:00-06:00', '21:00-07:00']
+                  }
+                />
+
+                {/* Charge Type Field (Billing Basis) */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11.5px] font-semibold text-slate-700 tracking-tight flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      Charge Type (Billing Basis)
+                    </label>
+                    <span className="text-[10.5px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      {draftLocalTier.chargeType || `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`}
                     </span>
-                    <input
-                      type="number"
-                      placeholder="e.g. Per 2 Hours or Per Trip"
-                      value={draftLocalTier.chargeType || ''}
-                      autoFocus
+                  </div>
+
+                  <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all">
+                    <span className="px-2.5 py-2.5 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center shrink-0">
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    </span>
+                    <select
+                      value={
+                        isCustomLocalBilling
+                          ? 'custom'
+                          : (draftLocalTier.chargeType || `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`)
+                      }
                       onChange={(e) => {
                         const val = e.target.value;
-                        const match = val.match(/\d+/);
-                        const hrs = match ? parseInt(match[0], 10) : draftLocalTier.hours;
-                        setDraftLocalTier({
-                          ...draftLocalTier,
-                          chargeType: val,
-                          hours: hrs,
-                        });
+                        if (val === 'custom') {
+                          setIsCustomLocalBilling(true);
+                          if (
+                            !draftLocalTier.chargeType ||
+                            LOCAL_PRESET_CHARGES.includes(draftLocalTier.chargeType)
+                          ) {
+                            setDraftLocalTier({
+                              ...draftLocalTier,
+                              chargeType: `Per ${draftLocalTier.hours || 2} Hours`,
+                            });
+                          }
+                        } else {
+                          setIsCustomLocalBilling(false);
+                          const match = val.match(/\d+/);
+                          const hrs = match ? parseInt(match[0], 10) : draftLocalTier.hours;
+                          setDraftLocalTier({
+                            ...draftLocalTier,
+                            chargeType: val,
+                            hours: hrs,
+                          });
+                        }
                       }}
-                      className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
-                    />
+                      className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-transparent focus:outline-none cursor-pointer appearance-none pr-8"
+                    >
+                      {LOCAL_PRESET_CHARGES.map((preset) => (
+                        <option key={preset} value={preset}>
+                          {preset === 'Per 24 Hours' ? 'Per 24 Hours (Full Day)' : preset}
+                        </option>
+                      ))}
+                      <option value="custom">Custom Billing Basis...</option>
+                    </select>
+                    <div className="pointer-events-none absolute right-3 flex items-center text-slate-400">
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Fares */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                <CurrencyField
-                  label="Customer Fare"
-                  sublabel={`Billed ${draftLocalTier.chargeType || `per ${draftLocalTier.hours} hr${draftLocalTier.hours > 1 ? 's' : ''}`}`}
-                  value={draftLocalTier.customerPrice}
-                  onChange={(val) =>
-                    setDraftLocalTier({ ...draftLocalTier, customerPrice: val })
-                  }
-                  accent={isNightShift ? 'indigo' : 'emerald'}
-                  step={50}
-                />
+                  {/* Direct text input when custom billing basis is selected */}
+                  {isCustomLocalBilling && (
+                    <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all mt-1.5 animate-fadeIn">
+                      <span className="px-2.5 py-2 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center shrink-0">
+                        <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                      </span>
+                      <input
+                        type="number"
+                        placeholder="e.g. Per 2 Hours or Per Trip"
+                        value={draftLocalTier.chargeType || ''}
+                        autoFocus
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const match = val.match(/\d+/);
+                          const hrs = match ? parseInt(match[0], 10) : draftLocalTier.hours;
+                          setDraftLocalTier({
+                            ...draftLocalTier,
+                            chargeType: val,
+                            hours: hrs,
+                          });
+                        }}
+                        className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
+                      />
+                    </div>
+                  )}
+                </div>
 
-                <CurrencyField
-                  label="Driver Payout"
-                  sublabel={`Paid ${draftLocalTier.chargeType || `per ${draftLocalTier.hours} hr${draftLocalTier.hours > 1 ? 's' : ''}`}`}
-                  value={draftLocalTier.driverPrice}
-                  onChange={(val) =>
-                    setDraftLocalTier({ ...draftLocalTier, driverPrice: val })
-                  }
-                  accent={isNightShift ? 'indigo' : 'emerald'}
-                  step={50}
-                />
-              </div>
+                {/* Fares */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                  <CurrencyField
+                    label="Customer Fare"
+                    sublabel={`Billed ${draftLocalTier.chargeType || `per ${draftLocalTier.hours} hr${draftLocalTier.hours > 1 ? 's' : ''}`}`}
+                    value={draftLocalTier.customerPrice}
+                    onChange={(val) =>
+                      setDraftLocalTier({ ...draftLocalTier, customerPrice: val })
+                    }
+                    accent={isNightShift ? 'indigo' : 'emerald'}
+                    step={50}
+                  />
 
-              {/* Live Margin Split */}
-              <MarginSplitBar
-                customerPrice={draftLocalTier.customerPrice}
-                driverPrice={draftLocalTier.driverPrice}
-                unitLabel={draftLocalTier.chargeType || `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`}
-              />
-            </div>
-          )}
+                  <CurrencyField
+                    label="Driver Payout"
+                    sublabel={`Paid ${draftLocalTier.chargeType || `per ${draftLocalTier.hours} hr${draftLocalTier.hours > 1 ? 's' : ''}`}`}
+                    value={draftLocalTier.driverPrice}
+                    onChange={(val) =>
+                      setDraftLocalTier({ ...draftLocalTier, driverPrice: val })
+                    }
+                    accent={isNightShift ? 'indigo' : 'emerald'}
+                    step={50}
+                  />
+                </div>
 
-          {/* OUTSTATION FIELDS */}
-          {target.category === 'outstation' && (
-            <div className="space-y-4">
-              <HourSelector
-                label="Included Coverage Duration"
-                value={draftOutstationDays}
-                onChange={setDraftOutstationDays}
-                options={[1, 2, 3, 4, 5, 7]}
-                unitText="day(s)"
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                <CurrencyField
-                  label="Customer Base Tariff"
-                  sublabel="Billed per package"
-                  value={draftOutstationCustomerPrice}
-                  onChange={setDraftOutstationCustomerPrice}
-                  accent="sky"
-                  step={100}
-                />
-
-                <CurrencyField
-                  label="Driver Base Payout"
-                  sublabel="Guaranteed driver share"
-                  value={draftOutstationDriverPrice}
-                  onChange={setDraftOutstationDriverPrice}
-                  accent="sky"
-                  step={100}
+                {/* Live Margin Split */}
+                <MarginSplitBar
+                  customerPrice={draftLocalTier.customerPrice}
+                  driverPrice={draftLocalTier.driverPrice}
+                  unitLabel={draftLocalTier.chargeType || `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`}
                 />
               </div>
+            )}
 
-              <MarginSplitBar
-                customerPrice={draftOutstationCustomerPrice}
-                driverPrice={draftOutstationDriverPrice}
-                unitLabel={`${draftOutstationDays} Day(s) Package`}
-              />
-            </div>
-          )}
-
-          {/* VALET PARKING FIELDS */}
-          {target.category === 'valet' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <CurrencyField
-                  label="Customer Package Fare"
-                  sublabel="Billed to customer"
-                  value={draftValetParking.customerprice}
-                  onChange={(val) =>
-                    setDraftValetParking({ ...draftValetParking, customerprice: val })
-                  }
-                  accent="amber"
-                  step={50}
-                  min={0}
-                />
-
-                <CurrencyField
-                  label="Driver Staff Payout"
-                  sublabel="Guaranteed driver earnings"
-                  value={draftValetParking.driverprice}
-                  onChange={(val) =>
-                    setDraftValetParking({ ...draftValetParking, driverprice: val })
-                  }
-                  accent="emerald"
-                  step={50}
-                  min={0}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <CurrencyField
-                  label="Valet Attendants / Staff"
-                  sublabel="Number of staff required"
-                  prefix="#"
-                  unit="person"
-                  value={draftValetParking.person}
-                  onChange={(val) =>
-                    setDraftValetParking({ ...draftValetParking, person: Math.max(1, val) })
-                  }
-                  accent="amber"
-                  step={1}
-                  min={1}
-                />
-
+            {/* OUTSTATION FIELDS */}
+            {target.category === 'outstation' && (
+              <div className="space-y-4">
                 <HourSelector
-                  label="Package Duration"
-                  value={draftValetParking.hours}
-                  onChange={(val) =>
-                    setDraftValetParking({ ...draftValetParking, hours: Math.max(1, val) })
-                  }
-                  options={[2, 4, 6, 8, 10, 12]}
+                  label="Included Coverage Duration"
+                  value={draftOutstationDays}
+                  onChange={setDraftOutstationDays}
+                  options={[1, 2, 3, 4, 5, 7]}
+                  unitText="day(s)"
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                  <CurrencyField
+                    label="Customer Base Tariff"
+                    sublabel="Billed per package"
+                    value={draftOutstationCustomerPrice}
+                    onChange={setDraftOutstationCustomerPrice}
+                    accent="sky"
+                    step={100}
+                  />
+
+                  <CurrencyField
+                    label="Driver Base Payout"
+                    sublabel="Guaranteed driver share"
+                    value={draftOutstationDriverPrice}
+                    onChange={setDraftOutstationDriverPrice}
+                    accent="sky"
+                    step={100}
+                  />
+                </div>
+
+                <MarginSplitBar
+                  customerPrice={draftOutstationCustomerPrice}
+                  driverPrice={draftOutstationDriverPrice}
+                  unitLabel={`${draftOutstationDays} Day(s) Package`}
                 />
               </div>
+            )}
 
-              {/* Margin Split Bar */}
-              <MarginSplitBar
-                customerPrice={draftValetParking.customerprice}
-                driverPrice={draftValetParking.driverprice}
-                unitLabel={`${draftValetParking.person} Staff · ${draftValetParking.hours}h Package`}
-              />
+            {/* VALET PARKING FIELDS */}
+            {target.category === 'valet' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <CurrencyField
+                    label="Customer Package Fare"
+                    sublabel="Billed to customer"
+                    value={draftValetParking.customerprice}
+                    onChange={(val) =>
+                      setDraftValetParking({ ...draftValetParking, customerprice: val })
+                    }
+                    accent="amber"
+                    step={50}
+                    min={0}
+                  />
 
-              {/* Sample / Breakdown Projection */}
-              <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/70 space-y-1 text-xs">
-                <div className="font-semibold text-amber-900">
-                  Rate Summary ({draftValetParking.person} Staff × {draftValetParking.hours} Hours Package):
+                  <CurrencyField
+                    label="Driver Staff Payout"
+                    sublabel="Guaranteed driver earnings"
+                    value={draftValetParking.driverprice}
+                    onChange={(val) =>
+                      setDraftValetParking({ ...draftValetParking, driverprice: val })
+                    }
+                    accent="emerald"
+                    step={50}
+                    min={0}
+                  />
                 </div>
-                <div className="text-slate-600 text-[11px] flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 border-t border-amber-200/50">
-                  <span>Customer: ₹{draftValetParking.customerprice.toLocaleString('en-IN')} (₹{Math.round(draftValetParking.customerprice / (draftValetParking.hours || 1))}/hr)</span>
-                  <span>Driver Staff: ₹{draftValetParking.driverprice.toLocaleString('en-IN')} (₹{Math.round(draftValetParking.driverprice / (draftValetParking.hours || 1))}/hr)</span>
-                  <span className="font-semibold text-amber-800">
-                    Margin: ₹{Math.max(0, draftValetParking.customerprice - draftValetParking.driverprice).toLocaleString('en-IN')} ({draftValetParking.customerprice > 0 ? Math.round(((draftValetParking.customerprice - draftValetParking.driverprice) / draftValetParking.customerprice) * 100) : 0}%)
-                  </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <CurrencyField
+                    label="Valet Attendants / Staff"
+                    sublabel="Number of staff required"
+                    prefix="#"
+                    unit="person"
+                    value={draftValetParking.person}
+                    onChange={(val) =>
+                      setDraftValetParking({ ...draftValetParking, person: Math.max(1, val) })
+                    }
+                    accent="amber"
+                    step={1}
+                    min={1}
+                  />
+
+                  <HourSelector
+                    label="Package Duration"
+                    value={draftValetParking.hours}
+                    onChange={(val) =>
+                      setDraftValetParking({ ...draftValetParking, hours: Math.max(1, val) })
+                    }
+                    options={[2, 4, 6, 8, 10, 12]}
+                  />
+                </div>
+
+                {/* Margin Split Bar */}
+                <MarginSplitBar
+                  customerPrice={draftValetParking.customerprice}
+                  driverPrice={draftValetParking.driverprice}
+                  unitLabel={`${draftValetParking.person} Staff · ${draftValetParking.hours}h Package`}
+                />
+
+                {/* Sample / Breakdown Projection */}
+                <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/70 space-y-1 text-xs">
+                  <div className="font-semibold text-amber-900">
+                    Rate Summary ({draftValetParking.person} Staff × {draftValetParking.hours} Hours Package):
+                  </div>
+                  <div className="text-slate-600 text-[11px] flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 border-t border-amber-200/50">
+                    <span>Customer: ₹{draftValetParking.customerprice.toLocaleString('en-IN')} (₹{Math.round(draftValetParking.customerprice / (draftValetParking.hours || 1))}/hr)</span>
+                    <span>Driver Staff: ₹{draftValetParking.driverprice.toLocaleString('en-IN')} (₹{Math.round(draftValetParking.driverprice / (draftValetParking.hours || 1))}/hr)</span>
+                    <span className="font-semibold text-amber-800">
+                      Margin: ₹{Math.max(0, draftValetParking.customerprice - draftValetParking.driverprice).toLocaleString('en-IN')} ({draftValetParking.customerprice > 0 ? Math.round(((draftValetParking.customerprice - draftValetParking.driverprice) / draftValetParking.customerprice) * 100) : 0}%)
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
           </div>
 
           {/* Modal Actions Footer (Pinned at bottom, always visible) */}
@@ -1428,6 +1428,29 @@ export default function PricingManagementView() {
 
   // New Rule Form Modal state
   const [showAddRuleModal, setShowAddRuleModal] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [justRefreshed, setJustRefreshed] = useState(false);
+
+  const handleRefreshRates = async () => {
+    if (isRefreshing || isLoading) return;
+    setIsRefreshing(true);
+    setJustRefreshed(false);
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
+
+    try {
+      await Promise.all([fetchDriverPricing(), minDelay]);
+      setJustRefreshed(true);
+      toast.success('Rates Refreshed', 'Driver pricing and rate tiers have been synchronized with the latest data.');
+      setTimeout(() => {
+        setJustRefreshed(false);
+      }, 2500);
+    } catch (err: any) {
+      toast.error('Refresh Failed', 'Unable to sync pricing rates.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const [newRule, setNewRule] = useState({
     ruleName: '',
     service: 'All' as PricingRule['service'],
@@ -1588,24 +1611,16 @@ export default function PricingManagementView() {
       {/* PAGE HEADER */}
       {/* ====================================================================== */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        {/* <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
             Pricing & Tariffs
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Real-time customer fare tiers, driver payouts, and operational platform margins.
           </p>
-        </div>
+        </div> */}
 
-        <button
-          type="button"
-          onClick={() => fetchDriverPricing()}
-          disabled={isLoading}
-          className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 transition-all flex items-center gap-2 shadow-2xs active:scale-95 disabled:opacity-50 cursor-pointer self-start sm:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>{isLoading ? 'Syncing...' : 'Refresh Rates'}</span>
-        </button>
+
       </div>
 
       {/* ====================================================================== */}
@@ -1709,44 +1724,47 @@ export default function PricingManagementView() {
       {/* ====================================================================== */}
       {/* SERVICE MODE TABS NAVIGATION */}
       {/* ====================================================================== */}
-      <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
-        <button
-          type="button"
-          onClick={() => setActiveTab('local')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'local'
-            ? 'bg-[#023526] text-white shadow-xs'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-            }`}
-        >
-          <Car className="w-3.5 h-3.5" />
-          <span>Local Driver</span>
-        </button>
+      <div className='flex justify-between'>
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
+          <button
+            type="button"
+            onClick={() => setActiveTab('local')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'local'
+              ? 'bg-[#023526] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+          >
+            <Car className="w-3.5 h-3.5" />
+            <span>Local Driver</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('outstation')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'outstation'
-            ? 'bg-[#023526] text-white shadow-xs'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-            }`}
-        >
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>Outstation</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('outstation')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'outstation'
+              ? 'bg-[#023526] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>Outstation</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('valet')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'valet'
-            ? 'bg-[#023526] text-white shadow-xs'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-            }`}
-        >
-          <Building2 className="w-3.5 h-3.5" />
-          <span>Valet Parking</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('valet')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'valet'
+              ? 'bg-[#023526] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+          >
+            <Building2 className="w-3.5 h-3.5" />
+            <span>Valet Parking</span>
+          </button>
 
-        {/* <button
+
+
+          {/* <button
           type="button"
           onClick={() => setActiveTab('rules')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'rules'
@@ -1757,343 +1775,383 @@ export default function PricingManagementView() {
           <Zap className="w-3.5 h-3.5" />
           <span>Surge Rules ({pricingRules.filter((r) => r.status === 'Active').length})</span>
         </button> */}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleRefreshRates}
+          disabled={isRefreshing || isLoading}
+          className={`px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200/90 transition-all flex items-center gap-2 shadow-2xs active:scale-95 disabled:opacity-75 cursor-pointer self-start sm:self-auto ${justRefreshed
+              ? 'bg-emerald-700 text-white shadow-xs'
+              : 'bg-primary text-white hover:bg-primary/95'
+            }`}
+        >
+          {isRefreshing || isLoading ? (
+            <>
+              <RefreshCw className="w-3.5 h-3.5 text-white animate-spin" />
+              <span>Refreshing...</span>
+            </>
+          ) : justRefreshed ? (
+            <>
+              <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+              <span>Refreshed!</span>
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-3.5 h-3.5 text-white" />
+              <span>Refresh Rates</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* ====================================================================== */}
-      {/* TAB CONTENT 1: LOCAL DRIVER PRICING STUDIO */}
+      {/* TAB CONTENTS (WITH SMOOTH LOADING OVERLAY) */}
       {/* ====================================================================== */}
-      {activeTab === 'local' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 space-y-6 animate-fadeIn">
-          {/* Section 1: One-Way Local Driver Tiers */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-0.5">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <h4 className="text-sm font-semibold text-slate-800">One-Way Point-to-Point Tiers</h4>
-                <span className="text-xs text-slate-400 font-semibold ml-1.5">• Single drop off</span>
-              </div>
-              <span className="text-[11px] font-semibold text-slate-400">
-                Click any card to edit
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ReadOnlyTierCard
-                shiftTitle="One-Way Day Shift"
-                subTitle="Regular standard day point-to-point hours"
-                badgeText="Day Tariff"
-                timeRange={localTiers.one_way.morningHours.timeRange}
-                durationHours={localTiers.one_way.morningHours.hours}
-                chargeType={localTiers.one_way.morningHours.chargeType}
-                customerPrice={localTiers.one_way.morningHours.customerPrice}
-                driverPrice={localTiers.one_way.morningHours.driverPrice}
-                isNight={false}
-                onEdit={() =>
-                  setEditModalTarget({
-                    category: 'local',
-                    tripType: 'one_way',
-                    shift: 'morningHours',
-                    title: 'One-Way Day Shift',
-                    subTitle: 'Point-to-point standard daytime chauffeuring',
-                    badgeText: 'Day Tariff',
-                    isNight: false,
-                  })
-                }
-              />
-
-              <ReadOnlyTierCard
-                shiftTitle="One-Way Night Shift"
-                subTitle="Overnight late-night city rides"
-                badgeText="Night Tariff"
-                timeRange={localTiers.one_way.nightHours.timeRange}
-                durationHours={localTiers.one_way.nightHours.hours}
-                chargeType={localTiers.one_way.nightHours.chargeType}
-                customerPrice={localTiers.one_way.nightHours.customerPrice}
-                driverPrice={localTiers.one_way.nightHours.driverPrice}
-                isNight={true}
-                onEdit={() =>
-                  setEditModalTarget({
-                    category: 'local',
-                    tripType: 'one_way',
-                    shift: 'nightHours',
-                    title: 'One-Way Night Shift',
-                    subTitle: 'Point-to-point overnight city chauffeuring',
-                    badgeText: 'Night Tariff',
-                    isNight: true,
-                  })
-                }
-              />
-            </div>
+      <div className="relative">
+        {(isRefreshing || isLoading) && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1.5px] z-20 flex flex-col items-center justify-center gap-2.5 rounded-2xl min-h-[360px] transition-all">
+            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin shadow-xs" />
+            <span className="text-xs font-medium text-slate-700">Syncing live tariffs & driver pricing...</span>
           </div>
+        )}
 
-          {/* Divider */}
-          <div className="border-t border-slate-100" />
-
-          {/* Section 2: Round-Trip Local Driver Packages */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-0.5">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                <h4 className="text-sm font-semibold text-slate-800">Round-Trip Hourly Packages</h4>
-                <span className="text-xs text-slate-400 font-semibold ml-1.5">• Return city chauffeuring</span>
-              </div>
-              <span className="text-[11px] font-semibold text-slate-400">
-                Click any card to edit
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ReadOnlyTierCard
-                shiftTitle="Round-Trip Day Shift"
-                subTitle="Multi-stop day city tour with return"
-                badgeText="Day Return"
-                timeRange={localTiers.round_trip.morningHours.timeRange}
-                durationHours={localTiers.round_trip.morningHours.hours}
-                chargeType={localTiers.round_trip.morningHours.chargeType}
-                customerPrice={localTiers.round_trip.morningHours.customerPrice}
-                driverPrice={localTiers.round_trip.morningHours.driverPrice}
-                isNight={false}
-                onEdit={() =>
-                  setEditModalTarget({
-                    category: 'local',
-                    tripType: 'round_trip',
-                    shift: 'morningHours',
-                    title: 'Round-Trip Day Shift',
-                    subTitle: 'Multi-stop city tour with return (daytime)',
-                    badgeText: 'Day Return',
-                    isNight: false,
-                  })
-                }
-              />
-
-              <ReadOnlyTierCard
-                shiftTitle="Round-Trip Night Shift"
-                subTitle="Late-night party or night event chauffeuring"
-                badgeText="Night Return"
-                timeRange={localTiers.round_trip.nightHours.timeRange}
-                durationHours={localTiers.round_trip.nightHours.hours}
-                chargeType={localTiers.round_trip.nightHours.chargeType}
-                customerPrice={localTiers.round_trip.nightHours.customerPrice}
-                driverPrice={localTiers.round_trip.nightHours.driverPrice}
-                isNight={true}
-                onEdit={() =>
-                  setEditModalTarget({
-                    category: 'local',
-                    tripType: 'round_trip',
-                    shift: 'nightHours',
-                    title: 'Round-Trip Night Shift',
-                    subTitle: 'Late-night party or return event chauffeuring',
-                    badgeText: 'Night Return',
-                    isNight: true,
-                  })
-                }
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ====================================================================== */}
-      {/* TAB CONTENT 2: OUTSTATION PRICING STUDIO */}
-      {/* ====================================================================== */}
-      {activeTab === 'outstation' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 space-y-6 animate-fadeIn">
-          {/* Header directly on main card */}
-          <div className="flex items-center justify-between px-0.5 pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-sky-500" />
-              <h4 className="text-sm font-semibold text-slate-800">Intercity Outstation Tariffs</h4>
-              <span className="text-xs text-slate-400 font-semibold ml-1.5">• 2 Service Modes</span>
-            </div>
-            <span className="text-[11px] font-semibold text-slate-400">
-              Click any card to edit
-            </span>
-          </div>
-
-          {/* Outstation Cards */}
-          <div className="space-y-4">
-            <ReadOnlyOutstationCard
-              title="One-Way Intercity Outstation Tariff"
-              subTitle="Intercity driver drop to outstation cities (driver travel back required)."
-              badgeText="Daily Billing Cycle"
-              days={outstationTiers.one_way.day}
-              customerPrice={outstationTiers.one_way.customerPrice}
-              driverPrice={outstationTiers.one_way.driverPrice}
-              notes="Drop to destination (one-way)"
-              onEdit={() =>
-                setEditModalTarget({
-                  category: 'outstation',
-                  tripType: 'one_way',
-                  title: 'One-Way Intercity Outstation Tariff',
-                  subTitle: 'Intercity driver drop to outstation cities (driver travel back required).',
-                  badgeText: 'Daily Billing Cycle',
-                  notes: 'Drop to destination (one-way)',
-                })
-              }
-            />
-
-            <div className="border-t border-slate-100" />
-
-            <ReadOnlyOutstationCard
-              title="Round-Trip Intercity Outstation Packages"
-              subTitle="Chauffeur accompanies customer outstation for multi-day tours with return."
-              badgeText="Tour / Return Multi-Day"
-              days={outstationTiers.round_trip.day}
-              customerPrice={outstationTiers.round_trip.customerPrice}
-              driverPrice={outstationTiers.round_trip.driverPrice}
-              notes="Multi-day tour with return"
-              onEdit={() =>
-                setEditModalTarget({
-                  category: 'outstation',
-                  tripType: 'round_trip',
-                  title: 'Round-Trip Intercity Outstation Packages',
-                  subTitle: 'Chauffeur accompanies customer outstation for multi-day tours with return.',
-                  badgeText: 'Tour / Return Multi-Day',
-                  notes: 'Multi-day tour with return',
-                })
-              }
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ====================================================================== */}
-      {/* TAB CONTENT 3: VALET PRICING STUDIO */}
-      {/* ====================================================================== */}
-      {activeTab === 'valet' && (
-        <div className="space-y-6 animate-fadeIn">
-          <ReadOnlyValetOverview
-            valetParkingTier={valetParkingTier}
-            onEdit={() =>
-              setEditModalTarget({
-                category: 'valet',
-                title: 'Valet Parking & Event Operations',
-                subTitle: 'Chauffeur and valet parking attendant operations for venues, hotels, and luxury private events.',
-              })
-            }
-          />
-        </div>
-      )}
-
-      {/* ====================================================================== */}
-      {/* TAB CONTENT 4: SURGE RULES STUDIO */}
-      {/* ====================================================================== */}
-      {activeTab === 'rules' &&
-        (() => {
-          const ruleColumns: Column<PricingRule>[] = [
-            {
-              key: 'ruleName',
-              header: 'Rule Identifier',
-              render: (r) => (
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-semibold shrink-0">
-                    <Zap className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-slate-900">{r.ruleName}</div>
-                    <div className="text-[10px] text-slate-400 font-mono">ID: {r.id}</div>
-                  </div>
+        {/* ====================================================================== */}
+        {/* TAB CONTENT 1: LOCAL DRIVER PRICING STUDIO */}
+        {/* ====================================================================== */}
+        {activeTab === 'local' && (
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 space-y-6 animate-fadeIn">
+            {/* Section 1: One-Way Local Driver Tiers */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <h4 className="text-sm font-semibold text-slate-800">One-Way Point-to-Point Tiers</h4>
+                  <span className="text-xs text-slate-400 font-semibold ml-1.5">• Single drop off</span>
                 </div>
-              ),
-            },
-            {
-              key: 'service',
-              header: 'Applicable Services',
-              render: (r) => (
-                <span className="px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                  {r.service}
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Click any card to edit
                 </span>
-              ),
-            },
-            {
-              key: 'condition',
-              header: 'Trigger Condition',
-              render: (r) => <span className="text-xs text-slate-600 font-medium">{r.condition}</span>,
-            },
-            {
-              key: 'value',
-              header: 'Surge Surcharge',
-              render: (r) => (
-                <span className="font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-                  +{r.value}
-                  {r.type === 'Percentage' ? '%' : ' ₹'}
-                </span>
-              ),
-            },
-            {
-              key: 'priority',
-              header: 'Priority',
-              render: (r) => (
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${r.priority === 'High'
-                    ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                    : 'bg-blue-100 text-blue-800 border border-blue-200'
-                    }`}
-                >
-                  {r.priority}
-                </span>
-              ),
-            },
-            {
-              key: 'status',
-              header: 'Status',
-              render: (r) => (
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 w-fit ${r.status === 'Active'
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                    : 'bg-slate-100 text-slate-500 border border-slate-200'
-                    }`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${r.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-400'
-                      }`}
-                  />
-                  {r.status}
-                </span>
-              ),
-            },
-            {
-              key: 'action',
-              header: 'Action',
-              align: 'right',
-              render: (r) => (
-                <button
-                  onClick={() => togglePricingRuleStatus(r.id)}
-                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${r.status === 'Active'
-                    ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
-                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                    }`}
-                >
-                  {r.status === 'Active' ? 'Disable' : 'Enable'}
-                </button>
-              ),
-            },
-          ];
+              </div>
 
-          return (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
-                <DataTable<PricingRule>
-                  columns={ruleColumns}
-                  data={pricingRules}
-                  keyExtractor={(r) => r.id}
-                  pageSize={5}
-                  searchPlaceholder="Filter rules by name or condition..."
-                  searchFilterKeys={['ruleName', 'service', 'condition']}
-                  emptyMessage="No dynamic surge rules configured."
-                  headerActions={
-                    <button
-                      onClick={() => setShowAddRuleModal(true)}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-[#023526] text-white text-xs font-semibold rounded-xl hover:bg-emerald-900 transition-all shadow-sm"
-                    >
-                      <Plus className="w-4 h-4" /> Add Dynamic Rule
-                    </button>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <ReadOnlyTierCard
+                  shiftTitle="One-Way Day Shift"
+                  subTitle="Regular standard day point-to-point hours"
+                  badgeText="Day Tariff"
+                  timeRange={localTiers.one_way.morningHours.timeRange}
+                  durationHours={localTiers.one_way.morningHours.hours}
+                  chargeType={localTiers.one_way.morningHours.chargeType}
+                  customerPrice={localTiers.one_way.morningHours.customerPrice}
+                  driverPrice={localTiers.one_way.morningHours.driverPrice}
+                  isNight={false}
+                  onEdit={() =>
+                    setEditModalTarget({
+                      category: 'local',
+                      tripType: 'one_way',
+                      shift: 'morningHours',
+                      title: 'One-Way Day Shift',
+                      subTitle: 'Point-to-point standard daytime chauffeuring',
+                      badgeText: 'Day Tariff',
+                      isNight: false,
+                    })
+                  }
+                />
+
+                <ReadOnlyTierCard
+                  shiftTitle="One-Way Night Shift"
+                  subTitle="Overnight late-night city rides"
+                  badgeText="Night Tariff"
+                  timeRange={localTiers.one_way.nightHours.timeRange}
+                  durationHours={localTiers.one_way.nightHours.hours}
+                  chargeType={localTiers.one_way.nightHours.chargeType}
+                  customerPrice={localTiers.one_way.nightHours.customerPrice}
+                  driverPrice={localTiers.one_way.nightHours.driverPrice}
+                  isNight={true}
+                  onEdit={() =>
+                    setEditModalTarget({
+                      category: 'local',
+                      tripType: 'one_way',
+                      shift: 'nightHours',
+                      title: 'One-Way Night Shift',
+                      subTitle: 'Point-to-point overnight city chauffeuring',
+                      badgeText: 'Night Tariff',
+                      isNight: true,
+                    })
                   }
                 />
               </div>
             </div>
-          );
-        })()}
+
+            {/* Divider */}
+            <div className="border-t border-slate-100" />
+
+            {/* Section 2: Round-Trip Local Driver Packages */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                  <h4 className="text-sm font-semibold text-slate-800">Round-Trip Hourly Packages</h4>
+                  <span className="text-xs text-slate-400 font-semibold ml-1.5">• Return city chauffeuring</span>
+                </div>
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Click any card to edit
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <ReadOnlyTierCard
+                  shiftTitle="Round-Trip Day Shift"
+                  subTitle="Multi-stop day city tour with return"
+                  badgeText="Day Return"
+                  timeRange={localTiers.round_trip.morningHours.timeRange}
+                  durationHours={localTiers.round_trip.morningHours.hours}
+                  chargeType={localTiers.round_trip.morningHours.chargeType}
+                  customerPrice={localTiers.round_trip.morningHours.customerPrice}
+                  driverPrice={localTiers.round_trip.morningHours.driverPrice}
+                  isNight={false}
+                  onEdit={() =>
+                    setEditModalTarget({
+                      category: 'local',
+                      tripType: 'round_trip',
+                      shift: 'morningHours',
+                      title: 'Round-Trip Day Shift',
+                      subTitle: 'Multi-stop city tour with return (daytime)',
+                      badgeText: 'Day Return',
+                      isNight: false,
+                    })
+                  }
+                />
+
+                <ReadOnlyTierCard
+                  shiftTitle="Round-Trip Night Shift"
+                  subTitle="Late-night party or night event chauffeuring"
+                  badgeText="Night Return"
+                  timeRange={localTiers.round_trip.nightHours.timeRange}
+                  durationHours={localTiers.round_trip.nightHours.hours}
+                  chargeType={localTiers.round_trip.nightHours.chargeType}
+                  customerPrice={localTiers.round_trip.nightHours.customerPrice}
+                  driverPrice={localTiers.round_trip.nightHours.driverPrice}
+                  isNight={true}
+                  onEdit={() =>
+                    setEditModalTarget({
+                      category: 'local',
+                      tripType: 'round_trip',
+                      shift: 'nightHours',
+                      title: 'Round-Trip Night Shift',
+                      subTitle: 'Late-night party or return event chauffeuring',
+                      badgeText: 'Night Return',
+                      isNight: true,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====================================================================== */}
+        {/* TAB CONTENT 2: OUTSTATION PRICING STUDIO */}
+        {/* ====================================================================== */}
+        {activeTab === 'outstation' && (
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 space-y-6 animate-fadeIn">
+            {/* Header directly on main card */}
+            <div className="flex items-center justify-between px-0.5 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-sky-500" />
+                <h4 className="text-sm font-semibold text-slate-800">Intercity Outstation Tariffs</h4>
+                <span className="text-xs text-slate-400 font-semibold ml-1.5">• 2 Service Modes</span>
+              </div>
+              <span className="text-[11px] font-semibold text-slate-400">
+                Click any card to edit
+              </span>
+            </div>
+
+            {/* Outstation Cards */}
+            <div className="space-y-4">
+              <ReadOnlyOutstationCard
+                title="One-Way Intercity Outstation Tariff"
+                subTitle="Intercity driver drop to outstation cities (driver travel back required)."
+                badgeText="Daily Billing Cycle"
+                days={outstationTiers.one_way.day}
+                customerPrice={outstationTiers.one_way.customerPrice}
+                driverPrice={outstationTiers.one_way.driverPrice}
+                notes="Drop to destination (one-way)"
+                onEdit={() =>
+                  setEditModalTarget({
+                    category: 'outstation',
+                    tripType: 'one_way',
+                    title: 'One-Way Intercity Outstation Tariff',
+                    subTitle: 'Intercity driver drop to outstation cities (driver travel back required).',
+                    badgeText: 'Daily Billing Cycle',
+                    notes: 'Drop to destination (one-way)',
+                  })
+                }
+              />
+
+              <div className="border-t border-slate-100" />
+
+              <ReadOnlyOutstationCard
+                title="Round-Trip Intercity Outstation Packages"
+                subTitle="Chauffeur accompanies customer outstation for multi-day tours with return."
+                badgeText="Tour / Return Multi-Day"
+                days={outstationTiers.round_trip.day}
+                customerPrice={outstationTiers.round_trip.customerPrice}
+                driverPrice={outstationTiers.round_trip.driverPrice}
+                notes="Multi-day tour with return"
+                onEdit={() =>
+                  setEditModalTarget({
+                    category: 'outstation',
+                    tripType: 'round_trip',
+                    title: 'Round-Trip Intercity Outstation Packages',
+                    subTitle: 'Chauffeur accompanies customer outstation for multi-day tours with return.',
+                    badgeText: 'Tour / Return Multi-Day',
+                    notes: 'Multi-day tour with return',
+                  })
+                }
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ====================================================================== */}
+        {/* TAB CONTENT 3: VALET PRICING STUDIO */}
+        {/* ====================================================================== */}
+        {activeTab === 'valet' && (
+          <div className="space-y-6 animate-fadeIn">
+            <ReadOnlyValetOverview
+              valetParkingTier={valetParkingTier}
+              onEdit={() =>
+                setEditModalTarget({
+                  category: 'valet',
+                  title: 'Valet Parking & Event Operations',
+                  subTitle: 'Chauffeur and valet parking attendant operations for venues, hotels, and luxury private events.',
+                })
+              }
+            />
+          </div>
+        )}
+
+        {/* ====================================================================== */}
+        {/* TAB CONTENT 4: SURGE RULES STUDIO */}
+        {/* ====================================================================== */}
+        {activeTab === 'rules' &&
+          (() => {
+            const ruleColumns: Column<PricingRule>[] = [
+              {
+                key: 'ruleName',
+                header: 'Rule Identifier',
+                render: (r) => (
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-semibold shrink-0">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-slate-900">{r.ruleName}</div>
+                      <div className="text-[10px] text-slate-400 font-mono">ID: {r.id}</div>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: 'service',
+                header: 'Applicable Services',
+                render: (r) => (
+                  <span className="px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                    {r.service}
+                  </span>
+                ),
+              },
+              {
+                key: 'condition',
+                header: 'Trigger Condition',
+                render: (r) => <span className="text-xs text-slate-600 font-medium">{r.condition}</span>,
+              },
+              {
+                key: 'value',
+                header: 'Surge Surcharge',
+                render: (r) => (
+                  <span className="font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                    +{r.value}
+                    {r.type === 'Percentage' ? '%' : ' ₹'}
+                  </span>
+                ),
+              },
+              {
+                key: 'priority',
+                header: 'Priority',
+                render: (r) => (
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${r.priority === 'High'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                      : 'bg-blue-100 text-blue-800 border border-blue-200'
+                      }`}
+                  >
+                    {r.priority}
+                  </span>
+                ),
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                render: (r) => (
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 w-fit ${r.status === 'Active'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      : 'bg-slate-100 text-slate-500 border border-slate-200'
+                      }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${r.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-400'
+                        }`}
+                    />
+                    {r.status}
+                  </span>
+                ),
+              },
+              {
+                key: 'action',
+                header: 'Action',
+                align: 'right',
+                render: (r) => (
+                  <button
+                    onClick={() => togglePricingRuleStatus(r.id)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${r.status === 'Active'
+                      ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                      : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                      }`}
+                  >
+                    {r.status === 'Active' ? 'Disable' : 'Enable'}
+                  </button>
+                ),
+              },
+            ];
+
+            return (
+              <div className="space-y-4 animate-fadeIn">
+                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+                  <DataTable<PricingRule>
+                    columns={ruleColumns}
+                    data={pricingRules}
+                    keyExtractor={(r) => r.id}
+                    pageSize={5}
+                    searchPlaceholder="Filter rules by name or condition..."
+                    searchFilterKeys={['ruleName', 'service', 'condition']}
+                    emptyMessage="No dynamic surge rules configured."
+                    headerActions={
+                      <button
+                        onClick={() => setShowAddRuleModal(true)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-[#023526] text-white text-xs font-semibold rounded-xl hover:bg-emerald-900 transition-all shadow-sm"
+                      >
+                        <Plus className="w-4 h-4" /> Add Dynamic Rule
+                      </button>
+                    }
+                  />
+                </div>
+              </div>
+            );
+          })()}
+      </div>
 
       {/* ====================================================================== */}
       {/* EDIT PRICING MODAL (OPENS FOR THE EXACT CLICKED CARD) */}
@@ -2141,64 +2199,64 @@ export default function PricingManagementView() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Rule Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Festival Eve Surge"
-                  value={newRule.ruleName}
-                  onChange={(e) => setNewRule({ ...newRule, ruleName: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Target Service Scope</label>
-                <select
-                  value={newRule.service}
-                  onChange={(e) => setNewRule({ ...newRule, service: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none bg-white"
-                >
-                  <option value="All">All Services (Universal)</option>
-                  <option value="Local Driver">Local Driver Only</option>
-                  <option value="Outstation Driver">Outstation Driver Only</option>
-                  <option value="Valet Staff">Valet Staff Only</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Trigger Condition</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Heavy Rain Warning or 18:00 - 23:00"
-                  value={newRule.condition}
-                  onChange={(e) => setNewRule({ ...newRule, condition: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Surge Type</label>
-                  <select
-                    value={newRule.type}
-                    onChange={(e) => setNewRule({ ...newRule, type: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none bg-white"
-                  >
-                    <option value="Percentage">Percentage (%)</option>
-                    <option value="Fixed">Fixed Amount (₹)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Surcharge Value</label>
                   <input
-                    type="number"
-                    value={newRule.value}
-                    onChange={(e) => setNewRule({ ...newRule, value: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none font-semibold"
+                    type="text"
+                    required
+                    placeholder="e.g. Festival Eve Surge"
+                    value={newRule.ruleName}
+                    onChange={(e) => setNewRule({ ...newRule, ruleName: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none"
                   />
                 </div>
-              </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Target Service Scope</label>
+                  <select
+                    value={newRule.service}
+                    onChange={(e) => setNewRule({ ...newRule, service: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none bg-white"
+                  >
+                    <option value="All">All Services (Universal)</option>
+                    <option value="Local Driver">Local Driver Only</option>
+                    <option value="Outstation Driver">Outstation Driver Only</option>
+                    <option value="Valet Staff">Valet Staff Only</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Trigger Condition</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Heavy Rain Warning or 18:00 - 23:00"
+                    value={newRule.condition}
+                    onChange={(e) => setNewRule({ ...newRule, condition: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Surge Type</label>
+                    <select
+                      value={newRule.type}
+                      onChange={(e) => setNewRule({ ...newRule, type: e.target.value as any })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none bg-white"
+                    >
+                      <option value="Percentage">Percentage (%)</option>
+                      <option value="Fixed">Fixed Amount (₹)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Surcharge Value</label>
+                    <input
+                      type="number"
+                      value={newRule.value}
+                      onChange={(e) => setNewRule({ ...newRule, value: Number(e.target.value) })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-3 focus:ring-emerald-500/20 focus:border-emerald-600 focus:outline-none font-semibold"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="shrink-0 flex justify-end gap-2 px-5 py-3.5 border-t border-slate-100 bg-slate-50/60">

@@ -739,29 +739,39 @@ export default function DriversView({ filter }: DriversViewProps = {}) {
         headerActions={
           <div className="relative inline-flex items-center">
             <div className="relative">
-              <select
-                value={effectiveStatus}
-                onChange={(e) => handleTabFilterChange(e.target.value)}
-                className="appearance-none bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg pl-8 pr-8 py-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer shadow-2xs transition-all"
-                title="Filter by status"
-              >
-                {filterTabs.map((tab) => {
-                  let count: number | undefined = undefined;
-                  if (tab === 'All') count = totalCount;
-                  else if (tab === 'Pending Approval') count = pendingCount;
-                  else if (tab === 'Approved') count = approvedCount;
-                  else if (tab === 'Online') count = onlineCount;
-                  else if (tab === 'Suspended') count = suspendedCount;
 
-                  return (
-                    <option key={tab} value={tab} className="py-1 text-slate-800">
-                      {tab}
-                    </option>
-                  );
-                })}
-              </select>
-              <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {/* <span className="text-[11px] font-bold text-[#c5a880] uppercase tracking-wider">
+                {headerTag}
+              </span> */}
+              {filter && filter === 'all' && (
+                <div>
+                  <select
+                    value={effectiveStatus}
+                    onChange={(e) => handleTabFilterChange(e.target.value)}
+                    className="appearance-none bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg pl-8 pr-8 py-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer shadow-2xs transition-all"
+                    title="Filter by status"
+                  >
+                    {filterTabs.map((tab) => {
+                      let count: number | undefined = undefined;
+                      if (tab === 'All') count = totalCount;
+                      else if (tab === 'Pending Approval') count = pendingCount;
+                      else if (tab === 'Approved') count = approvedCount;
+                      else if (tab === 'Online') count = onlineCount;
+                      else if (tab === 'Suspended') count = suspendedCount;
+
+                      return (
+                        <option key={tab} value={tab} className="py-1 text-slate-800">
+                          {tab}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+
+                  <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              )}
             </div>
           </div>
         }

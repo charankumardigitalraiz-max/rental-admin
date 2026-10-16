@@ -16,14 +16,14 @@ interface AuthStoreState {
   error: string | null;
 
   checkAuth: () => void;
-  login: (email: string, pass: string) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, pass: string, fcmToken?: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   clearError: () => void;
 }
 
 const AUTH_STORAGE_KEY = 'drivepulse_admin_session';
 
-export const useAuthStore = create<AuthStoreState>((set) => ({
+export const useAuthStore = create<AuthStoreState>((set, get) => ({
   isAuthenticated: false,
   user: null,
   isLoading: true,
@@ -48,7 +48,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
     set({ isLoading: false });
   },
 
-  login: async (email, password) => {
+  login: async (email, password, fcmToken) => {
     set({ isSubmitting: true, error: null });
 
     try {
@@ -57,7 +57,11 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+          ...(fcmToken ? { fcmToken } : {}),
+        }),
       });
 
       const data = await response.json();
@@ -105,9 +109,36 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
     }
   },
 
-  logout: () => {
+  logout: async () => {
+    try {
+      const savedToken =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('admin_fcm_token')
+          : null;
+      const currentUser = get().user;
+
+      await fetch('/api/admin/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: currentUser?.email,
+          fcmToken: savedToken || undefined,
+        }),
+      });
+    } catch (e) {
+      console.warn('Error during backend logout:', e);
+    }
+
+    try {
+      const { clearFcmTokenAndUnsubscribe } = await import('@/lib/fcm-client');
+      await clearFcmTokenAndUnsubscribe();
+    } catch (e) {
+      console.warn('Error during client FCM token cleanup:', e);
+    }
+
     if (typeof window !== 'undefined') {
       localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem('admin_fcm_token');
     }
     set({ user: null, isAuthenticated: false });
   },

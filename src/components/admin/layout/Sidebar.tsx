@@ -187,7 +187,7 @@ export default function Sidebar() {
     {
       groupTitle: 'PRICING & DISPATCH RULES',
       items: [
-        { href: '/admin/pricing', label: 'Pricing & Dynamic Surge', icon: SlidersHorizontal },
+        { href: '/admin/pricing', label: 'Driver & Vallet Prices', icon: SlidersHorizontal },
       ],
     },
     {

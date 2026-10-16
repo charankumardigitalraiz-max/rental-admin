@@ -3,10 +3,12 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface TransactionInterface extends Document {
     transactionId: string;
     bookingId?: mongoose.Types.ObjectId | string;
+    subscriptionId?: mongoose.Types.ObjectId | string;
     customerId?: mongoose.Types.ObjectId;
     driverId?: mongoose.Types.ObjectId;
     serviceType: string;
     customerOrDriverName: string;
+    planName?: string;
     amount: number;
     method: string;
     payoutAmount: number;
@@ -32,6 +34,11 @@ const transactionSchema: Schema = new Schema(
             ref: "DriverBooking",
             default: null
         },
+        subscriptionId: {
+            type: Schema.Types.ObjectId,
+            ref: "DriverSubscription",
+            default: null
+        },
         customerId: {
             type: Schema.Types.ObjectId,
             ref: "Customer",
@@ -48,6 +55,10 @@ const transactionSchema: Schema = new Schema(
             default: "Driver Local"
         },
         customerOrDriverName: {
+            type: String,
+            default: ""
+        },
+        planName: {
             type: String,
             default: ""
         },
@@ -83,5 +94,9 @@ const transactionSchema: Schema = new Schema(
     }
 );
 
-const Transaction = mongoose.models.Transaction || mongoose.model<TransactionInterface>("Transaction", transactionSchema);
+if (mongoose.models && mongoose.models.Transaction) {
+    delete (mongoose.models as any).Transaction;
+}
+
+const Transaction = mongoose.model<TransactionInterface>("Transaction", transactionSchema);
 export default Transaction;

@@ -75,10 +75,10 @@ export async function GET(request: Request) {
     if (tripType) {
       query.tripType = tripType;
     }
-
+    // scheduledStartTime: 1, 
     const pipeline: any[] = [
       { $match: query },
-      { $sort: { scheduledStartTime: 1, createdAt: -1 } },
+      { $sort: { createdAt: -1 } },
       {
         $lookup: {
           from: "customers",

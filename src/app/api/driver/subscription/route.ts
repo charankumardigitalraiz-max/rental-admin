@@ -235,11 +235,13 @@ export async function POST(req: NextRequest) {
             completedBookings: 0,
         });
 
-        // Record a transaction for audit & admin financial records
+        // Record a transaction for audit, financial ledger & subscription-payments
         try {
             await Transaction.create({
                 transactionId: subTxnId,
                 driverId: driver._id,
+                subscriptionId: newDriverSubscription._id,
+                planName: plan.planName || "Driver Subscription Plan",
                 serviceType: "Driver Subscription",
                 customerOrDriverName: driverFullName,
                 amount: Number(plan.price) || 0,

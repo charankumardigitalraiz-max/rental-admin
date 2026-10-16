@@ -8,11 +8,8 @@ export async function POST(req: NextRequest) {
     try {
         await connectToDatabase();
         const body = await req.json();
-        const { email, password } = body;
-        const admin = await Admin.findOne({ email, status: true }
-
-
-        );
+        const { email, password, fcmToken } = body;
+        const admin = await Admin.findOne({ email, status: true });
         if (!admin)
             return NextResponse.json(
                 { success: false, error: "Invalid credentials" },
@@ -24,6 +21,18 @@ export async function POST(req: NextRequest) {
                 { success: false, error: "Invalid credentials" },
                 { status: 400 }
             );
+
+        if (fcmToken) {
+            admin.fcmToken = fcmToken;
+            await admin.save();
+            try {
+                const { subscribeTokensToTopic } = await import("@/lib/firebase-admin");
+                await subscribeTokensToTopic([fcmToken], "admin");
+                await subscribeTokensToTopic([fcmToken], "all");
+            } catch (err: any) {
+                console.warn("Could not subscribe admin token on login:", err?.message);
+            }
+        }
 
         const token = jwt.sign(
             { id: admin._id, role: admin.role },

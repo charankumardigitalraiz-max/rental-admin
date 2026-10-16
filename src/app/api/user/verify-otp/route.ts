@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { phone, otp } = body;
+    const { phone, otp, fcmToken } = body;
 
     if (!phone || !otp) {
       return NextResponse.json(
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     await Otp.deleteOne({ phone });
 
     // Check if user exists
-    const customer = await Customer.findOne({ phone });
+    let customer = await Customer.findOne({ phone });
 
     if (!customer) {
       return NextResponse.json({
@@ -48,9 +48,25 @@ export async function POST(request: Request) {
       });
     }
 
+    // If fcmToken is passed in verify-otp, save it and subscribe to topics
+    if (fcmToken) {
+      customer = await Customer.findByIdAndUpdate(
+        customer._id,
+        { $set: { fcmToken } },
+        { new: true }
+      );
+      try {
+        const { subscribeTokensToTopic } = await import("@/lib/firebase-admin");
+        await subscribeTokensToTopic([fcmToken], "customers");
+        await subscribeTokensToTopic([fcmToken], "all");
+      } catch (err: any) {
+        console.warn("Could not subscribe customer token on verify-otp:", err?.message);
+      }
+    }
+
     // User exists, generate token
     const token = jwt.sign(
-      { id: customer._id, role: "customer" },
+      { id: customer!._id, role: "customer" },
       process.env.JWT_SECRET || "fallback",
       { expiresIn: "7d" }
     );

@@ -6,7 +6,7 @@ import Driver from "@/models/driver";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { phone } = body;
+    const { phone, fcmToken } = body;
 
     if (!phone) {
       return NextResponse.json(
@@ -25,6 +25,18 @@ export async function POST(request: Request) {
         { success: false, message: "Invalid Credentials" },
         { status: 404 }
       );
+    }
+
+    if (fcmToken) {
+      driver.fcmToken = fcmToken;
+      await driver.save();
+      try {
+        const { subscribeTokensToTopic } = await import("@/lib/firebase-admin");
+        await subscribeTokensToTopic([fcmToken], "drivers");
+        await subscribeTokensToTopic([fcmToken], "all");
+      } catch (err: any) {
+        console.warn("Could not subscribe driver token on login:", err?.message);
+      }
     }
 
     const isDriverVerified = driver.isVerified === true || ["verified", "approved", "active"].includes(driver.status);

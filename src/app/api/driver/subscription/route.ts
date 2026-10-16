@@ -6,6 +6,7 @@ import Subscription from "@/models/subscription";
 import DriverSubscription from "@/models/driverSubscription";
 import Transaction from "@/models/transaction";
 import { verifyDriver } from "@/lib/auth";
+import { dispatchNotification } from "@/lib/notifications";
 
 /**
  * Format subscription document for response
@@ -252,6 +253,25 @@ export async function POST(req: NextRequest) {
             });
         } catch (txnErr) {
             console.error("Failed to create transaction record for subscription:", txnErr);
+        }
+
+        // 🔔 Dispatch Push Notification to driver for activated pass
+        try {
+            await dispatchNotification({
+                title: "Subscription Activated! 🎟️",
+                message: `Your '${plan.planName}' pass is now active for ${durationDays} days.`,
+                targetAudience: "Drivers",
+                token: driver.fcmToken || undefined,
+                type: "Subscription",
+                data: {
+                    subscriptionId: newDriverSubscription._id.toString(),
+                    planName: plan.planName || "Driver Pass",
+                    amount: String(plan.price || 0),
+                    status: "Active",
+                },
+            });
+        } catch (notifErr: any) {
+            console.warn("Could not dispatch push notification for subscription:", notifErr?.message);
         }
 
         return NextResponse.json(

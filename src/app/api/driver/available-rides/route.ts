@@ -35,10 +35,13 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const skip = (page - 1) * limit;
 
-    // Available rides condition: not yet assigned to any driver and in pending/confirmed status
+    // Available rides condition: not yet assigned to any driver, not rejected by this driver (multi-driver support), and in pending/confirmed status
+    const driverObjectId = new mongoose.Types.ObjectId(driverPayload.id);
     const query: any = {
       bookingStatus: { $in: ["pending", "confirmed"] },
       $or: [{ driverId: null }, { driverId: { $exists: false } }],
+      "rejectedDrivers.driverId": { $nin: [driverObjectId] },
+      rejectedDrivers: { $nin: [driverObjectId] },
     };
 
     // Filter by pricing type:

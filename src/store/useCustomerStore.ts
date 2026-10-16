@@ -20,6 +20,8 @@ export interface CustomerBookingStats {
   completed: number;
   cancelled: number;
   total: number;
+  driverTripsCount?: number;
+  valetTripsCount?: number;
 }
 
 export interface CustomerTransactionStats {
@@ -36,6 +38,18 @@ export interface CustomerDetailsData {
   bookings: DriverBooking[];
   customerBookingStats: CustomerBookingStats;
   customerTransactionStats: CustomerTransactionStats;
+  bookingsPagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  transactionsPagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 interface CustomerStoreState {
@@ -49,7 +63,16 @@ interface CustomerStoreState {
 
   setSelectedCustomerId: (id: string | null) => void;
   fetchCustomers: (params?: { page?: number; limit?: number; search?: string; status?: string }) => Promise<void>;
-  fetchCustomersById: (customerId: string) => Promise<void>;
+  fetchCustomersById: (
+    customerId: string,
+    params?: {
+      bookingPage?: number;
+      bookingLimit?: number;
+      bookingFilter?: string;
+      transactionPage?: number;
+      transactionLimit?: number;
+    }
+  ) => Promise<void>;
   toggleCustomerStatus: (customerId: string) => Promise<void>;
 }
 
@@ -83,10 +106,10 @@ export function formatCustomer(raw: any): Customer {
     status: isStatusActive ? 'Active' : 'Suspended',
     joinedDate: isObj && raw.createdAt
       ? new Date(raw.createdAt).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        })
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
       : isObj && raw.joinedDate ? raw.joinedDate : 'Sep 29, 2026',
   };
 }
@@ -101,18 +124,38 @@ export function formatBooking(raw: any, customer?: Customer): DriverBooking {
     : 'Sep 29, 2026';
 
   const bookingTime = isDoc && raw.bookingTime ? raw.bookingTime : '10:30 AM';
-  const bookingType = isDoc && (raw.bookingType || raw.serviceType)
-    ? (raw.bookingType === 'outstation' || raw.serviceType === 'outstation' ? 'Outstation' : 'Local')
-    : 'Local';
+  const rawType = isDoc ? (raw.bookingType || raw.serviceType || '') : '';
+  const isValet =
+    raw.serviceCategory === 'valet' ||
+    (typeof rawType === 'string' && rawType.toLowerCase().includes('valet')) ||
+    String(bookingNumber).startsWith('VLT');
+  const isOutstation =
+    !isValet &&
+    (typeof rawType === 'string' &&
+      (rawType.toLowerCase().includes('outstation') || raw.tripType === 'outstation'));
 
-  const durationHours = isDoc ? (raw.durationHours || raw.durationDays || 4) : 4;
-  const pickup = isDoc ? (typeof raw.pickupLocation === 'string' ? raw.pickupLocation : raw.pickupLocation?.address || 'MG Road, Indiranagar, Bengaluru') : 'MG Road, Indiranagar, Bengaluru';
-  const drop = isDoc ? (typeof raw.destinationLocation === 'string' ? raw.destinationLocation : raw.dropLocation?.address || 'Koramangala 5th Block, Bengaluru') : 'Koramangala 5th Block, Bengaluru';
+  const bookingType: 'Local' | 'Outstation' | 'Valet' = isValet
+    ? 'Valet'
+    : isOutstation
+      ? 'Outstation'
+      : 'Local';
 
-  const vehicleModel = isDoc ? (raw.vehicleInfo?.model || raw.vehicleNumber || 'Hyundai Creta') : 'Hyundai Creta';
-  const vehiclePlate = isDoc ? (raw.vehicleInfo?.plateNumber || raw.vehicleNumber || 'KA-01-MJ-8899') : 'KA-01-MJ-8899';
+  const durationHours = isDoc ? (raw.durationHours || raw.durationDays || raw.hours || 4) : 4;
+  const pickup = isDoc
+    ? (typeof raw.pickupLocation === 'string'
+      ? raw.pickupLocation
+      : raw.pickupLocation?.address || raw.venueName || raw.address || 'MG Road, Indiranagar, Bengaluru')
+    : 'MG Road, Indiranagar, Bengaluru';
+  const drop = isDoc
+    ? (typeof raw.destinationLocation === 'string'
+      ? raw.destinationLocation
+      : raw.dropLocation?.address || (isValet ? `${raw.person || 1} Staff · ${durationHours}h Package` : 'Koramangala 5th Block, Bengaluru'))
+    : 'Koramangala 5th Block, Bengaluru';
 
-  const totalAmount = isDoc ? (raw.totalAmount || raw.pricing?.totalCustomerAmount || raw.baseAmount || 1250) : 1250;
+  const vehicleModel = isDoc ? (raw.vehicleInfo?.model || raw.vehicleNumber || (isValet ? raw.eventName || 'Valet Event' : 'Hyundai Creta')) : 'Hyundai Creta';
+  const vehiclePlate = isDoc ? (raw.vehicleInfo?.plateNumber || raw.vehicleNumber || (isValet ? `${raw.person || 1} Staff Required` : 'KA-01-MJ-8899')) : 'KA-01-MJ-8899';
+
+  const totalAmount = isDoc ? (raw.totalAmount || raw.pricing?.totalCustomerAmount || raw.pricing?.totalAmount || raw.pricing?.customerPrice || raw.baseAmount || 1250) : 1250;
 
   const rawStatus = isDoc ? (raw.status || raw.bookingStatus || 'Completed') : 'Completed';
   let formattedStatus: any = 'Completed';
@@ -126,6 +169,10 @@ export function formatBooking(raw: any, customer?: Customer): DriverBooking {
     else formattedStatus = 'Pending';
   }
 
+  const detailsUrl = isDoc && raw.detailsUrl
+    ? raw.detailsUrl
+    : (isValet ? `/admin/valet-bookings/${id}` : `/admin/driver-bookings/${id}`);
+
   return {
     id: String(id),
     bookingNumber: String(bookingNumber),
@@ -133,14 +180,16 @@ export function formatBooking(raw: any, customer?: Customer): DriverBooking {
     customerEmail: customer?.email || (isDoc ? raw.customerEmail : ''),
     customerPhone: customer?.phone || (isDoc ? raw.customerPhone : ''),
     customerAvatar: customer?.avatar || '',
-    bookingType: bookingType as 'Local' | 'Outstation',
+    bookingType: bookingType,
+    serviceCategory: isValet ? 'valet' : 'driver',
+    detailsUrl: detailsUrl,
     pickupLocation: pickup,
     destinationLocation: drop,
     bookingDate: bookingDate,
     bookingTime: bookingTime,
     durationHours: Number(durationHours),
     vehicleInfo: {
-      type: isDoc ? (raw.vehicleInfo?.type || raw.vehicleType || 'SUV') : 'SUV',
+      type: isDoc ? (raw.vehicleInfo?.type || (isValet ? 'Valet Service' : raw.vehicleType) || 'SUV') : 'SUV',
       model: vehicleModel,
       plateNumber: vehiclePlate,
       fuelType: isDoc ? (raw.vehicleInfo?.fuelType || 'Petrol') : 'Petrol',
@@ -260,13 +309,40 @@ export const useCustomerStore = create<CustomerStoreState>((set, get) => ({
     }
   },
 
-  fetchCustomersById: async (customerId: string) => {
+  fetchCustomersById: async (
+    customerId: string,
+    params?: {
+      bookingPage?: number;
+      bookingLimit?: number;
+      bookingFilter?: string;
+      transactionPage?: number;
+      transactionLimit?: number;
+    }
+  ) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await fetch(`/api/admin/customers/${customerId}`, {
+      const token =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('token') ||
+          localStorage.getItem('admin_token') ||
+          document.cookie.split('; ').find((r) => r.startsWith('admin_token=') || r.startsWith('token='))?.split('=')[1]
+          : undefined;
+
+      const queryParams = new URLSearchParams();
+      if (params?.bookingPage) queryParams.set('bookingPage', String(params.bookingPage));
+      if (params?.bookingLimit) queryParams.set('bookingLimit', String(params.bookingLimit));
+      if (params?.bookingFilter) queryParams.set('bookingFilter', params.bookingFilter);
+      if (params?.transactionPage) queryParams.set('transactionPage', String(params.transactionPage));
+      if (params?.transactionLimit) queryParams.set('transactionLimit', String(params.transactionLimit));
+
+      const queryString = queryParams.toString();
+      const endpoint = `/api/admin/customers/${customerId}${queryString ? `?${queryString}` : ''}`;
+
+      const res = await fetch(endpoint, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
       const data = await res.json();
@@ -274,40 +350,42 @@ export const useCustomerStore = create<CustomerStoreState>((set, get) => ({
       if (res.ok && data.success) {
         const payload = data.data;
 
-        // Extract customer object whether nested inside payload.customer or directly payload
+        // Extract customer object
         const rawCustomer = payload.customer || payload;
         const formattedCust = formatCustomer(rawCustomer);
 
-        // Raw bookings & transactions from API response
+        // Core arrays from API
         const rawBookings = payload.bookings || [];
         const rawTransactions = payload.transactions || [];
 
         // Format bookings & transactions
-        let formattedBookings: DriverBooking[] = (rawBookings || []).map((b: any) => formatBooking(b, formattedCust));
-        let formattedTransactions: Transaction[] = (rawTransactions || []).map((t: any) => formatTransaction(t, formattedCust));
+        let formattedBookings: DriverBooking[] = rawBookings.map((b: any) => formatBooking(b, formattedCust));
+        let formattedTransactions: Transaction[] = rawTransactions.map((t: any) => formatTransaction(t, formattedCust));
 
-        // Fallback: If API returned empty bookings/transactions for demo, match initial mock bookings & txns for seamless UI preview
-        if (formattedBookings.length === 0) {
+        // Fallback for mock demo if entirely empty
+        if (!payload.bookings && formattedBookings.length === 0) {
           const matchedMockBookings = initialDriverBookings.filter(
             (b) => b.customerName === formattedCust.name || b.customerEmail === formattedCust.email
           );
-          formattedBookings = matchedMockBookings.length > 0 ? matchedMockBookings : initialDriverBookings.slice(0, 2);
+          formattedBookings = matchedMockBookings.length > 0 ? matchedMockBookings : initialDriverBookings;
         }
 
-        if (formattedTransactions.length === 0) {
+        if (!payload.transactions && formattedTransactions.length === 0) {
           const matchedMockTxns = initialTransactions.filter(
             (t) => t.customerOrDriverName === formattedCust.name
           );
-          formattedTransactions = matchedMockTxns.length > 0 ? matchedMockTxns : initialTransactions.slice(0, 2);
+          formattedTransactions = matchedMockTxns.length > 0 ? matchedMockTxns : initialTransactions;
         }
 
-        const bookingStats = payload.customerBookingStats || {
+        const bookingStats: CustomerBookingStats = payload.customerBookingStats || {
           completed: formattedBookings.filter((b) => b.status === 'Completed').length,
           cancelled: formattedBookings.filter((b) => b.status === 'Cancelled').length,
           total: formattedBookings.length,
+          driverTripsCount: formattedBookings.filter((b) => b.bookingType !== 'Valet').length,
+          valetTripsCount: formattedBookings.filter((b) => b.bookingType === 'Valet').length,
         };
 
-        const transactionStats = payload.customerTransactionStats || {
+        const transactionStats: CustomerTransactionStats = payload.customerTransactionStats || {
           totalCount: formattedTransactions.length,
           totalSuccess: formattedTransactions.filter((t) => t.status === 'Success').length,
           totalFailed: formattedTransactions.filter((t) => t.status === 'Failed').length,
@@ -331,6 +409,8 @@ export const useCustomerStore = create<CustomerStoreState>((set, get) => ({
           transactions: formattedTransactions,
           customerBookingStats: bookingStats,
           customerTransactionStats: transactionStats,
+          bookingsPagination: payload.bookingsPagination,
+          transactionsPagination: payload.transactionsPagination,
         };
 
         const existing = get().customers;
@@ -381,19 +461,19 @@ export const useCustomerStore = create<CustomerStoreState>((set, get) => ({
       ),
       selectedCustomerDetails: state.selectedCustomerDetails
         ? {
-            ...state.selectedCustomerDetails,
-            customer: {
-              ...state.selectedCustomerDetails.customer,
-              status: newStatusBool ? 'Active' : 'Suspended',
-            },
-          }
+          ...state.selectedCustomerDetails,
+          customer: {
+            ...state.selectedCustomerDetails.customer,
+            status: newStatusBool ? 'Active' : 'Suspended',
+          },
+        }
         : null,
       counts: state.counts
         ? {
-            ...state.counts,
-            active: newStatusBool ? state.counts.active + 1 : state.counts.active - 1,
-            inactive: newStatusBool ? state.counts.inactive - 1 : state.counts.inactive + 1,
-          }
+          ...state.counts,
+          active: newStatusBool ? state.counts.active + 1 : state.counts.active - 1,
+          inactive: newStatusBool ? state.counts.inactive - 1 : state.counts.inactive + 1,
+        }
         : null,
     }));
 

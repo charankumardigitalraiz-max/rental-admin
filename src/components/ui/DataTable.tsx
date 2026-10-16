@@ -18,6 +18,7 @@ export interface ServerPaginationProps {
   totalPages: number;
   totalItems: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 interface DataTableProps<T> {
@@ -25,6 +26,7 @@ interface DataTableProps<T> {
   data: T[];
   keyExtractor: (row: T) => string;
   pageSize?: number;
+  pageSizeOptions?: number[];
   emptyMessage?: React.ReactNode;
   isLoading?: boolean;
   searchPlaceholder?: string;
@@ -37,7 +39,7 @@ interface DataTableProps<T> {
   onSearchChange?: (term: string) => void;
   /** Controlled search value from parent */
   searchValue?: string;
-  /** Minimum duration in milliseconds the loader remains visible (defaults to 2000ms) */
+  /** Minimum duration in milliseconds the loader remains visible (defaults to 1500ms) */
   minLoadingDurationMs?: number;
 }
 
@@ -46,6 +48,7 @@ export default function DataTable<T>({
   data,
   keyExtractor,
   pageSize = 5,
+  pageSizeOptions,
   emptyMessage = 'No records found',
   isLoading: externalLoading = false,
   searchPlaceholder,
@@ -57,11 +60,18 @@ export default function DataTable<T>({
   searchValue,
   minLoadingDurationMs = 1500,
 }: DataTableProps<T>) {
+  const [internalPageSize, setInternalPageSize] = useState(pageSize);
+  const effectivePageSize = internalPageSize || pageSize || 5;
+
   const [currentPage, setCurrentPage] = useState(1);
   const [internalSearchTerm, setInternalSearchTerm] = useState('');
-  const [localLoading, setLocalLoading] = useState(false);
 
-  // Guarantee loader displays for at least 2 seconds (2000ms)
+  // Sync pageSize prop when changed externally
+  React.useEffect(() => {
+    setInternalPageSize(pageSize);
+  }, [pageSize]);
+
+  // Guarantee loader displays for at least minLoadingDurationMs on actual external async loads
   const [minLoaderActive, setMinLoaderActive] = useState(false);
   const loadingStartTimeRef = React.useRef<number | null>(null);
 
@@ -103,7 +113,12 @@ export default function DataTable<T>({
     });
   }, [data, searchTerm, searchFilterKeys]);
 
-  // Handle Search Input Change cleanly with minimum 2-second loader
+  // Auto-reset current page to 1 whenever data or search filter updates
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [data, searchTerm]);
+
+  // Handle Search Input Change
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (searchValue === undefined) {
@@ -111,35 +126,39 @@ export default function DataTable<T>({
     }
     onSearchChange?.(val);
     setCurrentPage(1);
-    setLocalLoading(true);
-    const timer = setTimeout(() => {
-      setLocalLoading(false);
-    }, minLoadingDurationMs);
-    return () => clearTimeout(timer);
   };
 
-  // Trigger minimum 2-second local loader when page changes
-  const handlePageChange = (page: number) => {
-    setLocalLoading(true);
-    setCurrentPage(page);
-    setTimeout(() => {
-      setLocalLoading(false);
-    }, minLoadingDurationMs);
-  };
-
-  // Server-side pagination: use data as-is, delegate counts to caller
+  // Server-side vs client-side calculations
   const isServerPaginated = !!serverPagination;
   const isSearching = !!searchTerm.trim();
+
   const totalItems = isServerPaginated
     ? (isSearching ? filteredData.length : serverPagination!.totalItems)
     : filteredData.length;
+
   const totalPages = isServerPaginated
-    ? (isSearching ? Math.ceil(totalItems / pageSize) || 1 : serverPagination!.totalPages)
-    : Math.ceil(totalItems / pageSize) || 1;
-  const effectivePage = isServerPaginated ? (isSearching ? 1 : serverPagination!.currentPage) : currentPage;
-  const currentData = isServerPaginated
-    ? (isSearching ? filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize) : data)
-    : filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    ? (isSearching ? Math.ceil(totalItems / effectivePageSize) || 1 : serverPagination!.totalPages)
+    : Math.ceil(totalItems / effectivePageSize) || 1;
+
+  // Always clamp effectivePage within valid range [1, totalPages]
+  const effectivePage = isServerPaginated
+    ? (isSearching ? 1 : serverPagination!.currentPage)
+    : Math.max(1, Math.min(currentPage, totalPages));
+
+  // Instant in-memory slicing
+  const currentData = React.useMemo(() => {
+    if (isServerPaginated && !isSearching) {
+      return data;
+    }
+    const startIndex = (effectivePage - 1) * effectivePageSize;
+    return filteredData.slice(startIndex, startIndex + effectivePageSize);
+  }, [isServerPaginated, isSearching, data, filteredData, effectivePage, effectivePageSize]);
+
+  // Clean, instant page change handler
+  const handlePageChange = (page: number) => {
+    const validPage = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(validPage);
+  };
 
   const handleEffectivePageChange = (page: number) => {
     if (isServerPaginated) {
@@ -149,7 +168,7 @@ export default function DataTable<T>({
     }
   };
 
-  const showLoader = externalLoading || localLoading || minLoaderActive;
+  const showLoader = externalLoading || minLoaderActive;
 
   return (
     <div className="card-white overflow-hidden isolate">
@@ -269,8 +288,16 @@ export default function DataTable<T>({
             currentPage={effectivePage}
             totalPages={totalPages}
             totalItems={totalItems}
-            itemsPerPage={isServerPaginated ? (data.length || pageSize) : pageSize}
+            itemsPerPage={effectivePageSize}
             onPageChange={handleEffectivePageChange}
+            pageSizeOptions={pageSizeOptions}
+            onPageSizeChange={(newSize) => {
+              setInternalPageSize(newSize);
+              setCurrentPage(1);
+              if (serverPagination?.onPageSizeChange) {
+                serverPagination.onPageSizeChange(newSize);
+              }
+            }}
           />
         </div>
       )}

@@ -39,7 +39,12 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
     toggleCustomerStatus,
   } = useCustomerStore();
 
-  const [tripFilter, setTripFilter] = useState<'all' | 'completed' | 'in-progress' | 'cancelled'>('all');
+  const [tripFilter, setTripFilter] = useState<'all' | 'driver' | 'valet' | 'completed' | 'cancelled'>('all');
+  const [bookingPage, setBookingPage] = useState(1);
+  const [bookingLimit, setBookingLimit] = useState(5);
+  const [financialTab, setFinancialTab] = useState<'transactions' | 'refunds'>('transactions');
+  const [transactionPage, setTransactionPage] = useState(1);
+  const [transactionLimit, setTransactionLimit] = useState(5);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -47,9 +52,83 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
 
   useEffect(() => {
     if (targetId) {
-      fetchCustomersById(targetId);
+      fetchCustomersById(targetId, {
+        bookingPage: 1,
+        bookingLimit: 5,
+        bookingFilter: 'all',
+        transactionPage: 1,
+        transactionLimit: 5,
+      });
     }
   }, [targetId, fetchCustomersById]);
+
+  const handleTripFilterChange = (filter: 'all' | 'driver' | 'valet' | 'completed' | 'cancelled') => {
+    setTripFilter(filter);
+    setBookingPage(1);
+    if (targetId) {
+      fetchCustomersById(targetId, {
+        bookingPage: 1,
+        bookingLimit,
+        bookingFilter: filter,
+        transactionPage,
+        transactionLimit,
+      });
+    }
+  };
+
+  const handleBookingPageChange = (page: number) => {
+    setBookingPage(page);
+    if (targetId) {
+      fetchCustomersById(targetId, {
+        bookingPage: page,
+        bookingLimit,
+        bookingFilter: tripFilter,
+        transactionPage,
+        transactionLimit,
+      });
+    }
+  };
+
+  const handleBookingLimitChange = (limit: number) => {
+    setBookingLimit(limit);
+    setBookingPage(1);
+    if (targetId) {
+      fetchCustomersById(targetId, {
+        bookingPage: 1,
+        bookingLimit: limit,
+        bookingFilter: tripFilter,
+        transactionPage,
+        transactionLimit,
+      });
+    }
+  };
+
+  const handleTransactionPageChange = (page: number) => {
+    setTransactionPage(page);
+    if (targetId) {
+      fetchCustomersById(targetId, {
+        bookingPage,
+        bookingLimit,
+        bookingFilter: tripFilter,
+        transactionPage: page,
+        transactionLimit,
+      });
+    }
+  };
+
+  const handleTransactionLimitChange = (limit: number) => {
+    setTransactionLimit(limit);
+    setTransactionPage(1);
+    if (targetId) {
+      fetchCustomersById(targetId, {
+        bookingPage,
+        bookingLimit,
+        bookingFilter: tripFilter,
+        transactionPage: 1,
+        transactionLimit: limit,
+      });
+    }
+  };
 
   const customer =
     selectedCustomerDetails?.customer ||
@@ -112,52 +191,37 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
     );
   }
 
-  const customerTrips =
-    selectedCustomerDetails?.bookings && selectedCustomerDetails.bookings.length > 0
-      ? selectedCustomerDetails.bookings
-      : [];
-
-  const customerTxns =
-    selectedCustomerDetails?.transactions && selectedCustomerDetails.transactions.length > 0
-      ? selectedCustomerDetails.transactions
-      : [];
-
+  const customerTrips = selectedCustomerDetails?.bookings || [];
+  const customerTxns = selectedCustomerDetails?.transactions || [];
   const customerRefunds: RefundRecord[] = [];
 
   const bookingStats = selectedCustomerDetails?.customerBookingStats;
   const txnStats = selectedCustomerDetails?.customerTransactionStats;
+  const bookingsPagination = selectedCustomerDetails?.bookingsPagination;
+  const txnsPagination = selectedCustomerDetails?.transactionsPagination;
 
   const totalSpentAmount = txnStats?.totalSpentAmount ?? customer.totalSpent ?? 0;
-  const totalBookingsCount = bookingStats?.total ?? customer.totalBookings ?? customerTrips.length;
-  const completedTripsCount = bookingStats?.completed ?? customer.completedBookings ?? customerTrips.filter(b => b.status === 'Completed').length;
-  const cancelledTripsCount = bookingStats?.cancelled ?? customer.cancelledBookings ?? customerTrips.filter(b => b.status === 'Cancelled').length;
-
-  const filteredTrips = customerTrips.filter((trip) => {
-    if (tripFilter === 'completed') return trip.status === 'Completed';
-    if (tripFilter === 'in-progress')
-      return (
-        trip.status === 'Service Started' ||
-        trip.status === 'Driver Arriving' ||
-        trip.status === 'Driver Assigned' ||
-        trip.status === 'Searching Driver' ||
-        trip.status === 'Pending'
-      );
-    if (tripFilter === 'cancelled') return trip.status === 'Cancelled';
-    return true;
-  });
+  const totalBookingsCount = bookingStats?.total ?? customer.totalBookings ?? 0;
+  const completedTripsCount = bookingStats?.completed ?? customer.completedBookings ?? 0;
+  const cancelledTripsCount = bookingStats?.cancelled ?? customer.cancelledBookings ?? 0;
+  const driverTripsCount = bookingStats?.driverTripsCount ?? 0;
+  const valetTripsCount = bookingStats?.valetTripsCount ?? 0;
 
   const bookingColumns: Column<DriverBooking>[] = [
     {
       key: 'bookingNumber',
       header: 'Booking Ref',
-      render: (b) => (
-        <Link
-          href={`/admin/driver-bookings/${b.id}`}
-          className="font-mono font-bold text-slate-900 hover:text-emerald-700 hover:underline text-left inline-block"
-        >
-          {b.bookingNumber}
-        </Link>
-      ),
+      render: (b) => {
+        const linkUrl = b.detailsUrl || (b.bookingType === 'Valet' || b.bookingNumber?.startsWith('VLT') ? `/admin/valet-bookings/${b.id}` : `/admin/driver-bookings/${b.id}`);
+        return (
+          <Link
+            href={linkUrl}
+            className="font-mono font-bold text-slate-900 hover:text-emerald-700 hover:underline text-left inline-block"
+          >
+            {b.bookingNumber}
+          </Link>
+        );
+      },
     },
     {
       key: 'bookingDate',
@@ -173,21 +237,28 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       key: 'bookingType',
       header: 'Service Type',
       render: (b) => (
-        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-          {b.bookingType} ({b.durationHours}h)
+        <span
+          className={`px-2 py-0.5 rounded text-[10px] font-bold border ${b.bookingType === 'Valet'
+              ? 'bg-amber-50 text-amber-800 border-amber-200'
+              : b.bookingType === 'Outstation'
+                ? 'bg-sky-50 text-sky-800 border-sky-200'
+                : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            }`}
+        >
+          {b.bookingType === 'Valet' ? 'Valet Parking' : `${b.bookingType} (${b.durationHours}h)`}
         </span>
       ),
     },
     {
       key: 'pickupLocation',
-      header: 'Pickup → Destination',
+      header: 'Pickup / Location',
       render: (b) => (
         <div className="max-w-[220px]">
           <div className="text-slate-900 font-semibold text-xs truncate flex items-center gap-1.5" title={`Pickup: ${b.pickupLocation}`}>
             <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span className="truncate">{b.pickupLocation}</span>
           </div>
-          <div className="text-slate-500 text-[11px] truncate flex items-center gap-1.5 mt-0.5" title={`Destination: ${b.destinationLocation}`}>
+          <div className="text-slate-500 text-[11px] truncate flex items-center gap-1.5 mt-0.5" title={`Details: ${b.destinationLocation}`}>
             <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
             <span className="truncate">{b.destinationLocation}</span>
           </div>
@@ -196,22 +267,22 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
     },
     {
       key: 'vehicleInfo',
-      header: 'Customer Vehicle',
+      header: 'Vehicle / Event',
       render: (b) => (
         <div className="text-slate-700">
-          <span className="font-semibold block">{b.vehicleInfo.model}</span>
+          <span className="font-semibold block truncate max-w-[150px]">{b.vehicleInfo.model}</span>
           <span className="text-[10px] text-slate-400 font-mono">{b.vehicleInfo.plateNumber}</span>
         </div>
       ),
     },
     {
       key: 'driverName',
-      header: 'Assigned Driver',
+      header: 'Assigned Driver / Staff',
       render: (b) =>
         b.driverName ? (
           <div>
-            <span className="font-bold text-slate-900 block">{b.driverName}</span>
-            <span className="text-[10px] text-slate-400">{b.driverPhone}</span>
+            <span className="font-bold text-slate-900 block truncate max-w-[130px]">{b.driverName}</span>
+            {b.driverPhone && <span className="text-[10px] text-slate-400">{b.driverPhone}</span>}
           </div>
         ) : (
           <span className="text-slate-400 text-[11px] italic">Unassigned</span>
@@ -223,7 +294,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       align: 'right',
       render: (b) => (
         <span className="font-bold text-slate-900">
-          ₹{b.pricing.totalCustomerAmount.toLocaleString('en-IN')}
+          ₹{(b.pricing?.totalCustomerAmount || b.totalAmount || 0).toLocaleString('en-IN')}
         </span>
       ),
     },
@@ -250,16 +321,18 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       key: 'actions',
       header: 'Action',
       align: 'right',
-      render: (b) => (
-        <Link
-          href={`/admin/driver-bookings/${b.id}`}
-          className="px-2.5 py-1 text-[11px] font-bold text-white bg-primary hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors flex items-center gap-1 ml-auto w-fit"
-          title="View Booking Details"
-        >
-          <Eye className="w-3 h-3" />
-          {/* <span>View</span> */}
-        </Link>
-      ),
+      render: (b) => {
+        const linkUrl = b.detailsUrl || (b.bookingType === 'Valet' || b.bookingNumber?.startsWith('VLT') ? `/admin/valet-bookings/${b.id}` : `/admin/driver-bookings/${b.id}`);
+        return (
+          <Link
+            href={linkUrl}
+            className="px-2.5 py-1 text-[11px] font-bold text-white bg-primary hover:bg-emerald-800 border border-emerald-900 rounded-md transition-colors flex items-center gap-1 ml-auto w-fit"
+            title="View Booking Details"
+          >
+            <Eye className="w-3 h-3" />
+          </Link>
+        );
+      },
     },
   ];
 
@@ -462,7 +535,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
         <div className="card-white p-4 space-y-1">
           <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Bookings</span>
           <div className="text-xl font-bold text-slate-900">{totalBookingsCount}</div>
-          <p className="text-[10px] text-slate-500">Lifetime requested trips</p>
+          <p className="text-[10px] text-slate-500 font-medium">{driverTripsCount} Driver · {valetTripsCount} Valet</p>
         </div>
 
         <div className="card-white p-4 space-y-1">
@@ -632,9 +705,18 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       {/* FULL WIDTH: Booking History Table using global DataTable */}
       <DataTable<DriverBooking>
         columns={bookingColumns}
-        data={filteredTrips}
-        keyExtractor={(b) => b.id}
-        pageSize={5}
+        data={customerTrips}
+        keyExtractor={(b) => b.id || (b as any)._id || b.bookingNumber || String(Math.random())}
+        pageSize={bookingLimit}
+        pageSizeOptions={[5, 10, 20, 50]}
+        isLoading={isLoading}
+        serverPagination={{
+          currentPage: bookingsPagination?.page || bookingPage,
+          totalPages: bookingsPagination?.totalPages || 1,
+          totalItems: bookingsPagination?.total ?? (tripFilter === 'all' ? totalBookingsCount : (tripFilter === 'driver' ? driverTripsCount : (tripFilter === 'valet' ? valetTripsCount : (tripFilter === 'completed' ? completedTripsCount : cancelledTripsCount)))),
+          onPageChange: handleBookingPageChange,
+          onPageSizeChange: handleBookingLimitChange,
+        }}
         emptyMessage="No booking records found for this customer."
         headerActions={
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
@@ -644,44 +726,58 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
               </h3>
             </div>
 
-            {/* <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
               <button
-                onClick={() => setTripFilter('all')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'all'
+                type="button"
+                onClick={() => handleTripFilterChange('all')}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${tripFilter === 'all'
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
               >
-                All ({customerTrips.length})
+                All ({totalBookingsCount})
               </button>
               <button
-                onClick={() => setTripFilter('completed')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'completed'
+                type="button"
+                onClick={() => handleTripFilterChange('driver')}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${tripFilter === 'driver'
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
               >
-                Completed
+                Driver ({driverTripsCount})
               </button>
               <button
-                onClick={() => setTripFilter('in-progress')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'in-progress'
+                type="button"
+                onClick={() => handleTripFilterChange('valet')}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${tripFilter === 'valet'
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
               >
-                In Progress
+                Valet ({valetTripsCount})
               </button>
               <button
-                onClick={() => setTripFilter('cancelled')}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all ${tripFilter === 'cancelled'
+                type="button"
+                onClick={() => handleTripFilterChange('completed')}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${tripFilter === 'completed'
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
               >
-                Cancelled
+                Completed ({completedTripsCount})
               </button>
-            </div> */}
+              <button
+                type="button"
+                onClick={() => handleTripFilterChange('cancelled')}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${tripFilter === 'cancelled'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
+              >
+                Cancelled ({cancelledTripsCount})
+              </button>
+            </div>
           </div>
         }
       />
@@ -689,7 +785,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       {/* Financial Records Navigation & Content */}
       <div className="space-y-4">
         {/* Tab Filter Control */}
-        {/* <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary" /> Financial Activity & History
@@ -698,77 +794,72 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
 
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
             <button
-              onClick={() => setFinancialTab('all')}
-              className={`px-3 py-1 rounded-md font-bold transition-all ${
-                financialTab === 'all'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
-            >
-              All Records ({customerTxns.length + customerRefunds.length})
-            </button>
-            <button
               onClick={() => setFinancialTab('transactions')}
-              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 ${
-                financialTab === 'transactions'
+              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer ${financialTab === 'transactions'
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
+                }`}
             >
               <Receipt className="w-3.5 h-3.5" />
               <span>Transactions ({customerTxns.length})</span>
             </button>
             <button
               onClick={() => setFinancialTab('refunds')}
-              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 ${
-                financialTab === 'refunds'
+              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer ${financialTab === 'refunds'
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
+                }`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Refunds ({customerRefunds.length})</span>
             </button>
           </div>
-        </div> */}
+        </div>
 
         {/* Financial Tables Stack */}
         <div className="space-y-6">
-          {/* {(financialTab === 'all' || financialTab === 'transactions') && ( */}
-          <DataTable<Transaction>
-            columns={txnColumns}
-            data={customerTxns}
-            keyExtractor={(t) => t.id}
-            pageSize={5}
-            emptyMessage="No payment transactions recorded for this customer."
-            headerActions={
-              <div className="flex items-center justify-between w-full">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <Receipt className="w-4.5 h-4.5 text-primary" /> Payment Transactions
-                </h3>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Payment Logs</span>
-              </div>
-            }
-          />
-          {/* )} */}
-
-          {/* {(financialTab === 'all' || financialTab === 'refunds') && ( */}
-          <DataTable<RefundRecord>
-            columns={refundColumns}
-            data={customerRefunds}
-            keyExtractor={(r) => r.id}
-            pageSize={5}
-            emptyMessage="No refund requests or dispute claims recorded."
-            headerActions={
-              <div className="flex items-center justify-between w-full">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <RotateCcw className="w-4.5 h-4.5 text-rose-500" /> Refund History
-                </h3>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Refund Claims</span>
-              </div>
-            }
-          />
-          {/* )} */}
+          {financialTab === 'transactions' ? (
+            <DataTable<Transaction>
+              columns={txnColumns}
+              data={customerTxns}
+              keyExtractor={(t) => t.id || (t as any)._id || t.transactionId || String(Math.random())}
+              pageSize={transactionLimit}
+              pageSizeOptions={[5, 10, 20]}
+              isLoading={isLoading}
+              serverPagination={{
+                currentPage: txnsPagination?.page || transactionPage,
+                totalPages: txnsPagination?.totalPages || 1,
+                totalItems: txnsPagination?.total ?? (txnStats?.totalCount ?? customerTxns.length),
+                onPageChange: handleTransactionPageChange,
+                onPageSizeChange: handleTransactionLimitChange,
+              }}
+              emptyMessage="No payment transactions recorded for this customer."
+              headerActions={
+                <div className="flex items-center justify-between w-full">
+                  <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <Receipt className="w-4.5 h-4.5 text-primary" /> Payment Transactions
+                  </h3>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Payment Logs</span>
+                </div>
+              }
+            />
+          ) : (
+            <DataTable<RefundRecord>
+              columns={refundColumns}
+              data={customerRefunds}
+              keyExtractor={(r) => r.id}
+              pageSize={5}
+              emptyMessage="No refund requests or dispute claims recorded."
+              headerActions={
+                <div className="flex items-center justify-between w-full">
+                  <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <RotateCcw className="w-4.5 h-4.5 text-rose-500" /> Refund History
+                  </h3>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Refund Claims</span>
+                </div>
+              }
+            />
+          )}
         </div>
       </div>
       {/* Delete Customer Confirmation Modal */}

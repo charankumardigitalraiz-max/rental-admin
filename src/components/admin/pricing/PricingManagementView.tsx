@@ -287,38 +287,123 @@ function HourSelector({
   options = [2, 4, 6, 8, 10, 12, 24],
   unitText = 'hrs',
 }: HourSelectorProps) {
+  const isDayUnit = unitText?.toLowerCase().includes('day');
+  const unitSuffix = isDayUnit ? 'd' : 'h';
+  const isCustomInitially = !options.includes(value);
+
+  const [isCustomMode, setIsCustomMode] = useState<boolean>(isCustomInitially);
+  const [customStr, setCustomStr] = useState<string>(() =>
+    isCustomInitially ? String(value) : ''
+  );
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Synchronize when value changes externally (e.g. modal opens with new tier)
+  useEffect(() => {
+    if (!options.includes(value)) {
+      setIsCustomMode(true);
+      setCustomStr(String(value));
+    } else {
+      setIsCustomMode(false);
+      setCustomStr('');
+    }
+  }, [value, options]);
+
+  const handlePresetClick = (presetVal: number) => {
+    setIsCustomMode(false);
+    setCustomStr('');
+    onChange(presetVal);
+  };
+
+  const handleCustomChange = (raw: string) => {
+    setCustomStr(raw);
+    setIsCustomMode(true);
+    const num = parseInt(raw, 10);
+    if (!isNaN(num) && num > 0) {
+      onChange(num);
+    }
+  };
+
+  const handleCustomBlur = () => {
+    if (isCustomMode) {
+      const num = parseInt(customStr, 10);
+      if (isNaN(num) || num < 1) {
+        const fallback = value > 0 ? value : 1;
+        setCustomStr(String(fallback));
+        onChange(fallback);
+      } else {
+        setCustomStr(String(num));
+        onChange(num);
+      }
+    }
+  };
+
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-[11.5px] font-semibold text-slate-700 tracking-tight">{label}</label>
-        <span className="text-[11px] font-semibold text-slate-900">
+        <label className="text-[11.5px] font-semibold text-slate-700 tracking-tight flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5 text-slate-400" />
+          {label}
+        </label>
+        <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
           {value} {unitText}
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
-        {options.map((h) => (
-          <button
-            key={h}
-            type="button"
-            onClick={() => onChange(h)}
-            className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer select-none ${value === h
-              ? 'bg-emerald-800 text-white border-emerald-900 shadow-2xs scale-102'
-              : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:scale-95'
-              }`}
-          >
-            {h}h
-          </button>
-        ))}
+        {options.map((h) => {
+          const isSelected = !isCustomMode && value === h;
+          return (
+            <button
+              key={h}
+              type="button"
+              onClick={() => handlePresetClick(h)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer select-none ${isSelected
+                ? 'bg-emerald-800 text-white border-emerald-900 shadow-2xs scale-102 font-bold'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:scale-95'
+                }`}
+            >
+              {h}{unitSuffix}
+            </button>
+          );
+        })}
 
-        <div className="relative w-16 ml-1">
+        {/* Custom Value Entry Box */}
+        <div
+          onClick={() => {
+            setIsCustomMode(true);
+            if (!customStr) {
+              setCustomStr(String(value));
+            }
+            inputRef.current?.focus();
+          }}
+          className={`relative flex items-center bg-white rounded-lg border transition-all duration-150 cursor-text shadow-2xs overflow-hidden ${isCustomMode
+            ? 'border-emerald-600 ring-2 ring-emerald-500/15'
+            : 'border-slate-200 hover:border-slate-300'
+            }`}
+        >
+          <span className="text-[11px] font-semibold text-slate-500 pl-2.5 pr-1 select-none flex items-center gap-1">
+            <Pencil className="w-3 h-3 text-slate-400" />
+            Custom:
+          </span>
           <input
+            ref={inputRef}
             type="number"
             min={1}
-            value={value}
-            onChange={(e) => onChange(Math.max(1, Number(e.target.value) || 1))}
-            className="w-full text-xs font-semibold px-2 py-1 border border-slate-200 rounded-lg text-center bg-white focus:outline-none focus:border-emerald-600"
+            placeholder="e.g. 10"
+            value={isCustomMode ? customStr : ''}
+            onFocus={() => {
+              setIsCustomMode(true);
+              if (!customStr) {
+                setCustomStr(String(value));
+              }
+            }}
+            onChange={(e) => handleCustomChange(e.target.value)}
+            onBlur={handleCustomBlur}
+            className="w-16 px-1 py-1.5 text-xs font-bold text-slate-900 bg-transparent text-center focus:outline-none tabular-nums"
           />
+          <span className="text-[10.5px] font-semibold text-slate-400 pr-2.5 select-none">
+            {unitSuffix}
+          </span>
         </div>
       </div>
     </div>
@@ -341,7 +426,7 @@ function MarginSplitBar({ customerPrice, driverPrice, unitLabel }: MarginSplitPr
 
   return (
     <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/70 space-y-2">
-      <div className="flex items-center justify-between text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-1 text-xs">
         <div className="flex items-center gap-1.5">
           <Calculator className="w-3.5 h-3.5 text-slate-400" />
           <span className="font-semibold text-slate-700">Financial Margin Split</span>
@@ -815,6 +900,19 @@ interface EditPricingModalProps {
   isSaving: boolean;
 }
 
+const LOCAL_PRESET_CHARGES = [
+  'Per 1 Hour',
+  'Per 2 Hours',
+  'Per 3 Hours',
+  'Per 4 Hours',
+  'Per 5 Hours',
+  'Per 6 Hours',
+  'Per 8 Hours',
+  'Per 10 Hours',
+  'Per 12 Hours',
+  'Per 24 Hours',
+];
+
 function EditPricingModal({
   target,
   onClose,
@@ -838,6 +936,14 @@ function EditPricingModal({
       return { ...localTiers[target.tripType][target.shift] };
     }
     return { hours: 4, timeRange: '06:00-18:00', customerPrice: 400, driverPrice: 320 };
+  });
+
+  const [isCustomLocalBilling, setIsCustomLocalBilling] = useState<boolean>(() => {
+    if (target.category === 'local') {
+      const charge = localTiers[target.tripType][target.shift].chargeType;
+      return Boolean(charge && !LOCAL_PRESET_CHARGES.includes(charge));
+    }
+    return false;
   });
 
   // Outstation tier state
@@ -872,7 +978,9 @@ function EditPricingModal({
   const handleShiftSwitch = (shift: 'morningHours' | 'nightHours') => {
     if (target.category === 'local') {
       setLocalShift(shift);
-      setDraftLocalTier({ ...localTiers[target.tripType][shift] });
+      const tier = localTiers[target.tripType][shift];
+      setDraftLocalTier({ ...tier });
+      setIsCustomLocalBilling(Boolean(tier.chargeType && !LOCAL_PRESET_CHARGES.includes(tier.chargeType)));
     }
   };
 
@@ -909,14 +1017,14 @@ function EditPricingModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn"
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-hidden animate-fadeIn"
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/90 max-w-lg w-full overflow-hidden my-8">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/90 max-w-lg w-full max-h-[calc(100dvh-1.25rem)] sm:max-h-[calc(100dvh-2.5rem)] flex flex-col overflow-hidden my-auto">
         {/* Modal Header */}
-        <div className="px-6 py-5 border-b border-slate-100 flex items-start justify-between gap-3 bg-gradient-to-b from-slate-50/80 to-white">
-          <div className="flex items-center gap-3">
+        <div className="shrink-0 px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2.5 bg-gradient-to-b from-slate-50/90 to-white">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center font-semibold ${target.category === 'local'
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-semibold shrink-0 ${target.category === 'local'
                 ? isNightShift
                   ? 'bg-indigo-100 text-indigo-700'
                   : 'bg-amber-100 text-amber-700'
@@ -926,16 +1034,16 @@ function EditPricingModal({
                 }`}
             >
               {target.category === 'local' ? (
-                isNightShift ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />
+                isNightShift ? <Moon className="w-4.5 h-4.5 sm:w-5 sm:h-5" /> : <Sun className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
               ) : target.category === 'outstation' ? (
-                <MapPin className="w-5 h-5" />
+                <MapPin className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
               ) : (
-                <Building2 className="w-5 h-5" />
+                <Building2 className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
               )}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-slate-900 tracking-tight">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h3 className="text-sm sm:text-base font-semibold text-slate-900 tracking-tight leading-tight">
                   {target.category === 'local'
                     ? `${target.tripType === 'one_way' ? 'One-Way' : 'Round-Trip'} ${localShift === 'nightHours' ? 'Night Shift' : 'Day Shift'
                     }`
@@ -943,7 +1051,7 @@ function EditPricingModal({
                 </h3>
                 {target.category === 'local' && (
                   <span
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${isNightShift
+                    className={`text-[9.5px] sm:text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${isNightShift
                       ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
                       : 'bg-amber-50 text-amber-800 border-amber-200'
                       }`}
@@ -952,12 +1060,12 @@ function EditPricingModal({
                   </span>
                 )}
                 {target.category === 'outstation' && (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200">
+                  <span className="text-[9.5px] sm:text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 shrink-0">
                     {target.badgeText}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{target.subTitle}</p>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">{target.subTitle}</p>
             </div>
           </div>
 
@@ -971,10 +1079,12 @@ function EditPricingModal({
         </div>
 
         {/* Modal Form */}
-        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-5">
-          {/* LOCAL TIER FIELDS */}
-          {target.category === 'local' && (
-            <div className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Scrollable Form Body */}
+          <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4 sm:space-y-5">
+            {/* LOCAL TIER FIELDS */}
+            {target.category === 'local' && (
+              <div className="space-y-4">
               {/* Shift Switcher */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <span className="text-xs font-semibold text-slate-700">Active Shift:</span>
@@ -1034,42 +1144,25 @@ function EditPricingModal({
                   </span>
                   <select
                     value={
-                      [
-                        'Per 1 Hour',
-                        'Per 2 Hours',
-                        'Per 3 Hours',
-                        'Per 4 Hours',
-                        'Per 5 Hours',
-                        'Per 6 Hours',
-                        'Per 8 Hours',
-                        'Per 10 Hours',
-                        'Per 12 Hours',
-                        'Per 24 Hours',
-                      ].includes(draftLocalTier.chargeType || '')
-                        ? draftLocalTier.chargeType
-                        : (draftLocalTier.chargeType ? 'custom' : `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`)
+                      isCustomLocalBilling
+                        ? 'custom'
+                        : (draftLocalTier.chargeType || `Per ${draftLocalTier.hours} Hour${draftLocalTier.hours > 1 ? 's' : ''}`)
                     }
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === 'custom') {
-                        setDraftLocalTier({
-                          ...draftLocalTier,
-                          chargeType: draftLocalTier.chargeType && ![
-                            'Per 1 Hour',
-                            'Per 2 Hours',
-                            'Per 3 Hours',
-                            'Per 4 Hours',
-                            'Per 5 Hours',
-                            'Per 6 Hours',
-                            'Per 8 Hours',
-                            'Per 10 Hours',
-                            'Per 12 Hours',
-                            'Per 24 Hours',
-                          ].includes(draftLocalTier.chargeType)
-                            ? draftLocalTier.chargeType
-                            : `Per ${draftLocalTier.hours || 2} Hours`,
-                        });
+                        setIsCustomLocalBilling(true);
+                        if (
+                          !draftLocalTier.chargeType ||
+                          LOCAL_PRESET_CHARGES.includes(draftLocalTier.chargeType)
+                        ) {
+                          setDraftLocalTier({
+                            ...draftLocalTier,
+                            chargeType: `Per ${draftLocalTier.hours || 2} Hours`,
+                          });
+                        }
                       } else {
+                        setIsCustomLocalBilling(false);
                         const match = val.match(/\d+/);
                         const hrs = match ? parseInt(match[0], 10) : draftLocalTier.hours;
                         setDraftLocalTier({
@@ -1081,16 +1174,11 @@ function EditPricingModal({
                     }}
                     className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-transparent focus:outline-none cursor-pointer appearance-none pr-8"
                   >
-                    <option value="Per 1 Hour">Per 1 Hour</option>
-                    <option value="Per 2 Hours">Per 2 Hours</option>
-                    <option value="Per 3 Hours">Per 3 Hours</option>
-                    <option value="Per 4 Hours">Per 4 Hours</option>
-                    <option value="Per 5 Hours">Per 5 Hours</option>
-                    <option value="Per 6 Hours">Per 6 Hours</option>
-                    <option value="Per 8 Hours">Per 8 Hours</option>
-                    <option value="Per 10 Hours">Per 10 Hours</option>
-                    <option value="Per 12 Hours">Per 12 Hours</option>
-                    <option value="Per 24 Hours">Per 24 Hours (Full Day)</option>
+                    {LOCAL_PRESET_CHARGES.map((preset) => (
+                      <option key={preset} value={preset}>
+                        {preset === 'Per 24 Hours' ? 'Per 24 Hours (Full Day)' : preset}
+                      </option>
+                    ))}
                     <option value="custom">Custom Billing Basis...</option>
                   </select>
                   <div className="pointer-events-none absolute right-3 flex items-center text-slate-400">
@@ -1099,26 +1187,16 @@ function EditPricingModal({
                 </div>
 
                 {/* Direct text input when custom billing basis is selected */}
-                {draftLocalTier.chargeType && ![
-                  'Per 1 Hour',
-                  'Per 2 Hours',
-                  'Per 3 Hours',
-                  'Per 4 Hours',
-                  'Per 5 Hours',
-                  'Per 6 Hours',
-                  'Per 8 Hours',
-                  'Per 10 Hours',
-                  'Per 12 Hours',
-                  'Per 24 Hours',
-                ].includes(draftLocalTier.chargeType) && (
-                  <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all mt-1.5">
+                {isCustomLocalBilling && (
+                  <div className="relative flex items-center bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-500/15 overflow-hidden transition-all mt-1.5 animate-fadeIn">
                     <span className="px-2.5 py-2 text-slate-400 bg-slate-50 border-r border-slate-200 text-xs flex items-center shrink-0">
                       <Pencil className="w-3.5 h-3.5 text-slate-500" />
                     </span>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. Per 2 Hours or Per Trip"
-                      value={draftLocalTier.chargeType}
+                      value={draftLocalTier.chargeType || ''}
+                      autoFocus
                       onChange={(e) => {
                         const val = e.target.value;
                         const match = val.match(/\d+/);
@@ -1274,7 +1352,7 @@ function EditPricingModal({
                 <div className="font-semibold text-amber-900">
                   Rate Summary ({draftValetParking.person} Staff × {draftValetParking.hours} Hours Package):
                 </div>
-                <div className="text-slate-600 text-[11px] flex items-center justify-between pt-1 border-t border-amber-200/50">
+                <div className="text-slate-600 text-[11px] flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 border-t border-amber-200/50">
                   <span>Customer: ₹{draftValetParking.customerprice.toLocaleString('en-IN')} (₹{Math.round(draftValetParking.customerprice / (draftValetParking.hours || 1))}/hr)</span>
                   <span>Driver Staff: ₹{draftValetParking.driverprice.toLocaleString('en-IN')} (₹{Math.round(draftValetParking.driverprice / (draftValetParking.hours || 1))}/hr)</span>
                   <span className="font-semibold text-amber-800">
@@ -1284,14 +1362,15 @@ function EditPricingModal({
               </div>
             </div>
           )}
+          </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+          {/* Modal Actions Footer (Pinned at bottom, always visible) */}
+          <div className="shrink-0 px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-100 bg-slate-50/80 backdrop-blur-xs flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -2039,28 +2118,29 @@ export default function PricingManagementView() {
       {/* ADD SURGE RULE MODAL */}
       {/* ====================================================================== */}
       {showAddRuleModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-hidden animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2.5rem)] flex flex-col overflow-hidden my-auto">
+            <div className="shrink-0 px-5 py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center shrink-0">
                   <Zap className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-semibold text-slate-900 tracking-tight">
+                <h3 className="text-sm sm:text-base font-semibold text-slate-900 tracking-tight">
                   Add Dynamic Surge Rule
                 </h3>
               </div>
               <button
                 onClick={() => setShowAddRuleModal(false)}
-                className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center font-semibold"
+                className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center font-semibold shrink-0 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleAddRuleSubmit} noValidate className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Rule Name</label>
+            <form onSubmit={handleAddRuleSubmit} noValidate className="flex flex-col flex-1 min-h-0 overflow-hidden text-xs">
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Rule Name</label>
                 <input
                   type="text"
                   required
@@ -2119,18 +2199,19 @@ export default function PricingManagementView() {
                   />
                 </div>
               </div>
+              </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="shrink-0 flex justify-end gap-2 px-5 py-3.5 border-t border-slate-100 bg-slate-50/60">
                 <button
                   type="button"
                   onClick={() => setShowAddRuleModal(false)}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50"
+                  className="px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#023526] hover:bg-emerald-900 text-white font-semibold rounded-xl shadow-sm"
+                  className="px-5 py-2 bg-[#023526] hover:bg-emerald-900 text-white font-semibold rounded-xl shadow-sm cursor-pointer"
                 >
                   Create Surge Rule
                 </button>

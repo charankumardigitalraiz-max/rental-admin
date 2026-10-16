@@ -115,7 +115,9 @@ export interface DriverBooking {
   customerEmail: string;
   customerPhone: string;
   customerAvatar: string;
-  bookingType: 'Local' | 'Outstation';
+  bookingType: 'Local' | 'Outstation' | 'Valet' | string;
+  serviceCategory?: 'driver' | 'valet';
+  detailsUrl?: string;
   pickupLocation: string;
   destinationLocation: string;
   bookingDate: string;

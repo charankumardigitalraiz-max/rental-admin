@@ -300,23 +300,21 @@ export default function DashboardView() {
         </div>
       </div>
 
-      {/* Single Unified Stats Card Band */}
-      <div className="card-white p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
-          {statsMetrics.map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
-              <div key={stat.id} className={`sm:px-3 space-y-1 ${idx > 0 ? 'pt-3 sm:pt-0' : ''}`}>
-                <div className="flex items-center justify-between text-slate-400">
-                  <span className="text-[10.5px] font-bold uppercase tracking-wider">{stat.label}</span>
-                  <Icon className={`w-4 h-4 ${stat.iconColor}`} />
-                </div>
-                <h3 className={`text-xl font-bold mt-1 ${stat.valueColor}`}>{stat.value}</h3>
-                <p className={`text-[10px] mt-0.5 ${stat.subtextColor || 'text-slate-500'}`}>{stat.subtext}</p>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {statsMetrics.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.id} className="card-white p-4 space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10.5px] font-bold uppercase tracking-wider">{stat.label}</span>
+                <Icon className={`w-4 h-4 ${stat.iconColor}`} />
               </div>
-            );
-          })}
-        </div>
+              <h3 className={`text-xl font-bold mt-1 ${stat.valueColor}`}>{stat.value}</h3>
+              <p className={`text-[10px] mt-0.5 ${stat.subtextColor || 'text-slate-500'}`}>{stat.subtext}</p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Grid 2: Service Breakdown & Subscription Health */}

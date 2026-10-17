@@ -19,6 +19,8 @@ import {
   Car,
   Trash2,
   Loader2,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
 import { useCustomerStore } from '@/store/useCustomerStore';
 import { useToast } from '@/context/ToastContext';
@@ -47,6 +49,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
   const [transactionLimit, setTransactionLimit] = useState(5);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const targetId = customerId;
 
@@ -162,6 +165,43 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
     }
   };
 
+  const handleCopyId = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const idVal = customer?.custId || customer?.id;
+    if (idVal) {
+      navigator.clipboard.writeText(idVal);
+      setIsCopied(true);
+      toast.success('Copied to Clipboard', `Customer ID ${idVal} copied.`);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  const handleEmailClick = (e?: React.MouseEvent) => {
+    e?.stopPropagation?.();
+    if (!customer?.email) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(customer.email);
+    }
+    toast.success('Email Copied', `${customer.email} copied to clipboard.`);
+  };
+
+  const handlePhoneClick = (e?: React.MouseEvent) => {
+    e?.stopPropagation?.();
+    if (!customer?.phone) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(customer.phone);
+    }
+    toast.success('Phone Copied', `${customer.phone} copied to clipboard.`);
+  };
+
+  const handleAddressClick = (e: React.MouseEvent) => {
+    if (!customer?.address) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(customer.address);
+    }
+    toast.success('Address Copied', `${customer.address} copied to clipboard.`);
+  };
+
   if (isLoading && !customer) {
     return (
       <div className="space-y-4 pb-10 animate-pulse">
@@ -239,10 +279,10 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       render: (b) => (
         <span
           className={`px-2 py-0.5 rounded text-[10px] font-bold border ${b.bookingType === 'Valet'
-              ? 'bg-amber-50 text-amber-800 border-amber-200'
-              : b.bookingType === 'Outstation'
-                ? 'bg-sky-50 text-sky-800 border-sky-200'
-                : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            ? 'bg-amber-50 text-amber-800 border-amber-200'
+            : b.bookingType === 'Outstation'
+              ? 'bg-sky-50 text-sky-800 border-sky-200'
+              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
             }`}
         >
           {b.bookingType === 'Valet' ? 'Valet Parking' : `${b.bookingType} (${b.durationHours}h)`}
@@ -431,101 +471,236 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
     },
   ];
 
+  const financialTabButtons = (
+    <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+      <button
+        onClick={() => setFinancialTab('transactions')}
+        className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer ${financialTab === 'transactions'
+          ? 'bg-primary text-white shadow-xs'
+          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+      >
+        <Receipt className="w-3.5 h-3.5" />
+        <span>Transactions ({customerTxns.length})</span>
+      </button>
+      <button
+        onClick={() => setFinancialTab('refunds')}
+        className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer ${financialTab === 'refunds'
+          ? 'bg-primary text-white shadow-xs'
+          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+      >
+        <RotateCcw className="w-3.5 h-3.5" />
+        <span>Refunds ({customerRefunds.length})</span>
+      </button>
+    </div>
+  );
+
   return (
     <div className="space-y-4 pb-10 max-w-7xl mx-auto">
-      {/* Top Header Navigation & Status Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <button
-          onClick={() => router.back()}
-          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs w-fit cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
+      {/* Top Header Navigation & Status Card */}
+      <div className="card-white p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 px-3 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer active:scale-98"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-500" />
+            <span>Back</span>
+          </button>
+          <div className="h-6 w-px bg-slate-200" />
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight font-mono leading-none">
+              {customer.custId || customer.id}
+            </h2>
+            <span className="text-[11px] text-slate-500 font-medium mt-0.5 block">
+              Customer Account Details
+            </span>
+          </div>
+        </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-700">
-            ID: {customer.custId || customer.id}
-          </span>
+        <div className="flex flex-wrap items-center gap-2.5 ml-auto sm:ml-0">
           <span
-            className={`px-3 py-1 rounded text-xs font-bold ${customer.status === 'Active'
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              : 'bg-rose-50 text-rose-800 border border-rose-200'
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs border ${customer.status === 'Active'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border-rose-200'
               }`}
           >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${customer.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'
+                }`}
+            />
             {customer.status}
           </span>
 
           <button
             onClick={() => toggleCustomerStatus(customer.id)}
-            className={`px-3 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${customer.status === 'Active'
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-98 ${customer.status === 'Active'
               ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
               : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
               }`}
           >
             {customer.status === 'Active' ? (
-              <><Ban className="w-3.5 h-3.5" /> Suspend Account</>
+              <>
+                <Ban className="w-3.5 h-3.5" /> Suspend Account
+              </>
             ) : (
-              <><Check className="w-3.5 h-3.5" /> Activate Account</>
+              <>
+                <Check className="w-3.5 h-3.5" /> Activate Account
+              </>
             )}
           </button>
 
-          <button
+          {/* <button
             onClick={() => setShowDeleteModal(true)}
-            className="px-3 py-1 text-xs font-bold rounded flex items-center gap-1 bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-all"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white shadow-2xs transition-all cursor-pointer active:scale-98"
           >
             <Trash2 className="w-3.5 h-3.5" /> Delete
-          </button>
+          </button> */}
         </div>
       </div>
 
       {/* Customer Personal & Contact Header Card */}
-      <div className="card-white p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 bg-gradient-to-r from-emerald-50/40 via-white to-slate-50">
-        <div className="flex items-center gap-5">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 transition-all">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <div className="relative shrink-0">
             <img
               src={customer.avatar}
               alt={customer.name}
-              className="w-20 h-20 rounded-full object-cover ring-4 ring-emerald-100 shadow-sm"
+              className="w-20 h-20 rounded-full object-cover ring-4 ring-slate-100 shadow-sm border border-slate-200/80"
             />
             <span
-              className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${customer.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'
+              className={`absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 rounded-full border-2 border-white shadow-xs ${customer.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'
                 }`}
               title={`Account Status: ${customer.status}`}
-            ></span>
+            />
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{customer.name}</h2>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">{customer.name}</h2>
               {customer.currentBooking && (
-                <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-sky-100 text-sky-800 border border-sky-200">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
                   On Active Trip: {customer.currentBooking}
                 </span>
               )}
+              <button
+                type="button"
+                onClick={handleCopyId}
+                title="Click to copy Customer ID"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200/90 text-slate-700 hover:text-slate-900 transition-all cursor-pointer group shadow-2xs active:scale-95"
+              >
+                <span className="text-[10px] font-sans font-extrabold uppercase tracking-wider text-slate-400 group-hover:text-slate-500">
+                  ID :
+                </span>
+                <span className="text-xs font-mono font-bold text-slate-800">
+                  {customer.custId || customer.id}
+                </span>
+                {isCopied ? (
+                  <Check className="w-3 h-3 text-emerald-600" />
+                ) : (
+                  <Copy className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                )}
+              </button>
             </div>
-            <div className="text-xs text-slate-600 flex flex-wrap items-center gap-4 pt-1">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Phone className="w-3.5 h-3.5 text-emerald-600" /> {customer.phone}
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                <Mail className="w-3.5 h-3.5 text-sky-600" /> {customer.email}
-              </span>
-              <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                <MapPin className="w-3.5 h-3.5 text-amber-600" /> {customer.address}
-              </span>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+              {/* Phone Pill */}
+              <button
+                type="button"
+                onClick={handlePhoneClick}
+                title="Click to copy phone number"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 hover:text-slate-900 shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+              >
+                <Phone className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform shrink-0" />
+                <span className="font-semibold text-slate-800">{customer.phone || 'No phone'}</span>
+              </button>
+
+              {/* Email Pill with Gmail shortcut */}
+              <div className="inline-flex items-center rounded-lg bg-white border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all divide-x divide-slate-200">
+                <button
+                  type="button"
+                  onClick={handleEmailClick}
+                  title="Click to copy email address"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all cursor-pointer group rounded-l-lg active:scale-98"
+                >
+                  <Mail className="w-3.5 h-3.5 text-sky-600 group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="font-semibold text-slate-800 truncate max-w-[190px] sm:max-w-[240px]">
+                    {customer.email || 'No email'}
+                  </span>
+                </button>
+                {customer.email && (
+                  <a
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(customer.email)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open compose in Gmail"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 hover:bg-sky-50 text-sky-700 hover:text-sky-800 transition-colors font-bold text-[11px] cursor-pointer rounded-r-lg"
+                  >
+                    <span>Gmail</span>
+                    <ExternalLink className="w-3 h-3 text-sky-500" />
+                  </a>
+                )}
+              </div>
+
+              {/* Location Pill */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 shadow-2xs hover:shadow-xs transition-all group">
+                <MapPin className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform shrink-0" />
+                <span
+                  onClick={handleAddressClick}
+                  title={customer.address ? `${customer.address} (Click to copy)` : 'No address provided'}
+                  className="font-semibold text-slate-800 hover:text-slate-900 transition-colors cursor-pointer truncate max-w-[180px] sm:max-w-[260px]"
+                >
+                  {customer.address || 'No address provided'}
+                </span>
+                {customer.address && (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(customer.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open address in Google Maps"
+                    className="text-slate-400 hover:text-amber-600 transition-transform hover:scale-110 shrink-0"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs w-full md:w-auto">
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-center flex-1 md:flex-initial min-w-[110px]">
-            <span className="text-[10px] text-slate-500 font-bold block uppercase">Joined Date</span>
-            <span className="text-sm font-bold text-slate-800">{customer.joinedDate || 'N/A'}</span>
+        {/* Header Right Metric Summary Cards */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto">
+          {/* Joined Date Card */}
+          <div className="flex items-center gap-3.5 px-4 py-3 bg-slate-50/70 hover:bg-slate-50 border border-slate-200/80 rounded-xl min-w-[140px] flex-1 sm:flex-initial transition-all shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/90 shadow-2xs text-slate-600 flex items-center justify-center shrink-0">
+              <CalendarCheck className="w-5 h-5 text-slate-600" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider leading-none">
+                Joined Date
+              </span>
+              <span className="text-sm font-bold text-slate-900 leading-tight pt-1">
+                {customer.joinedDate || 'N/A'}
+              </span>
+            </div>
           </div>
 
-          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-center flex-1 md:flex-initial min-w-[110px]">
-            <span className="text-[10px] text-emerald-800 font-bold block uppercase">Total Spent</span>
-            <span className="text-lg font-bold text-emerald-900">₹{(totalSpentAmount || 0).toLocaleString('en-IN')}</span>
+          {/* Total Spent Card */}
+          <div className="flex items-center gap-3.5 px-4 py-3 bg-slate-50/70 hover:bg-slate-50 border border-slate-200/80 rounded-xl min-w-[160px] flex-1 sm:flex-initial transition-all shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/90 shadow-2xs text-emerald-600 flex items-center justify-center shrink-0">
+              <Receipt className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider leading-none">
+                Total Spent
+              </span>
+              <span className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight leading-tight pt-1 flex items-baseline gap-0.5">
+                <span className="text-xs font-bold text-emerald-600">₹</span>
+                {(totalSpentAmount || 0).toLocaleString('en-IN')}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -533,29 +708,29 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       {/* Customer Performance Summary - Individual Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-white p-4 space-y-1">
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Bookings</span>
-          <div className="text-xl font-bold text-slate-900">{totalBookingsCount}</div>
-          <p className="text-[10px] text-slate-500 font-medium">{driverTripsCount} Driver · {valetTripsCount} Valet</p>
+          <span className="text-xs font-semibold text-slate-500 block">Total Bookings</span>
+          <div className="text-2xl font-bold text-slate-900 tracking-tight">{totalBookingsCount}</div>
+          <p className="text-xs text-slate-400 font-medium">{driverTripsCount} Driver · {valetTripsCount} Valet</p>
         </div>
 
         <div className="card-white p-4 space-y-1">
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">Completed Trips</span>
-          <div className="text-xl font-bold text-emerald-600">{completedTripsCount}</div>
-          <p className="text-[10px] text-emerald-600 font-medium">Successfully fulfilled</p>
+          <span className="text-xs font-semibold text-slate-500 block">Completed Trips</span>
+          <div className="text-2xl font-bold text-emerald-600 tracking-tight">{completedTripsCount}</div>
+          <p className="text-xs text-slate-400 font-medium">Successfully fulfilled</p>
         </div>
 
         <div className="card-white p-4 space-y-1">
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-rose-700 block">Cancelled Trips</span>
-          <div className="text-xl font-bold text-rose-600">{cancelledTripsCount}</div>
-          <p className="text-[10px] text-rose-600 font-medium">Cancelled orders</p>
+          <span className="text-xs font-semibold text-slate-500 block">Cancelled Trips</span>
+          <div className="text-2xl font-bold text-rose-600 tracking-tight">{cancelledTripsCount}</div>
+          <p className="text-xs text-slate-400 font-medium">Cancelled orders</p>
         </div>
 
         <div className="card-white p-4 space-y-1">
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Active Status</span>
-          <div className={`text-xl font-bold ${customer.status === 'Active' ? 'text-emerald-600' : 'text-rose-600'}`}>
+          <span className="text-xs font-semibold text-slate-500 block">Active Status</span>
+          <div className={`text-2xl font-bold tracking-tight ${customer.status === 'Active' ? 'text-emerald-600' : 'text-rose-600'}`}>
             {customer.status}
           </div>
-          <p className="text-[10px] text-slate-500">Account standing</p>
+          <p className="text-xs text-slate-400 font-medium">Account standing</p>
         </div>
       </div>
 
@@ -785,36 +960,15 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
       {/* Financial Records Navigation & Content */}
       <div className="space-y-4">
         {/* Tab Filter Control */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+        {/* <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary" /> Financial Activity & History
             </h3>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
-            <button
-              onClick={() => setFinancialTab('transactions')}
-              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer ${financialTab === 'transactions'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
-            >
-              <Receipt className="w-3.5 h-3.5" />
-              <span>Transactions ({customerTxns.length})</span>
-            </button>
-            <button
-              onClick={() => setFinancialTab('refunds')}
-              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer ${financialTab === 'refunds'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Refunds ({customerRefunds.length})</span>
-            </button>
-          </div>
-        </div>
+
+        </div> */}
 
         {/* Financial Tables Stack */}
         <div className="space-y-6">
@@ -839,7 +993,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
                   <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                     <Receipt className="w-4.5 h-4.5 text-primary" /> Payment Transactions
                   </h3>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Payment Logs</span>
+                  {financialTabButtons}
                 </div>
               }
             />
@@ -855,7 +1009,7 @@ export default function CustomerDetailsView({ customerId }: CustomerDetailsViewP
                   <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                     <RotateCcw className="w-4.5 h-4.5 text-rose-500" /> Refund History
                   </h3>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Refund Claims</span>
+                  {financialTabButtons}
                 </div>
               }
             />

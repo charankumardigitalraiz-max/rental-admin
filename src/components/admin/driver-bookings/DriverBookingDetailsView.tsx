@@ -20,7 +20,12 @@ import {
   Receipt,
   RotateCcw,
   Loader2,
+  UserX,
+  ExternalLink,
+  AlertTriangle,
+  XCircle,
 } from 'lucide-react';
+import { RejectedDriver } from '@/types';
 
 interface DriverBookingDetailsViewProps {
   bookingId?: string;
@@ -30,6 +35,7 @@ export default function DriverBookingDetailsView({ bookingId }: DriverBookingDet
   const router = useRouter();
   const {
     driverBookings: rentalBookings,
+    drivers: rentalDrivers,
     selectedDriverBookingId,
     setActiveTab,
     setSelectedDriverId,
@@ -39,8 +45,10 @@ export default function DriverBookingDetailsView({ bookingId }: DriverBookingDet
   const {
     driverBookings,
     selectedBooking,
+    availableDrivers,
     isLoading,
     fetchDriverBookingById,
+    fetchAvailableDrivers,
   } = useDriverBookingStore();
 
   const targetId = bookingId || selectedDriverBookingId;
@@ -50,6 +58,45 @@ export default function DriverBookingDetailsView({ bookingId }: DriverBookingDet
       fetchDriverBookingById(targetId);
     }
   }, [targetId, fetchDriverBookingById]);
+
+  useEffect(() => {
+    if (availableDrivers.length === 0) {
+      fetchAvailableDrivers();
+    }
+  }, [availableDrivers.length, fetchAvailableDrivers]);
+
+  const getDriverInfo = (driverId: string, preloadedDriver?: RejectedDriver['driver']) => {
+    if (preloadedDriver && (preloadedDriver.name || preloadedDriver.firstName)) {
+      return preloadedDriver;
+    }
+    const foundAvail = availableDrivers.find((d) => d.id === driverId);
+    if (foundAvail) {
+      return {
+        _id: foundAvail.id,
+        driverId: foundAvail.id,
+        name: foundAvail.name,
+        phone: foundAvail.phone,
+        profilePicture: foundAvail.avatar,
+        avatar: foundAvail.avatar,
+        rating: foundAvail.rating,
+        status: foundAvail.status,
+      };
+    }
+    const foundRental = rentalDrivers?.find((d) => d.id === driverId);
+    if (foundRental) {
+      return {
+        _id: foundRental.id,
+        driverId: foundRental.id,
+        name: foundRental.name,
+        phone: foundRental.phone,
+        profilePicture: foundRental.avatar,
+        avatar: foundRental.avatar,
+        rating: foundRental.rating,
+        status: foundRental.status,
+      };
+    }
+    return preloadedDriver;
+  };
 
   const booking =
     (selectedBooking && (selectedBooking.id === targetId || selectedBooking.bookingNumber === targetId || selectedBooking._id === targetId) ? selectedBooking : null) ||
@@ -89,28 +136,54 @@ export default function DriverBookingDetailsView({ bookingId }: DriverBookingDet
     { label: 'Service Completed', timestamp: booking.timeline.completed, done: !!booking.timeline.completed },
   ];
 
+  const isBookingRejected =
+    booking.status === 'Rejected' ||
+    Boolean(booking.rejectedDrivers && booking.rejectedDrivers.length > 0);
+
   return (
-    <div className="space-y-6 pb-10 max-w-6xl mx-auto">
-      {/* Top Header Navigation */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => router.back()}
-          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
-            ID: {booking.bookingNumber}
-          </span>
+    <div className="space-y-4 pb-10 max-w-6xl mx-auto">
+      {/* Top Header Navigation Card */}
+      <div className="card-white p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 px-3 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer active:scale-98"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-500" />
+            <span>Back</span>
+          </button>
+          <div className="h-6 w-px bg-slate-200" />
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight font-mono leading-none">
+              {booking.bookingNumber || booking.bookingId || booking.id || 'N/A'}
+            </h2>
+            <span className="text-[11px] text-slate-500 font-medium mt-0.5 block">
+              Driver Booking Details
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 ml-auto sm:ml-0">
           <span
-            className={`px-3 py-1 rounded-md text-xs font-bold ${booking.status === 'Completed'
+            className={`px-3 py-1 rounded-md text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs ${booking.status === 'Completed'
               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
               : booking.status === 'Searching Driver'
                 ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                : 'bg-primary-light text-primary border border-primary/20'
+                : booking.status === 'Cancelled' || booking.status === 'Rejected'
+                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                  : 'bg-primary-light text-primary border border-primary/20'
               }`}
           >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${booking.status === 'Completed'
+                ? 'bg-emerald-500'
+                : booking.status === 'Searching Driver'
+                  ? 'bg-amber-500 animate-pulse'
+                  : booking.status === 'Cancelled' || booking.status === 'Rejected'
+                    ? 'bg-rose-500'
+                    : 'bg-primary'
+                }`}
+            />
             {booking.status}
           </span>
         </div>
@@ -121,26 +194,39 @@ export default function DriverBookingDetailsView({ bookingId }: DriverBookingDet
         {/* Left 2 Columns: Details */}
         <div className="lg:col-span-2 space-y-6">
           {/* Booking Overview Card */}
-          <div className="card-white p-5 space-y-4">
-            <h3 className="font-bold text-slate-900 text-sm border-b border-slate-100 pb-2 flex items-center gap-2">
-              <CalendarCheck className="w-4 h-4 text-primary" /> Booking Lifecycle & Core Info
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-              <div>
-                <span className="text-slate-400 text-[10px] block font-medium uppercase">Service Type</span>
-                <span className="font-bold text-primary text-sm">{booking.bookingType} Driver</span>
+          <div className="card-white overflow-hidden shadow-2xs hover:shadow-xs transition-shadow">
+            <div className="bg-primary px-4 py-2.5 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-white/15 flex items-center justify-center text-white backdrop-blur-xs">
+                  <CalendarCheck className="w-3.5 h-3.5" />
+                </div>
+                <h3 className="font-bold text-xs uppercase tracking-wider text-white">
+                  Booking Lifecycle & Core Info
+                </h3>
               </div>
-              <div>
-                <span className="text-slate-400 text-[10px] block font-medium uppercase">Duration</span>
-                <span className="font-bold text-slate-900 text-sm">{booking.durationHours} Hours</span>
-              </div>
-              <div>
-                <span className="text-slate-400 text-[10px] block font-medium uppercase">Date & Time</span>
-                <span className="font-bold text-slate-800">{booking.bookingDate} @ {booking.bookingTime}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 text-[10px] block font-medium uppercase">Created At</span>
-                <span className="font-medium text-slate-600">{booking.timeline.created}</span>
+              <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full tracking-wide">
+                {booking.bookingType} Service
+              </span>
+            </div>
+
+            <div className="p-5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                <div>
+                  <span className="text-slate-400 text-[10px] block font-medium uppercase">Service Type</span>
+                  <span className="font-bold text-primary text-sm">{booking.bookingType} Driver</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] block font-medium uppercase">Duration</span>
+                  <span className="font-bold text-slate-900 text-sm">{booking.durationHours} Hours</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] block font-medium uppercase">Date & Time</span>
+                  <span className="font-bold text-slate-800">{booking.bookingDate} @ {booking.bookingTime}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] block font-medium uppercase">Created At</span>
+                  <span className="font-medium text-slate-600">{booking.timeline.created}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -148,53 +234,103 @@ export default function DriverBookingDetailsView({ bookingId }: DriverBookingDet
           {/* Customer & Vehicle Info Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Customer Information */}
-            <div className="card-white p-5 space-y-3">
-              <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-                <User className="w-4 h-4 text-primary" /> Customer Profile
-              </h4>
-              <div className="flex items-center gap-3">
-                <img
-                  src={booking.customerAvatar}
-                  alt={booking.customerName}
-                  className="w-10 h-10 rounded-full object-cover ring-2 ring-primary-light"
-                />
-                <div>
-                  <h5 className="font-bold text-slate-900 text-sm">{booking.customerName}</h5>
-                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                    <Phone className="w-3 h-3" /> {booking.customerPhone}
-                  </span>
+            <div className="card-white overflow-hidden shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+              <div className="bg-primary px-4 py-2.5 flex items-center justify-between text-white">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-white/15 flex items-center justify-center text-white backdrop-blur-xs">
+                    <User className="w-3.5 h-3.5" />
+                  </div>
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-white">
+                    Customer Profile
+                  </h4>
                 </div>
+                <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full tracking-wide">
+                  Passenger
+                </span>
               </div>
-              <div className="text-xs text-slate-600 pt-1 space-y-1">
-                <div className="flex items-center gap-1.5 text-[11px]">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" /> {booking.customerEmail}
+
+              <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img
+                      src={booking.customerAvatar}
+                      alt={booking.customerName}
+                      className="w-11 h-11 rounded-full object-cover ring-2 ring-primary/20 shadow-2xs shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <h5 className="font-bold text-slate-900 text-sm truncate">{booking.customerName}</h5>
+                      <a
+                        href={booking.customerPhone ? `tel:${booking.customerPhone}` : undefined}
+                        className="text-[11px] text-slate-500 hover:text-primary flex items-center gap-1.5 transition-colors mt-0.5 font-medium"
+                      >
+                        <Phone className="w-3 h-3 text-slate-400" /> {booking.customerPhone}
+                      </a>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={booking.customerId ? `/admin/customers/${booking.customerId}` : (booking.userId ? `/admin/customers/${booking.userId}` : '/admin/customers')}
+                    className="group px-2.5 py-1 text-[11px] font-bold text-white bg-primary hover:bg-slate-100 hover:text-primary border border-transparent hover:border-slate-300 rounded-lg flex items-center gap-1 shadow-2xs transition-all shrink-0 cursor-pointer"
+                    title="View Customer Profile"
+                  >
+                    <span>Profile</span>
+                    <ExternalLink className="w-3 h-3 text-white group-hover:text-primary transition-colors" />
+                  </Link>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <a
+                    href={booking.customerEmail ? `mailto:${booking.customerEmail}` : undefined}
+                    className="flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-primary transition-colors truncate"
+                    title={booking.customerEmail}
+                  >
+                    <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span className="truncate">{booking.customerEmail}</span>
+                  </a>
                 </div>
               </div>
             </div>
 
             {/* Vehicle Information (Customer's Car) */}
-            <div className="card-white p-5 space-y-3">
-              <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-                <Car className="w-4 h-4 text-primary" /> Customer's Vehicle Info
-              </h4>
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Vehicle Model</span>
-                <h5 className="font-bold text-slate-900 text-sm">{booking.vehicleInfo.model}</h5>
-                <span className="inline-block mt-1 font-mono font-bold text-xs bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-800">
-                  {booking.vehicleInfo.plateNumber}
+            <div className="card-white overflow-hidden shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+              <div className="bg-slate-900 px-4 py-2.5 flex items-center justify-between text-white">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-white/15 flex items-center justify-center text-white backdrop-blur-xs">
+                    <Car className="w-3.5 h-3.5" />
+                  </div>
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-white">
+                    Customer's Vehicle
+                  </h4>
+                </div>
+                <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full tracking-wide">
+                  {booking.vehicleInfo.type || 'Vehicle'}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 border-t border-slate-100 pt-2">
+
+              <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                 <div>
-                  <span className="text-slate-400 text-[10px] block">Body Type:</span>
-                  <span className="font-bold text-slate-800">{booking.vehicleInfo.type}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Vehicle Model</span>
+                  <div className="flex items-center justify-between gap-2 mt-0.5">
+                    <h5 className="font-bold text-slate-900 text-sm truncate">{booking.vehicleInfo.model}</h5>
+                    <span className="font-mono font-bold text-xs bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-800 shrink-0">
+                      {booking.vehicleInfo.plateNumber}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-slate-400 text-[10px] block">Fuel / Trans:</span>
-                  <span className="font-bold text-slate-800">
-                    {booking.vehicleInfo.fuelType} • {booking.vehicleInfo.transmission}
-                  </span>
+
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 border-t border-slate-100 pt-2">
+                  <div>
+                    <span className="text-slate-400 text-[10px] block uppercase font-medium">Body Type</span>
+                    <span className="font-bold text-slate-800">{booking.vehicleInfo.type}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] block uppercase font-medium">Fuel / Trans</span>
+                    <span className="font-bold text-slate-800 truncate block">
+                      {booking.vehicleInfo.fuelType} • {booking.vehicleInfo.transmission}
+                    </span>
+                  </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -261,6 +397,116 @@ export default function DriverBookingDetailsView({ bookingId }: DriverBookingDet
             </div>
           </div>
 
+          {/* Rejected Drivers History Card */}
+          {booking.rejectedDrivers && booking.rejectedDrivers.length > 0 && (
+            <div className="card-white p-5 space-y-4 border-rose-100 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-rose-100 text-rose-600 flex items-center justify-center">
+                    <UserX className="w-3.5 h-3.5" />
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
+                    Rejected Drivers List
+                  </h4>
+                </div>
+                <span className="text-[10.5px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2.5 py-0.5 rounded-full">
+                  {booking.rejectedDrivers.length} Rejected
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {booking.rejectedDrivers.map((rej, idx) => {
+                  const driverObj = getDriverInfo(rej.driverId, rej.driver);
+                  const driverName =
+                    driverObj?.name ||
+                    [driverObj?.firstName, driverObj?.lastName].filter(Boolean).join(' ') ||
+                    `Driver (${rej.driverId?.slice(-6) || 'N/A'})`;
+                  const driverPhone = driverObj?.phone;
+                  const driverAvatar =
+                    driverObj?.avatar ||
+                    driverObj?.profilePicture ||
+                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80';
+                  const driverCode = driverObj?.driverId || rej.driverId;
+                  const rejectFormattedTime = rej.rejectTime
+                    ? new Date(rej.rejectTime).toLocaleString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                    : 'Time not recorded';
+
+                  return (
+                    <div
+                      key={rej._id || idx}
+                      className="p-3.5 bg-slate-50/80 hover:bg-slate-50 border border-slate-200/80 rounded-xl transition-all space-y-2.5"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={driverAvatar}
+                            alt={driverName}
+                            className="w-10 h-10 rounded-full object-cover ring-2 ring-rose-200 shrink-0"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-bold text-slate-900 text-xs sm:text-sm">{driverName}</h5>
+                              {driverCode && (
+                                <span className="text-[10px] font-mono font-semibold text-slate-500 bg-white border border-slate-200 px-1.5 py-0.2 rounded">
+                                  {driverCode.length > 12 ? driverCode.slice(-6) : driverCode}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2.5 text-[11px] text-slate-500 mt-0.5">
+                              {driverPhone && (
+                                <span className="flex items-center gap-1 font-medium text-slate-600">
+                                  <Phone className="w-3 h-3 text-slate-400" /> {driverPhone}
+                                </span>
+                              )}
+                              {driverObj?.rating !== undefined && (
+                                <span className="text-amber-600 font-bold">
+                                  ⭐ {driverObj.rating}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {rej.driverId && (
+                          <Link
+                            href={`/admin/drivers/${rej.driverId}`}
+                            className="group px-2.5 py-1 text-[11px] font-bold text-white bg-primary hover:bg-slate-100 hover:text-primary border border-transparent hover:border-slate-300 rounded-lg flex items-center gap-1 shadow-2xs transition-all shrink-0 cursor-pointer"
+                            title="View Driver Profile"
+                          >
+                            <span>Profile</span>
+                            <ExternalLink className="w-3 h-3 text-white group-hover:text-primary transition-colors" />
+                          </Link>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-200/60 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                            Declined
+                          </span>
+                          <span className="font-semibold text-slate-800 text-[11.5px]">
+                            {rej.reason || 'Driver declined the ride'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1 text-[10.5px] text-slate-500 font-medium">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span>{rejectFormattedTime}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Booking Timeline */}
           <div className="card-white p-5 space-y-4">
             <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
@@ -322,11 +568,23 @@ export default function DriverBookingDetailsView({ bookingId }: DriverBookingDet
                 </Link>
               </div>
             ) : (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-center space-y-2">
-                <p className="text-xs font-bold text-amber-800">No driver assigned yet.</p>
+              <div
+                className={`p-4 rounded-lg text-center space-y-2 border ${isBookingRejected
+                  ? 'bg-rose-50 border-rose-200'
+                  : 'bg-amber-50 border-amber-200'
+                  }`}
+              >
+                <p
+                  className={`text-xs font-bold ${isBookingRejected ? 'text-rose-800' : 'text-amber-800'
+                    }`}
+                >
+                  {isBookingRejected
+                    ? 'Ride was declined by driver. No driver assigned.'
+                    : 'No driver assigned yet.'}
+                </p>
                 <button
                   onClick={() => setActiveTab('driver-requests')}
-                  className="px-3 py-1 bg-primary text-white text-xs font-bold rounded shadow-xs"
+                  className="px-3 py-1 bg-primary text-white text-xs font-bold rounded shadow-xs cursor-pointer hover:bg-primary-hover transition-colors"
                 >
                   Go to Dispatch Center
                 </button>

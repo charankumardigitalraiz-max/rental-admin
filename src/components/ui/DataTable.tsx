@@ -43,6 +43,12 @@ interface DataTableProps<T> {
   serverSearch?: boolean;
   /** Minimum duration in milliseconds the loader remains visible (defaults to 1500ms) */
   minLoadingDurationMs?: number;
+  /** Maximum height constraint for table scroll container (e.g. '520px', 'max-h-[520px]', '60vh'). Defaults to '520px' */
+  maxHeight?: string | number;
+  /** Fixed height for table scroll container if constant height is preferred */
+  height?: string | number;
+  /** Optional custom class name for the table container */
+  tableContainerClassName?: string;
 }
 
 export default function DataTable<T>({
@@ -62,6 +68,9 @@ export default function DataTable<T>({
   searchValue,
   serverSearch,
   minLoadingDurationMs = 1500,
+  maxHeight = '520px',
+  height,
+  tableContainerClassName,
 }: DataTableProps<T>) {
   const [internalPageSize, setInternalPageSize] = useState(pageSize);
   const effectivePageSize = internalPageSize || pageSize || 5;
@@ -198,6 +207,14 @@ export default function DataTable<T>({
 
   const showLoader = externalLoading || minLoaderActive;
 
+  const isTailwindMaxHeight = typeof maxHeight === 'string' && maxHeight.startsWith('max-h-');
+  const isTailwindHeight = typeof height === 'string' && height.startsWith('h-');
+
+  const containerStyle: React.CSSProperties = {
+    ...(height && !isTailwindHeight ? { height: typeof height === 'number' ? `${height}px` : height } : {}),
+    ...(maxHeight && !isTailwindMaxHeight ? { maxHeight: typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight } : {}),
+  };
+
   return (
     <div className="card-white overflow-hidden isolate">
       {/* Table Header Bar with Search & Actions */}
@@ -220,20 +237,24 @@ export default function DataTable<T>({
         </div>
       )}
 
-      {/* Table Container - Scoped relative container for table rows only */}
-      <div className="relative overflow-x-auto w-full min-h-[160px]">
-        {/* Scoped Table Loader Overlay: ONLY covers rows below the header */}
+      {/* Table Container - Scoped scrollable container with fixed / max height constraint */}
+      <div
+        className={`relative overflow-x-auto overflow-y-auto w-full min-h-[160px] ${isTailwindHeight ? height : ''
+          } ${isTailwindMaxHeight ? maxHeight : ''} ${tableContainerClassName || ''}`}
+        style={containerStyle}
+      >
+        {/* Scoped Table Loader Overlay: covers rows below the header */}
         {showLoader && (
-          <TableLoader message="Updating records..." className="top-[38px] z-[1]" />
+          <TableLoader message="Updating records..." className="top-[38px] z-20" />
         )}
 
-        <table className="w-full text-left text-xs">
-          <thead className="bg-[#023526] text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-[#012319] relative z-[2]">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead className="bg-[#023526] text-white uppercase text-[10.5px] font-bold tracking-wider border-b border-[#012319] sticky top-0 z-10 shadow-xs">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`py-3 px-4 ${col.className || ''} ${col.align === 'right'
+                  className={`py-3 px-4 bg-[#023526] ${col.className || ''} ${col.align === 'right'
                     ? 'text-right'
                     : col.align === 'center'
                       ? 'text-center'

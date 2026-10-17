@@ -93,6 +93,7 @@ export default function DriverBookingsView() {
     'Service Started',
     'Completed',
     'Cancelled',
+    'Rejected',
     'No Driver Found',
   ];
 
@@ -242,6 +243,10 @@ export default function DriverBookingsView() {
               {b.driverPhone ? `📞 ${b.driverPhone}` : `Rating: ⭐ ${b.driverRating || 4.8}`}
             </div>
           </div>
+        ) : b.status === 'Rejected' || b.rawBookingStatus === 'rejected' ? (
+          <span className="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded text-[10px] border border-rose-200">
+            Declined by Driver
+          </span>
         ) : (
           <span className="text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded text-[10px] border border-amber-200">
             Searching Driver
@@ -265,12 +270,12 @@ export default function DriverBookingsView() {
         <div className="min-w-[120px] text-center">
           <span
             className={`px-3 py-1 rounded text-[10px] font-bold inline-block min-w-[95px] ${b.status === 'Completed'
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : b.status === 'Searching Driver' || b.status === 'Pending'
-                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                  : b.status === 'Cancelled'
-                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                    : 'bg-primary-light text-primary border border-primary/20'
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : b.status === 'Searching Driver' || b.status === 'Pending'
+                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                : b.status === 'Cancelled' || b.status === 'Rejected' || b.rawBookingStatus === 'rejected'
+                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                  : 'bg-primary-light text-primary border border-primary/20'
               }`}
           >
             {b.status}
@@ -363,7 +368,9 @@ export default function DriverBookingsView() {
         emptyMessage={
           isLoading ? 'Loading driver bookings from database...' : 'No driver bookings match the current filter or search criteria.'
         }
+        pageSize={PAGE_LIMIT}
         serverPagination={{
+
           currentPage,
           totalPages: pagination?.totalPages ?? 1,
           totalItems: pagination?.total ?? driverBookings.length,

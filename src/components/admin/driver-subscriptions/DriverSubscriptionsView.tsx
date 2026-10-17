@@ -36,6 +36,7 @@ export default function DriverSubscriptionsView() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Debounce search input (350ms) to ensure smooth live typing
   useEffect(() => {
@@ -60,23 +61,35 @@ export default function DriverSubscriptionsView() {
     setStatusFilter(newStatus);
   };
 
-  // Manual refresh
+  // Manual refresh with smooth visual feedback
   const handleRefresh = async () => {
-    const res = await fetchDriverSubscriptions(
-      {
-        page: 1,
-        limit: pagination?.limit || 8,
-        search: debouncedSearch.trim(),
-        status: statusFilter,
-      },
-      false
-    );
-    if (res.success) {
-      toast.success('Subscriptions Refreshed', 'Latest driver passes loaded.');
-    } else {
-      toast.error('Refresh Failed', res.error || 'Failed to refresh subscriptions.');
+    setIsRefreshing(true);
+    try {
+      const [res] = await Promise.all([
+        fetchDriverSubscriptions(
+          {
+            page: pagination?.page || 1,
+            limit: pagination?.limit || 8,
+            search: debouncedSearch.trim(),
+            status: statusFilter,
+          },
+          false
+        ),
+        new Promise((resolve) => setTimeout(resolve, 600)),
+      ]);
+      if (res?.success) {
+        toast.success('Subscriptions Refreshed', 'Latest driver passes loaded.');
+      } else {
+        toast.error('Refresh Failed', res?.error || 'Failed to refresh subscriptions.');
+      }
+    } catch (err: any) {
+      toast.error('Refresh Failed', err.message || 'Network error.');
+    } finally {
+      setIsRefreshing(false);
     }
   };
+
+  const isTableLoading = isLoading || isRefreshing;
 
   // Quick status update for a subscription
   const handleStatusUpdate = async (sub: DriverSubscription, newStatus: DriverSubscription['subscriptionStatus']) => {
@@ -219,14 +232,14 @@ export default function DriverSubscriptionsView() {
       render: (sub) => (
         <span
           className={`px-2 py-0.5 rounded text-[10px] font-bold ${sub.subscriptionStatus === 'Active'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : sub.subscriptionStatus === 'Expiring Soon'
-                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                : sub.subscriptionStatus === 'Expired'
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                  : sub.subscriptionStatus === 'Suspended'
-                    ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                    : 'bg-slate-100 text-slate-700 border border-slate-200'
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : sub.subscriptionStatus === 'Expiring Soon'
+              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+              : sub.subscriptionStatus === 'Expired'
+                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                : sub.subscriptionStatus === 'Suspended'
+                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                  : 'bg-slate-100 text-slate-700 border border-slate-200'
             }`}
         >
           {sub.subscriptionStatus}
@@ -372,7 +385,7 @@ export default function DriverSubscriptionsView() {
         keyExtractor={(sub) => sub.id || (sub as any)._id || String(Math.random())}
         pageSize={pagination?.limit || 8}
         pageSizeOptions={[5, 8, 15, 30]}
-        isLoading={isLoading}
+        isLoading={isTableLoading}
         minLoadingDurationMs={300}
         searchValue={searchQuery}
         onSearchChange={(val) => {
@@ -436,12 +449,12 @@ export default function DriverSubscriptionsView() {
             <button
               type="button"
               onClick={handleRefresh}
-              disabled={isLoading}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              disabled={isTableLoading}
+              className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 hover:text-slate-900 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer disabled:opacity-60"
               title="Refresh Data"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-primary' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${isTableLoading ? 'animate-spin text-primary' : 'text-slate-500'}`} />
+              <span className="hidden sm:inline">{isTableLoading ? 'Refreshing...' : 'Refresh'}</span>
             </button>
 
             {/* Manage Subscription Plans */}

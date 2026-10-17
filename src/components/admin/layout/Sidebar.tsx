@@ -462,12 +462,12 @@ export default function Sidebar() {
                     onClick={() => setMobileOpen(false)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${isActive
                       ? 'bg-[#023526] text-white font-bold shadow-xs border-l-4 border-[#c5a880]'
-                      : 'text-slate-700 hover:text-[#023526] hover:bg-emerald-50/60'
+                      : ' text-slate-700 hover:text-white hover:bg-primary'
                       }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Icon
-                        className={`w-4 h-4 transition-transform group-hover:scale-105 shrink-0 ${isActive ? 'text-[#c5a880]' : 'text-slate-400 group-hover:text-primary'
+                        className={`w-4 h-4 transition-transform group-hover:scale-105 shrink-0 ${isActive ? 'text-[#c5a880]' : 'text-[#c5a880]'
                           }`}
                       />
                       <span className="tracking-tight truncate">{item.label}</span>

@@ -54,6 +54,7 @@ export default function ValetBookingsView() {
   const [viewingBooking, setViewingBooking] = useState<ValetBooking | null>(null);
   const [assigningBooking, setAssigningBooking] = useState<ValetBooking | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const statuses = ['All', 'Pending', 'In Progress', 'Completed', 'Cancelled'];
 
@@ -84,6 +85,32 @@ export default function ValetBookingsView() {
     setStatusFilter(newStatus);
     setCurrentPage(1);
   };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const [res] = await Promise.all([
+        fetchValetBookings({
+          page: currentPage,
+          limit: 10,
+          status: statusFilter !== 'All' ? statusFilter : undefined,
+          search: debouncedSearch.trim() || undefined,
+        }),
+        new Promise((resolve) => setTimeout(resolve, 600)),
+      ]);
+      if (res?.success) {
+        toast.success('Bookings Refreshed', 'Latest valet bookings loaded.');
+      } else {
+        toast.error('Refresh Failed', res?.error || 'Failed to refresh bookings.');
+      }
+    } catch (err: any) {
+      toast.error('Refresh Failed', err.message || 'Network error.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const isTableLoading = isLoading || isRefreshing;
 
   // Dynamic counts: directly driven by API counts, or computed from valetBookings as fallback
   const totalCount = counts?.total ?? valetBookings.length;
@@ -523,7 +550,7 @@ export default function ValetBookingsView() {
         <DataTable<ValetBooking>
           columns={columns}
           data={valetBookings}
-          isLoading={isLoading}
+          isLoading={isTableLoading}
           keyExtractor={(v) => v.id}
           pageSize={10}
           searchPlaceholder="Search by booking ref, event name, customer, phone, venue..."
@@ -559,22 +586,15 @@ export default function ValetBookingsView() {
 
               <button
                 type="button"
-                onClick={() => {
-                  fetchValetBookings({
-                    page: currentPage,
-                    limit: 10,
-                    status: statusFilter !== 'All' ? statusFilter : undefined,
-                    search: searchQuery.trim() || undefined,
-                  });
-                }}
-                disabled={isLoading}
-                className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                onClick={handleRefresh}
+                disabled={isTableLoading}
+                className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 disabled:opacity-60"
                 title="Refresh Bookings"
               >
                 <RefreshCw
-                  className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-emerald-600' : 'text-slate-400'}`}
+                  className={`w-3.5 h-3.5 ${isTableLoading ? 'animate-spin text-[#023526]' : 'text-slate-400'}`}
                 />
-                <span>Refresh</span>
+                <span>{isTableLoading ? 'Refreshing...' : 'Refresh'}</span>
               </button>
             </div>
           }

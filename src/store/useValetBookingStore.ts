@@ -163,7 +163,9 @@ interface ValetBookingStoreState {
   setSelectedValetBooking: (booking: ValetBooking | null) => void;
 
   // Actions
-  fetchValetBookings: (params?: FetchValetBookingsParams) => Promise<void>;
+  fetchValetBookings: (
+    params?: FetchValetBookingsParams
+  ) => Promise<{ success: boolean; error?: string }>;
   fetchValetBookingById: (id: string) => Promise<ValetBooking | null>;
   fetchAvailableStaff: () => Promise<void>;
   createValetBooking: (payload: CreateValetBookingPayload) => Promise<ValetBooking | null>;
@@ -218,14 +220,21 @@ export const useValetBookingStore = create<ValetBookingStoreState>((set, get) =>
             pagination: json.pagination || null,
             isLoading: false,
           });
-          return;
+          return { success: true };
         }
+        const errMsg = json.error || 'Failed to fetch valet bookings';
+        set({ isLoading: false, error: errMsg });
+        return { success: false, error: errMsg };
       }
 
-      set({ isLoading: false });
+      const errMsg = 'Failed to fetch valet bookings';
+      set({ isLoading: false, error: errMsg });
+      return { success: false, error: errMsg };
     } catch (err: any) {
       console.warn('Valet booking fetch error:', err);
-      set({ error: err.message || 'Failed to fetch valet bookings', isLoading: false });
+      const errMsg = err.message || 'Failed to fetch valet bookings';
+      set({ error: errMsg, isLoading: false });
+      return { success: false, error: errMsg };
     }
   },
 

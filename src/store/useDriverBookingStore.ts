@@ -87,6 +87,7 @@ export function mapBackendBookingToFrontend(b: any): DriverBooking {
     trip_completed: 'Completed',
     completed: 'Completed',
     cancelled: 'Cancelled',
+    rejected: 'Rejected',
     no_driver_found: 'No Driver Found',
   };
 
@@ -125,6 +126,8 @@ export function mapBackendBookingToFrontend(b: any): DriverBooking {
     customerEmail: customer.email || b.customerEmail || '',
     customerPhone: customer.phone || b.customerPhone || '',
     customerAvatar: customer.avatar || customer.profileImage || b.customerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    customerId: customer._id?.toString() || (typeof b.userId === 'string' ? b.userId : b.userId?._id?.toString() || b.userId?.toString()) || b.customerId,
+    userId: customer._id?.toString() || (typeof b.userId === 'string' ? b.userId : b.userId?._id?.toString() || b.userId?.toString()),
     bookingType: b.serviceType?.toLowerCase() === 'outstation' ? 'Outstation' : (b.bookingType || 'Local'),
     pickupLocation: pickupLoc,
     destinationLocation: dropLoc,
@@ -167,6 +170,41 @@ export function mapBackendBookingToFrontend(b: any): DriverBooking {
       completed: b.tripCompletedAt ? new Date(b.tripCompletedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : b.timeline?.completed,
     },
     cancellationReason: b.cancellationReason,
+    cancelledBy: b.cancelledBy,
+    cancelledAt: b.cancelledAt,
+    rejectedDrivers: Array.isArray(b.rejectedDrivers)
+      ? b.rejectedDrivers.map((rd: any) => {
+        const rawDriver = rd.driver || (typeof rd.driverId === 'object' && rd.driverId !== null ? rd.driverId : null);
+        const driverId = rawDriver?._id?.toString() || (typeof rd.driverId === 'string' ? rd.driverId : rd.driverId?.toString() || '');
+        const driverName = rawDriver
+          ? [rawDriver.firstName, rawDriver.lastName].filter(Boolean).join(' ') || rawDriver.name
+          : undefined;
+
+        return {
+          _id: rd._id?.toString(),
+          driverId,
+          reason: rd.reason || 'Driver declined the ride',
+          rejectTime: rd.rejectTime
+            ? new Date(rd.rejectTime).toISOString()
+            : undefined,
+          driver: rawDriver
+            ? {
+              _id: rawDriver._id?.toString() || driverId,
+              driverId: rawDriver.driverId || driverId,
+              firstName: rawDriver.firstName,
+              lastName: rawDriver.lastName,
+              name: driverName,
+              phone: rawDriver.phone,
+              email: rawDriver.email,
+              profilePicture: rawDriver.profilePicture,
+              avatar: rawDriver.profilePicture || rawDriver.avatar,
+              rating: rawDriver.rating,
+              status: rawDriver.status,
+            }
+            : undefined,
+        };
+      })
+      : [],
     adminNotes: b.adminNotes,
     userNotes: b.userNotes,
   };

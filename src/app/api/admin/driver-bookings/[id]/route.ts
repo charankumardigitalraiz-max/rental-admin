@@ -91,6 +91,78 @@ export async function GET(
           preserveNullAndEmptyArrays: true,
         },
       },
+      // Lookup profile details for drivers who rejected this booking
+      {
+        $lookup: {
+          from: "drivers",
+          let: { rDrivers: { $ifNull: ["$rejectedDrivers", []] } },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $in: [
+                    { $toString: "$_id" },
+                    {
+                      $map: {
+                        input: "$$rDrivers",
+                        as: "rd",
+                        in: { $toString: "$$rd.driverId" },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                firstName: 1,
+                lastName: 1,
+                email: 1,
+                phone: 1,
+                driverId: 1,
+                profilePicture: 1,
+                rating: 1,
+                status: 1,
+              },
+            },
+          ],
+          as: "rejectedDriverDocs",
+        },
+      },
+      {
+        $addFields: {
+          rejectedDrivers: {
+            $map: {
+              input: { $ifNull: ["$rejectedDrivers", []] },
+              as: "rd",
+              in: {
+                _id: "$$rd._id",
+                driverId: "$$rd.driverId",
+                reason: "$$rd.reason",
+                rejectTime: "$$rd.rejectTime",
+                driver: {
+                  $arrayElemAt: [
+                    {
+                      $filter: {
+                        input: "$rejectedDriverDocs",
+                        as: "doc",
+                        cond: {
+                          $eq: [{ $toString: "$$doc._id" }, { $toString: "$$rd.driverId" }],
+                        },
+                      },
+                    },
+                    0,
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $unset: "rejectedDriverDocs",
+      },
     ]);
 
     const booking = bookings[0];

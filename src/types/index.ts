@@ -104,7 +104,28 @@ export type DriverBookingStatus =
   | 'Service Started'
   | 'Completed'
   | 'Cancelled'
+  | 'Rejected'
   | 'No Driver Found';
+
+export interface RejectedDriver {
+  _id?: string;
+  driverId: string;
+  reason?: string;
+  rejectTime?: string;
+  driver?: {
+    _id?: string;
+    driverId?: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+    profilePicture?: string;
+    avatar?: string;
+    rating?: number;
+    status?: string;
+  };
+}
 
 export type Booking = DriverBooking;
 
@@ -115,6 +136,8 @@ export interface DriverBooking {
   customerEmail: string;
   customerPhone: string;
   customerAvatar: string;
+  customerId?: string;
+  userId?: string;
   bookingType: 'Local' | 'Outstation' | 'Valet' | string;
   serviceCategory?: 'driver' | 'valet';
   detailsUrl?: string;
@@ -175,6 +198,9 @@ export interface DriverBooking {
   bookingId?: string;
   rawBookingStatus?: string;
   cancellationReason?: string;
+  cancelledBy?: string | null;
+  cancelledAt?: string | null;
+  rejectedDrivers?: RejectedDriver[];
   adminNotes?: string;
   userNotes?: string;
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRentalStore } from '@/store/useRentalStore';
+import React, { useState, useEffect } from 'react';
+import { useAdminUserStore } from '@/store/useAdminUserStore';
 import { useToast } from '@/context/ToastContext';
 import { AdminUser } from '@/types';
 import Modal from '@/components/ui/Modal';
@@ -14,17 +14,27 @@ import {
   Lock,
   CheckCircle2,
   Edit3,
-  UserCheck,
-  UserX,
   Users,
   Award,
   Filter,
   X,
   Check,
+  RefreshCw,
+  Trash2,
 } from 'lucide-react';
 
 export default function AdminUsersView() {
-  const { adminUsers, addAdminUser, updateAdminUser, toggleAdminUserStatus } = useRentalStore();
+  const {
+    adminUsers,
+    counts,
+    isLoading,
+    isSubmitting,
+    fetchAdminUsers,
+    addAdminUser,
+    updateAdminUser,
+    toggleAdminUserStatus,
+    deleteAdminUser,
+  } = useAdminUserStore();
   const { toast } = useToast();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -40,41 +50,88 @@ export default function AdminUsersView() {
     status: 'Active' as AdminUser['status'],
   });
 
-  const totalStaff = adminUsers.length;
-  const activeStaffCount = adminUsers.filter((a) => a.status === 'Active').length;
-  const superAdminCount = adminUsers.filter((a) => a.role === 'Super Admin').length;
-  const managersCount = adminUsers.filter(
-    (a) => a.role === 'Driver Manager' || a.role === 'Valet Manager' || a.role === 'Operations Admin'
-  ).length;
+  // Fetch admin users on initial mount
+  useEffect(() => {
+    fetchAdminUsers();
+  }, [fetchAdminUsers]);
 
-  const handleCreateStaff = (e: React.FormEvent) => {
+  // Metric counts derived from backend response or client roster
+  const totalStaff = counts?.totalStaff ?? adminUsers.length;
+  const activeStaffCount =
+    counts?.activeStaffCount ?? adminUsers.filter((a) => a.status === 'Active').length;
+  const superAdminCount =
+    counts?.superAdminCount ?? adminUsers.filter((a) => a.role === 'Super Admin').length;
+  const managersCount =
+    counts?.managersCount ??
+    adminUsers.filter(
+      (a) =>
+        a.role === 'Driver Manager' ||
+        a.role === 'Valet Manager' ||
+        a.role === 'Operations Admin'
+    ).length;
+
+  const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email) {
+    if (!formData.name.trim() || !formData.email.trim()) {
       toast.error('Required Fields Missing', 'Please provide staff name and email address.');
       return;
     }
 
-    addAdminUser(formData);
-    toast.success('Staff Member Added', `${formData.name} was added to the administrative roster.`);
-
-    setIsAddModalOpen(false);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      role: 'Operations Admin',
-      status: 'Active',
-    });
+    const res = await addAdminUser(formData);
+    if (res.success) {
+      toast.success('Staff Member Added', `${formData.name} was added to the administrative roster.`);
+      setIsAddModalOpen(false);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        role: 'Operations Admin',
+        status: 'Active',
+      });
+    } else {
+      toast.error('Creation Failed', res.error || 'Failed to create staff member.');
+    }
   };
 
-  const handleUpdateStaff = (e: React.FormEvent) => {
+  const handleUpdateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingStaff) return;
 
-    updateAdminUser(editingStaff.id, editingStaff);
-    toast.success('Staff Details Updated', `Changes for ${editingStaff.name} have been saved.`);
-    setEditingStaff(null);
+    const res = await updateAdminUser(editingStaff.id, editingStaff);
+    if (res.success) {
+      toast.success('Staff Details Updated', `Changes for ${editingStaff.name} have been saved.`);
+      setEditingStaff(null);
+    } else {
+      toast.error('Update Failed', res.error || 'Failed to update staff member.');
+    }
+  };
+
+  const handleToggleStatus = async (a: AdminUser) => {
+    const res = await toggleAdminUserStatus(a.id);
+    if (res.success) {
+      const nextStatus = res.data?.status || (a.status === 'Active' ? 'Inactive' : 'Active');
+      if (nextStatus === 'Active') {
+        toast.success('Staff Activated', `${a.name} is now active.`);
+      } else {
+        toast.warning('Staff Suspended', `Access for ${a.name} has been suspended.`);
+      }
+    } else {
+      toast.error('Action Failed', res.error || 'Failed to update staff status.');
+    }
+  };
+
+  const handleDeleteStaff = async (a: AdminUser) => {
+    if (!window.confirm(`Are you sure you want to remove ${a.name} from the administrative roster?`)) {
+      return;
+    }
+
+    const res = await deleteAdminUser(a.id);
+    if (res.success) {
+      toast.success('Staff Removed', `${a.name} was removed from the roster.`);
+    } else {
+      toast.error('Deletion Failed', res.error || 'Failed to delete staff member.');
+    }
   };
 
   const rolesList: AdminUser['role'][] = [
@@ -168,28 +225,27 @@ export default function AdminUsersView() {
         <div className="flex items-center justify-center gap-1.5">
           <button
             onClick={() => setEditingStaff(a)}
-            className="p-1.5 bg-primary-light hover:bg-primary text-primary hover:text-white rounded-md border border-primary/20 hover:border-primary transition-all shadow-2xs active:scale-95"
+            className="p-1.5 bg-primary-light hover:bg-primary text-primary hover:text-white rounded-md border border-primary/20 hover:border-primary transition-all shadow-2xs active:scale-95 cursor-pointer"
             title="Edit Staff Member Details"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => {
-              toggleAdminUserStatus(a.id);
-              const nextStatus = a.status === 'Active' ? 'Inactive' : 'Active';
-              if (nextStatus === 'Active') {
-                toast.success('Staff Activated', `${a.name} is now active.`);
-              } else {
-                toast.warning('Staff Suspended', `Access for ${a.name} has been suspended.`);
-              }
-            }}
-            className={`px-2 py-1 text-[10px] font-bold rounded border transition-colors ${
+            onClick={() => handleToggleStatus(a)}
+            className={`px-2 py-1 text-[10px] font-bold rounded border transition-colors cursor-pointer ${
               a.status === 'Active'
                 ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
                 : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
             }`}
           >
             {a.status === 'Active' ? 'Deactivate' : 'Activate'}
+          </button>
+          <button
+            onClick={() => handleDeleteStaff(a)}
+            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md border border-transparent hover:border-rose-200 transition-all cursor-pointer"
+            title="Delete Staff Account"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       ),
@@ -198,34 +254,67 @@ export default function AdminUsersView() {
 
   return (
     <div className="space-y-6 pb-10">
-      {/* Staff Statistics Band */}
-      <div className="card-white p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
-          <div className="sm:px-4 space-y-1">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Staff Roster</span>
-            <div className="text-xl font-bold text-slate-900">{totalStaff} Members</div>
-            <span className="text-[10px] text-emerald-600 font-semibold block">{activeStaffCount} Active Accounts</span>
-          </div>
-
-          <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Super Administrators</span>
-            <div className="text-xl font-bold text-emerald-700">{superAdminCount} Super Admins</div>
-            <span className="text-[10px] text-slate-500 font-medium block">Full system access control</span>
-          </div>
-
-          <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Operations & Fleet Managers</span>
-            <div className="text-xl font-bold text-sky-700">{managersCount} Managers</div>
-            <span className="text-[10px] text-slate-500 font-medium block">Driver & Valet operational Leads</span>
-          </div>
-
-          <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Security Status</span>
-            <div className="text-xl font-bold text-emerald-600 flex items-center gap-1">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" /> 100% Verified
+      {/* Staff Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Staff Roster */}
+        <div className="card-white p-4 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">
+              Total Staff Roster
+            </span>
+            <div className="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+              <Users className="w-4 h-4" />
             </div>
-            <span className="text-[10px] text-slate-500 font-medium block">2FA & Role-Based Access Enabled</span>
           </div>
+          <div className="text-xl font-bold text-slate-900 mt-1">{totalStaff} Members</div>
+          <span className="text-[10px] text-emerald-600 font-semibold block">
+            {activeStaffCount} Active Accounts
+          </span>
+        </div>
+
+        {/* Super Administrators */}
+        <div className="card-white p-4 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">
+              Super Administrators
+            </span>
+            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-xl font-bold text-emerald-700 mt-1">{superAdminCount} Super Admins</div>
+          <span className="text-[10px] text-slate-500 font-medium block">Full system access control</span>
+        </div>
+
+        {/* Operations & Fleet Managers */}
+        <div className="card-white p-4 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">
+              Operations & Fleet Managers
+            </span>
+            <div className="p-1.5 rounded-lg bg-sky-50 text-sky-700">
+              <Award className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-xl font-bold text-sky-700 mt-1">{managersCount} Managers</div>
+          <span className="text-[10px] text-slate-500 font-medium block">Driver & Valet operational Leads</span>
+        </div>
+
+        {/* Security Status */}
+        <div className="card-white p-4 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">
+              Security Status
+            </span>
+            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+              <Lock className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-xl font-bold text-emerald-600 flex items-center gap-1.5 mt-1">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>100% Verified</span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium block">2FA & Role-Based Access Enabled</span>
         </div>
       </div>
 
@@ -236,10 +325,20 @@ export default function AdminUsersView() {
           data={filteredStaff}
           keyExtractor={(a) => a.id}
           pageSize={6}
+          isLoading={isLoading}
           searchPlaceholder="Search staff name, email, role, or phone..."
           searchFilterKeys={['name', 'email', 'phone', 'role']}
           headerActions={
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => fetchAdminUsers()}
+                disabled={isLoading}
+                className="p-1.5 text-slate-500 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+                title="Refresh staff roster"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-primary' : ''}`} />
+              </button>
+
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
                   <Filter className="w-3.5 h-3.5" /> Filter Role:
@@ -260,7 +359,7 @@ export default function AdminUsersView() {
 
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm hover:shadow active:scale-95 shrink-0"
+                className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm hover:shadow active:scale-95 shrink-0 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add Staff Member
               </button>
@@ -350,15 +449,24 @@ export default function AdminUsersView() {
             <button
               type="button"
               onClick={() => setIsAddModalOpen(false)}
-              className="px-3.5 py-1.5 border border-slate-200 rounded-lg text-slate-600 font-semibold text-xs hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95"
+              className="px-3.5 py-1.5 border border-slate-200 rounded-lg text-slate-600 font-semibold text-xs hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" /> Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white font-bold rounded-lg text-xs shadow-sm hover:shadow transition-all flex items-center gap-1.5 active:scale-95"
+              disabled={isSubmitting}
+              className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white font-bold rounded-lg text-xs shadow-sm hover:shadow transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer disabled:opacity-50"
             >
-              <Plus className="w-3.5 h-3.5" /> Create Staff Member
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-3.5 h-3.5" /> Create Staff Member
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -414,7 +522,9 @@ export default function AdminUsersView() {
               <label className="block text-slate-700 font-semibold text-xs mb-1">Assigned Operational Role</label>
               <select
                 value={editingStaff.role}
-                onChange={(e) => setEditingStaff({ ...editingStaff, role: e.target.value as AdminUser['role'] })}
+                onChange={(e) =>
+                  setEditingStaff({ ...editingStaff, role: e.target.value as AdminUser['role'] })
+                }
                 className="w-full p-2 border border-slate-200 rounded-lg text-slate-800 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
               >
                 {rolesList.map((r) => (
@@ -429,15 +539,24 @@ export default function AdminUsersView() {
               <button
                 type="button"
                 onClick={() => setEditingStaff(null)}
-                className="px-3.5 py-1.5 border border-slate-200 rounded-lg text-slate-600 font-semibold text-xs hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95"
+                className="px-3.5 py-1.5 border border-slate-200 rounded-lg text-slate-600 font-semibold text-xs hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" /> Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white font-bold rounded-lg text-xs shadow-sm hover:shadow transition-all flex items-center gap-1.5 active:scale-95"
+                disabled={isSubmitting}
+                className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white font-bold rounded-lg text-xs shadow-sm hover:shadow transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer disabled:opacity-50"
               >
-                <Check className="w-3.5 h-3.5" /> Save Staff Changes
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" /> Save Staff Changes
+                  </>
+                )}
               </button>
             </div>
           </form>

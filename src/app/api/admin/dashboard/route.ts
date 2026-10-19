@@ -141,8 +141,20 @@ export async function GET(req: NextRequest) {
         },
       ]),
 
-      // 15. Subscriptions Aggregation
+      // 15. Subscriptions Aggregation (Unique members latest subscriptions)
       DriverSubscription.aggregate([
+        {
+          $sort: { createdAt: -1, expiryDate: -1, _id: -1 },
+        },
+        {
+          $group: {
+            _id: { $ifNull: ["$driverId", "$_id"] },
+            latestDoc: { $first: "$$ROOT" },
+          },
+        },
+        {
+          $replaceRoot: { newRoot: "$latestDoc" },
+        },
         {
           $group: {
             _id: null,
@@ -184,16 +196,35 @@ export async function GET(req: NextRequest) {
         .populate("driverId", "firstName lastName phone driverId profilePicture rating")
         .lean(),
 
-      // 19. Expiring & Expired Driver Passes
-      DriverSubscription.find({
-        $or: [
-          { subscriptionStatus: { $in: ["Expired", "Expiring Soon"] } },
-          { expiryDate: { $lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) } },
-        ],
-      })
-        .sort({ expiryDate: 1, createdAt: -1 })
-        .limit(5)
-        .lean(),
+      // 19. Expiring & Expired Driver Passes (Unique members latest subscriptions)
+      DriverSubscription.aggregate([
+        {
+          $sort: { createdAt: -1, expiryDate: -1, _id: -1 },
+        },
+        {
+          $group: {
+            _id: { $ifNull: ["$driverId", "$_id"] },
+            latestDoc: { $first: "$$ROOT" },
+          },
+        },
+        {
+          $replaceRoot: { newRoot: "$latestDoc" },
+        },
+        {
+          $match: {
+            $or: [
+              { subscriptionStatus: { $in: ["Expired", "Expiring Soon"] } },
+              { expiryDate: { $lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) } },
+            ],
+          },
+        },
+        {
+          $sort: { expiryDate: 1, createdAt: -1 },
+        },
+        {
+          $limit: 5,
+        },
+      ]),
     ]);
 
     // Financial calculations with sensible fallback to bookings if no transactions logged yet

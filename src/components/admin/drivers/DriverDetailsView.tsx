@@ -402,31 +402,85 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
         </div>
       </div>
 
-      {/* Single Unified Stats Card Band */}
-      <div className="card-white p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-4 sm:gap-0">
-          <div className="sm:px-4 space-y-1">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Bookings Received</span>
-            <h3 className="text-xl font-bold text-slate-900 mt-1">{driver.totalBookings}</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Lifetime assigned orders</p>
+      {/* Driver Performance Stats - Individual Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Bookings */}
+        <div className="card-white p-4.5 space-y-3 hover:shadow-sm transition-all border border-stone-200/80">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Total Bookings Received
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+              <Car className="w-4 h-4" />
+            </div>
           </div>
-
-          <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Successfully Completed</span>
-            <h3 className="text-xl font-bold text-emerald-600 mt-1">{driver.completedBookings}</h3>
-            <p className="text-[10px] text-emerald-600 font-medium mt-0.5">Finished driver trips</p>
+          <div>
+            <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              {driverStats?.totalBookings ?? driver.totalBookings ?? 0}
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium mt-1">
+              Lifetime assigned orders
+            </p>
           </div>
+        </div>
 
-          <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Cancelled / Missed</span>
-            <h3 className="text-xl font-bold text-rose-600 mt-1">{driver.cancelledBookings}</h3>
-            <p className="text-[10px] text-rose-600 font-medium mt-0.5">Cancelled by customer or driver</p>
+        {/* Card 2: Successfully Completed */}
+        <div className="card-white p-4.5 space-y-3 hover:shadow-sm transition-all border border-stone-200/80">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Successfully Completed
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
           </div>
+          <div>
+            <div className="text-2xl font-extrabold text-emerald-600 tracking-tight">
+              {driverStats?.completedBookings ?? driver.completedBookings ?? 0}
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium mt-1">
+              Finished driver trips ({completionRate}%)
+            </p>
+          </div>
+        </div>
 
-          <div className="sm:px-4 space-y-1 pt-3 sm:pt-0">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Net Earned Revenue</span>
-            <h3 className="text-xl font-bold text-slate-900 mt-1">₹{driver.earnings.total.toLocaleString('en-IN')}</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">₹{driver.earnings.pending} pending payout</p>
+        {/* Card 3: Cancelled / Missed */}
+        <div className="card-white p-4.5 space-y-3 hover:shadow-sm transition-all border border-stone-200/80">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Cancelled / Missed
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+              <XCircle className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-extrabold text-rose-600 tracking-tight">
+              {driverStats?.cancelledBookings ?? driver.cancelledBookings ?? 0}
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium mt-1">
+              Cancelled by customer or driver
+            </p>
+          </div>
+        </div>
+
+        {/* Card 4: Net Earned Revenue */}
+        <div className="card-white p-4.5 space-y-3 hover:shadow-sm transition-all border border-stone-200/80">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Net Earned Revenue
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              ₹{(driverStats?.totalEarnings ?? driver.earnings?.total ?? 0).toLocaleString('en-IN')}
+            </div>
+            <p className="text-[11px] text-amber-700 font-semibold mt-1">
+              ₹{(driverStats?.pendingEarnings ?? driver.earnings?.pending ?? 0).toLocaleString('en-IN')} pending payout
+            </p>
           </div>
         </div>
       </div>

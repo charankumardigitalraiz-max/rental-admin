@@ -236,7 +236,22 @@ export interface Driver {
     idProofType: string;
     idProofNumber: string;
     idProofImage: string;
+    idProofImageBack?: string;
+    pancardNumber?: string;
+    pancard?: string;
+    aadhaarNumber?: string;
+    aadhaarCardFront?: string;
+    aadhaarCardBack?: string;
+    passportId?: string;
+    passport?: string;
   };
+  pancardNumber?: string;
+  pancard?: string;
+  aadhaarNumber?: string;
+  aadhaarCardFront?: string;
+  aadhaarCardBack?: string;
+  passportId?: string;
+  passport?: string;
   bankDetails?: {
     bankName: string;
     accountHolderName: string;

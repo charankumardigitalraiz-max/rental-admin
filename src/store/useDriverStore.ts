@@ -88,7 +88,16 @@ export function formatDriver(d: any): any {
     idBack = '';
   }
 
+  const panNumber = d.pancardNumber || '';
+  const panImage = d.pancard ? safeUrl(d.pancard, '') : '';
+  const aadhaarNumber = d.aadhaarNumber || '';
+  const aadhaarFront = d.aadhaarCardFront ? safeUrl(d.aadhaarCardFront, '') : '';
+  const aadhaarBack = d.aadhaarCardBack ? safeUrl(d.aadhaarCardBack, '') : '';
+  const passportId = d.passportId || '';
+  const passportImage = d.passport ? safeUrl(d.passport, '') : '';
+
   return {
+    ...d,
     id: d._id || d.driverId,
     _id: d._id,
     driverId: d.driverId,
@@ -126,6 +135,13 @@ export function formatDriver(d: any): any {
       localEligible: false,
       outstationEligible: false,
     },
+    pancardNumber: panNumber,
+    pancard: panImage,
+    aadhaarNumber: aadhaarNumber,
+    aadhaarCardFront: aadhaarFront,
+    aadhaarCardBack: aadhaarBack,
+    passportId: passportId,
+    passport: passportImage,
     verification: {
       status: d.status === 'verified' ? 'Verified' : 'Pending',
       licenseNumber: d.licenseNumber || 'Not provided',
@@ -135,6 +151,13 @@ export function formatDriver(d: any): any {
       idProofNumber: idNumber,
       idProofImage: safeUrl(idFront, `https://placehold.co/400x250/e2e8f0/475569?text=${encodeURIComponent(idType)}`),
       idProofImageBack: idBack ? safeUrl(idBack, '') : '',
+      pancardNumber: panNumber,
+      pancard: panImage,
+      aadhaarNumber: aadhaarNumber,
+      aadhaarCardFront: aadhaarFront,
+      aadhaarCardBack: aadhaarBack,
+      passportId: passportId,
+      passport: passportImage,
     },
     bankDetails: d.bankDetails || {
       bankName: d.bankName || 'HDFC Bank',

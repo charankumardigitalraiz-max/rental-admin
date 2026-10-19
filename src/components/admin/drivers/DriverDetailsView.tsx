@@ -54,10 +54,17 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
   } = useDriverStore();
 
   const [selectedDocImage, setSelectedDocImage] = useState<{ title: string; url: string } | null>(null);
-  const [copiedBankField, setCopiedBankField] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [tripSearchQuery, setTripSearchQuery] = useState('');
   const [debouncedTripSearch, setDebouncedTripSearch] = useState('');
   const isInitialSearchMount = useRef(true);
+
+  const copyToClipboard = (text: string, fieldKey: string) => {
+    if (!text || text === 'Not provided') return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldKey);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   const activeDriverId = driverId || selectedDriverId;
 
@@ -241,6 +248,48 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
   const completionRate =
     driver.totalBookings > 0 ? Math.round((driver.completedBookings / driver.totalBookings) * 100) : 100;
 
+  const licenseNumber = driver.verification?.licenseNumber || driver.licenseNumber || 'Not provided';
+  const licenseExpiry = driver.verification?.licenseExpiry || 'Not provided';
+  const licenseImage = driver.verification?.licenseImage || driver.drivingLicense || '';
+
+  const aadhaarNumber =
+    driver.verification?.aadhaarNumber ||
+    driver.aadhaarNumber ||
+    (driver.verification?.idProofType === 'Aadhaar Card' ? driver.verification?.idProofNumber : '') ||
+    '';
+  const aadhaarFront =
+    driver.verification?.aadhaarCardFront ||
+    driver.aadhaarCardFront ||
+    (driver.verification?.idProofType === 'Aadhaar Card' ? driver.verification?.idProofImage : '') ||
+    '';
+  const aadhaarBack =
+    driver.verification?.aadhaarCardBack ||
+    driver.aadhaarCardBack ||
+    driver.verification?.idProofImageBack ||
+    '';
+
+  const panNumber =
+    driver.verification?.pancardNumber ||
+    driver.pancardNumber ||
+    (driver.verification?.idProofType === 'PAN Card' ? driver.verification?.idProofNumber : '') ||
+    '';
+  const panImage =
+    driver.verification?.pancard ||
+    driver.pancard ||
+    (driver.verification?.idProofType === 'PAN Card' ? driver.verification?.idProofImage : '') ||
+    '';
+
+  const passportId =
+    driver.verification?.passportId ||
+    driver.passportId ||
+    (driver.verification?.idProofType === 'Passport' ? driver.verification?.idProofNumber : '') ||
+    '';
+  const passportImage =
+    driver.verification?.passport ||
+    driver.passport ||
+    (driver.verification?.idProofType === 'Passport' ? driver.verification?.idProofImage : '') ||
+    '';
+
   return (
     <div className="space-y-4 pb-10 max-w-7xl mx-auto">
       {/* Top Header Navigation */}
@@ -382,149 +431,343 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
         </div>
       </div>
 
-      {/* HORIZONTAL GRID: Verification Docs, Bank Details & Subscription */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: Driving License Details */}
-        <div className="card-white p-5 space-y-4 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <FileText className="w-4.5 h-4.5 text-emerald-600" /> Driving License
-              </h3>
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold ${driver.verification.status === 'Verified'
-                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                  : 'bg-amber-100 text-amber-900 border border-amber-300'
-                  }`}
-              >
-                {driver.verification.status}
-              </span>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">License #:</span>
-                  <span className="font-bold font-mono text-slate-900">{driver.verification.licenseNumber}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Expiry Date:</span>
-                  <span className="font-bold text-slate-800">{driver.verification.licenseExpiry}</span>
-                </div>
-              </div>
-
-              {/* DL Image Thumbnail */}
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block">License Photo:</span>
-                <div
-                  onClick={() =>
-                    setSelectedDocImage({
-                      title: `Driving License - ${driver.verification.licenseNumber}`,
-                      url: driver.verification.licenseImage,
-                    })
-                  }
-                  className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
-                >
-                  <img
-                    src={driver.verification.licenseImage}
-                    alt="Driving License"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                    <ZoomIn className="w-4 h-4" /> Preview
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* SECTION 1: Identity & KYC Verification Documents */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+            <ShieldCheck className="w-4.5 h-4.5 text-emerald-600" /> Identity & Verification Documents
+          </h3>
+          <span className="text-[11px] text-slate-500 font-medium">
+            Official government credentials & photo verification
+          </span>
         </div>
 
-        {/* Card 2: Govt ID Proof Details */}
-        <div className="card-white p-5 space-y-4 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <User className="w-4.5 h-4.5 text-sky-600" /> {driver.verification.idProofType}
-              </h3>
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold ${driver.verification.status === 'Verified'
-                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                  : 'bg-amber-100 text-amber-900 border border-amber-300'
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {/* Card 1: Driving License Details */}
+          <div className="card-white p-5 space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <FileText className="w-4.5 h-4.5 text-emerald-600" /> Driving License
+                </h3>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    driver.verification?.status === 'Verified' || driver.status === 'Approved'
+                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                      : 'bg-amber-100 text-amber-900 border border-amber-300'
                   }`}
-              >
-                {driver.verification.status}
-              </span>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">ID Type:</span>
-                  <span className="font-bold text-slate-900">{driver.verification.idProofType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">ID Number:</span>
-                  <span className="font-bold font-mono text-slate-900">{driver.verification.idProofNumber}</span>
-                </div>
+                >
+                  {driver.verification?.status || 'Pending'}
+                </span>
               </div>
 
-              {/* ID Proof Image Thumbnails */}
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">
-                    {driver.verification.idProofImageBack ? `${driver.verification.idProofType} (Front):` : 'Document Photo:'}
-                  </span>
-                  <div
-                    onClick={() =>
-                      setSelectedDocImage({
-                        title: `${driver.verification.idProofType} ${driver.verification.idProofImageBack ? '(Front)' : ''} - ${driver.verification.idProofNumber}`,
-                        url: driver.verification.idProofImage,
-                      })
-                    }
-                    className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
-                  >
-                    <img
-                      src={driver.verification.idProofImage}
-                      alt={`${driver.verification.idProofType} Front`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                      <ZoomIn className="w-4 h-4" /> Preview
+              <div className="space-y-3 text-xs">
+                <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">License #:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold font-mono text-slate-900">{licenseNumber}</span>
+                      {licenseNumber && licenseNumber !== 'Not provided' && (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(licenseNumber, 'license')}
+                          className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                          title="Copy License Number"
+                        >
+                          {copiedField === 'license' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      )}
                     </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Expiry Date:</span>
+                    <span className="font-bold text-slate-800">{licenseExpiry}</span>
                   </div>
                 </div>
 
-                {driver.verification.idProofImageBack && (
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">
-                      {driver.verification.idProofType} (Back):
-                    </span>
+                {/* DL Image Thumbnail */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">License Photo:</span>
+                  {licenseImage ? (
                     <div
                       onClick={() =>
                         setSelectedDocImage({
-                          title: `${driver.verification.idProofType} (Back) - ${driver.verification.idProofNumber}`,
-                          url: driver.verification.idProofImageBack,
+                          title: `Driving License - ${licenseNumber}`,
+                          url: licenseImage,
                         })
                       }
                       className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
                     >
                       <img
-                        src={driver.verification.idProofImageBack}
-                        alt={`${driver.verification.idProofType} Back`}
+                        src={licenseImage}
+                        alt="Driving License"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
                         <ZoomIn className="w-4 h-4" /> Preview
                       </div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="h-28 rounded-lg border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center text-slate-400 text-xs">
+                      No photo uploaded
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Card 3: Bank Details & Payout */}
+          {/* Card 2: Aadhaar Card Details */}
+          <div className="card-white p-5 space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <User className="w-4.5 h-4.5 text-sky-600" /> Aadhaar Card
+                </h3>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    aadhaarNumber || aadhaarFront
+                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                      : 'bg-stone-100 text-stone-600 border border-stone-200'
+                  }`}
+                >
+                  {aadhaarNumber || aadhaarFront ? 'Uploaded' : 'Not Uploaded'}
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Document:</span>
+                    <span className="font-bold text-slate-900">Aadhaar Card</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Aadhaar #:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold font-mono text-slate-900">
+                        {aadhaarNumber || 'Not provided'}
+                      </span>
+                      {aadhaarNumber && (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(aadhaarNumber, 'aadhaar')}
+                          className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                          title="Copy Aadhaar Number"
+                        >
+                          {copiedField === 'aadhaar' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Aadhaar Images: Front & Back */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Aadhaar Photos:</span>
+                  {aadhaarFront || aadhaarBack ? (
+                    <div className={`grid ${aadhaarFront && aadhaarBack ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
+                      {aadhaarFront && (
+                        <div
+                          onClick={() =>
+                            setSelectedDocImage({
+                              title: `Aadhaar Card (Front) - ${aadhaarNumber || driver.name}`,
+                              url: aadhaarFront,
+                            })
+                          }
+                          className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                        >
+                          <img
+                            src={aadhaarFront}
+                            alt="Aadhaar Front"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 text-[9px] text-white rounded font-medium">Front</span>
+                          <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                            <ZoomIn className="w-4 h-4" /> Preview
+                          </div>
+                        </div>
+                      )}
+
+                      {aadhaarBack && (
+                        <div
+                          onClick={() =>
+                            setSelectedDocImage({
+                              title: `Aadhaar Card (Back) - ${aadhaarNumber || driver.name}`,
+                              url: aadhaarBack,
+                            })
+                          }
+                          className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                        >
+                          <img
+                            src={aadhaarBack}
+                            alt="Aadhaar Back"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 text-[9px] text-white rounded font-medium">Back</span>
+                          <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                            <ZoomIn className="w-4 h-4" /> Preview
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-28 rounded-lg border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center text-slate-400 text-xs">
+                      No Aadhaar photos uploaded
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: PAN Card Details */}
+          <div className="card-white p-5 space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CreditCard className="w-4.5 h-4.5 text-blue-600" /> PAN Card
+                </h3>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    panNumber || panImage
+                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                      : 'bg-stone-100 text-stone-600 border border-stone-200'
+                  }`}
+                >
+                  {panNumber || panImage ? 'Uploaded' : 'Not Uploaded'}
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Document:</span>
+                    <span className="font-bold text-slate-900">PAN Card</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">PAN #:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold font-mono text-slate-900 uppercase">
+                        {panNumber || 'Not provided'}
+                      </span>
+                      {panNumber && (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(panNumber, 'pan')}
+                          className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                          title="Copy PAN Number"
+                        >
+                          {copiedField === 'pan' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* PAN Card Image Thumbnail */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">PAN Card Photo:</span>
+                  {panImage ? (
+                    <div
+                      onClick={() =>
+                        setSelectedDocImage({
+                          title: `PAN Card - ${panNumber || driver.name}`,
+                          url: panImage,
+                        })
+                      }
+                      className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                    >
+                      <img
+                        src={panImage}
+                        alt="PAN Card"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                        <ZoomIn className="w-4 h-4" /> Preview
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-28 rounded-lg border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center text-slate-400 text-xs">
+                      No PAN photo uploaded
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Optional Card 4: Passport Details (if available) */}
+          {(passportId || passportImage) && (
+            <div className="card-white p-5 space-y-4 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                  <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <ShieldCheck className="w-4.5 h-4.5 text-amber-600" /> Passport
+                  </h3>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    Uploaded
+                  </span>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Document:</span>
+                      <span className="font-bold text-slate-900">Passport</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Passport #:</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold font-mono text-slate-900 uppercase">
+                          {passportId || 'Not provided'}
+                        </span>
+                        {passportId && (
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(passportId, 'passport')}
+                            className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                            title="Copy Passport Number"
+                          >
+                            {copiedField === 'passport' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {passportImage ? (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Passport Photo:</span>
+                      <div
+                        onClick={() =>
+                          setSelectedDocImage({
+                            title: `Passport - ${passportId || driver.name}`,
+                            url: passportImage,
+                          })
+                        }
+                        className="relative h-28 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                      >
+                        <img
+                          src={passportImage}
+                          alt="Passport"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                          <ZoomIn className="w-4 h-4" /> Preview
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* SECTION 2: Banking & Subscription Passes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Card: Bank Details & Payout */}
         <div className="card-white p-5 space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
@@ -537,14 +780,14 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-lg space-y-2">
+              <div className="p-3.5 bg-stone-50 border border-stone-200/80 rounded-lg space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Bank Name:</span>
                   <span className="font-bold text-slate-900">{driver.bankDetails?.bankName || 'HDFC Bank'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">A/C Holder:</span>
-                  <span className="font-medium text-slate-800 truncate max-w-[150px]">{driver.bankDetails?.accountHolderName || driver.name}</span>
+                  <span className="font-medium text-slate-800 truncate max-w-[200px]">{driver.bankDetails?.accountHolderName || driver.name}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Account #:</span>
@@ -554,15 +797,13 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
                       type="button"
                       onClick={() => {
                         if (driver.bankDetails?.accountNumber) {
-                          navigator.clipboard.writeText(driver.bankDetails.accountNumber);
-                          setCopiedBankField('acc');
-                          setTimeout(() => setCopiedBankField(null), 2000);
+                          copyToClipboard(driver.bankDetails.accountNumber, 'acc');
                         }
                       }}
                       className="text-slate-400 hover:text-slate-700 cursor-pointer"
                       title="Copy Account Number"
                     >
-                      {copiedBankField === 'acc' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      {copiedField === 'acc' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                     </button>
                   </div>
                 </div>
@@ -574,21 +815,31 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
                       type="button"
                       onClick={() => {
                         if (driver.bankDetails?.ifscCode) {
-                          navigator.clipboard.writeText(driver.bankDetails.ifscCode);
-                          setCopiedBankField('ifsc');
-                          setTimeout(() => setCopiedBankField(null), 2000);
+                          copyToClipboard(driver.bankDetails.ifscCode, 'ifsc');
                         }
                       }}
                       className="text-slate-400 hover:text-slate-700 cursor-pointer"
                       title="Copy IFSC"
                     >
-                      {copiedBankField === 'ifsc' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      {copiedField === 'ifsc' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                     </button>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">UPI ID:</span>
-                  <span className="font-mono text-emerald-700 font-semibold">{driver.bankDetails?.upiId || `${driver.phone}@upi`}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-emerald-700 font-semibold">{driver.bankDetails?.upiId || `${driver.phone}@upi`}</span>
+                    {driver.bankDetails?.upiId && (
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(driver.bankDetails.upiId, 'upi')}
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                        title="Copy UPI ID"
+                      >
+                        {copiedField === 'upi' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -602,7 +853,7 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
                         url: driver.bankDetails.passbookImage,
                       })
                     }
-                    className="relative h-20 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
+                    className="relative h-24 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 cursor-pointer group shadow-2xs"
                   >
                     <img
                       src={driver.bankDetails.passbookImage}
@@ -624,7 +875,7 @@ export default function DriverDetailsView({ driverId }: DriverDetailsViewProps =
           </div>
         </div>
 
-        {/* Card 4: Subscription Pass Status */}
+        {/* Card: Subscription Pass Status */}
         <div className="card-white p-5 space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">

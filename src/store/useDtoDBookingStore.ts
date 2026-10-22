@@ -87,6 +87,12 @@ export interface DtoDBooking {
   bookingStatus: string;
   status: string;
   
+  timings?: {
+    driverAssignedAt?: string | null;
+    driverArrivedAt?: string | null;
+    tripStartedAt?: string | null;
+    tripCompletedAt?: string | null;
+  };
   driverAssignedAt?: string | null;
   driverArrivedAt?: string | null;
   tripStartedAt?: string | null;
@@ -278,10 +284,33 @@ export function mapBackendDtoDToFrontend(b: any): DtoDBooking {
     bookingStatus: b.bookingStatus || 'pending',
     status: b.bookingStatus || 'pending',
 
-    driverAssignedAt: b.driverAssignedAt ? new Date(b.driverAssignedAt).toISOString() : null,
-    driverArrivedAt: b.driverArrivedAt ? new Date(b.driverArrivedAt).toISOString() : null,
-    tripStartedAt: b.tripStartedAt ? new Date(b.tripStartedAt).toISOString() : null,
-    tripCompletedAt: b.tripCompletedAt ? new Date(b.tripCompletedAt).toISOString() : null,
+    timings: {
+      driverAssignedAt: (b.timings?.driverAssignedAt || b.driverAssignedAt)
+        ? new Date(b.timings?.driverAssignedAt || b.driverAssignedAt).toISOString()
+        : null,
+      driverArrivedAt: (b.timings?.driverArrivedAt || b.driverArrivedAt)
+        ? new Date(b.timings?.driverArrivedAt || b.driverArrivedAt).toISOString()
+        : null,
+      tripStartedAt: (b.timings?.tripStartedAt || b.tripStartedAt)
+        ? new Date(b.timings?.tripStartedAt || b.tripStartedAt).toISOString()
+        : null,
+      tripCompletedAt: (b.timings?.tripCompletedAt || b.tripCompletedAt)
+        ? new Date(b.timings?.tripCompletedAt || b.tripCompletedAt).toISOString()
+        : null,
+    },
+
+    driverAssignedAt: (b.timings?.driverAssignedAt || b.driverAssignedAt)
+      ? new Date(b.timings?.driverAssignedAt || b.driverAssignedAt).toISOString()
+      : null,
+    driverArrivedAt: (b.timings?.driverArrivedAt || b.driverArrivedAt)
+      ? new Date(b.timings?.driverArrivedAt || b.driverArrivedAt).toISOString()
+      : null,
+    tripStartedAt: (b.timings?.tripStartedAt || b.tripStartedAt)
+      ? new Date(b.timings?.tripStartedAt || b.tripStartedAt).toISOString()
+      : null,
+    tripCompletedAt: (b.timings?.tripCompletedAt || b.tripCompletedAt)
+      ? new Date(b.timings?.tripCompletedAt || b.tripCompletedAt).toISOString()
+      : null,
     startOtp: b.startOtp || '',
 
     adminNotes: b.adminNotes || '',

@@ -201,18 +201,31 @@ export async function PATCH(
       cancellationReason,
     } = body;
 
+    // Ensure timings sub-document exists
+    if (!booking.timings) {
+      booking.timings = {
+        driverAssignedAt: null,
+        driverArrivedAt: null,
+        tripStartedAt: null,
+        tripCompletedAt: null,
+      };
+    }
+
     // Assign / Reassign driver
     if (driverId !== undefined) {
       if (driverId && mongoose.Types.ObjectId.isValid(driverId)) {
         booking.driverId = new mongoose.Types.ObjectId(driverId);
-        if (!booking.driverAssignedAt) {
-          booking.driverAssignedAt = new Date();
+        if (!booking.timings.driverAssignedAt && !booking.driverAssignedAt) {
+          const assignedTime = new Date();
+          booking.timings.driverAssignedAt = assignedTime;
+          booking.driverAssignedAt = assignedTime;
         }
         if (booking.bookingStatus === "pending" || booking.bookingStatus === "confirmed") {
           booking.bookingStatus = "driver_assigned";
         }
       } else if (driverId === null || driverId === "") {
         booking.driverId = null;
+        booking.timings.driverAssignedAt = null;
         booking.driverAssignedAt = null;
       }
     }
@@ -223,37 +236,47 @@ export async function PATCH(
       const now = new Date();
 
       if (bookingStatus === "driver_assigned") {
-        if (!booking.driverAssignedAt) {
+        if (!booking.timings.driverAssignedAt && !booking.driverAssignedAt) {
+          booking.timings.driverAssignedAt = now;
           booking.driverAssignedAt = now;
         }
       } else if (bookingStatus === "driver_arrived" || bookingStatus === "driver_arriving") {
-        if (!booking.driverAssignedAt) {
+        if (!booking.timings.driverAssignedAt && !booking.driverAssignedAt) {
+          booking.timings.driverAssignedAt = now;
           booking.driverAssignedAt = now;
         }
-        if (!booking.driverArrivedAt) {
+        if (!booking.timings.driverArrivedAt && !booking.driverArrivedAt) {
+          booking.timings.driverArrivedAt = now;
           booking.driverArrivedAt = now;
         }
       } else if (bookingStatus === "trip_started") {
-        if (!booking.driverAssignedAt) {
+        if (!booking.timings.driverAssignedAt && !booking.driverAssignedAt) {
+          booking.timings.driverAssignedAt = now;
           booking.driverAssignedAt = now;
         }
-        if (!booking.driverArrivedAt) {
+        if (!booking.timings.driverArrivedAt && !booking.driverArrivedAt) {
+          booking.timings.driverArrivedAt = now;
           booking.driverArrivedAt = now;
         }
-        if (!booking.tripStartedAt) {
+        if (!booking.timings.tripStartedAt && !booking.tripStartedAt) {
+          booking.timings.tripStartedAt = now;
           booking.tripStartedAt = now;
         }
       } else if (bookingStatus === "trip_completed") {
-        if (!booking.driverAssignedAt) {
+        if (!booking.timings.driverAssignedAt && !booking.driverAssignedAt) {
+          booking.timings.driverAssignedAt = now;
           booking.driverAssignedAt = now;
         }
-        if (!booking.driverArrivedAt) {
+        if (!booking.timings.driverArrivedAt && !booking.driverArrivedAt) {
+          booking.timings.driverArrivedAt = now;
           booking.driverArrivedAt = now;
         }
-        if (!booking.tripStartedAt) {
+        if (!booking.timings.tripStartedAt && !booking.tripStartedAt) {
+          booking.timings.tripStartedAt = now;
           booking.tripStartedAt = now;
         }
-        if (!booking.tripCompletedAt) {
+        if (!booking.timings.tripCompletedAt && !booking.tripCompletedAt) {
+          booking.timings.tripCompletedAt = now;
           booking.tripCompletedAt = now;
         }
         if (booking.paymentStatus === "pending") {

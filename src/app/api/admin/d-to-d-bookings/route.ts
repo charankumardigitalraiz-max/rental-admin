@@ -540,6 +540,12 @@ export async function POST(req: NextRequest) {
       totalAmount: calculatedTotalAmount,
       paymentMethod,
       bookingStatus: validatedDriverId ? "driver_assigned" : "pending",
+      timings: {
+        driverAssignedAt: validatedDriverId ? new Date() : null,
+        driverArrivedAt: null,
+        tripStartedAt: null,
+        tripCompletedAt: null,
+      },
       driverAssignedAt: validatedDriverId ? new Date() : null,
       adminNotes: adminNotes || (linkedBookingDoc ? `Created as peer handoff from DriverBooking ${linkedBookingDoc.bookingId}` : ""),
     });

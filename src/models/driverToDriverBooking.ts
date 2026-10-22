@@ -53,6 +53,12 @@ export interface DriverToDriverBookingInterface extends Document {
     actualDistance?: number;
     estimatedDuration?: number;
 
+    timings?: {
+        driverAssignedAt?: Date | null;
+        driverArrivedAt?: Date | null;
+        tripStartedAt?: Date | null;
+        tripCompletedAt?: Date | null;
+    };
     driverAssignedAt?: Date | null;
     driverArrivedAt?: Date | null;
     tripStartedAt?: Date | null;
@@ -278,24 +284,23 @@ const driverToDriverBookingSchema: Schema = new Schema(
             default: 0
         },
 
-        driverAssignedAt: {
-            type: Date,
-            default: null
-        },
-
-        driverArrivedAt: {
-            type: Date,
-            default: null
-        },
-
-        tripStartedAt: {
-            type: Date,
-            default: null
-        },
-
-        tripCompletedAt: {
-            type: Date,
-            default: null
+        timings: {
+            driverAssignedAt: {
+                type: Date,
+                default: null
+            },
+            driverArrivedAt: {
+                type: Date,
+                default: null
+            },
+            tripStartedAt: {
+                type: Date,
+                default: null
+            },
+            tripCompletedAt: {
+                type: Date,
+                default: null
+            }
         },
 
         startOtp: {
@@ -463,9 +468,48 @@ const driverToDriverBookingSchema: Schema = new Schema(
         }
     },
     {
-        timestamps: true
+        timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true }
     }
 );
+
+// Virtual getters/setters so top-level access maps to doc.timings.*
+driverToDriverBookingSchema.virtual("driverAssignedAt")
+    .get(function (this: any) {
+        return this.timings?.driverAssignedAt ?? null;
+    })
+    .set(function (this: any, val: Date | null) {
+        if (!this.timings) this.timings = {};
+        this.timings.driverAssignedAt = val;
+    });
+
+driverToDriverBookingSchema.virtual("driverArrivedAt")
+    .get(function (this: any) {
+        return this.timings?.driverArrivedAt ?? null;
+    })
+    .set(function (this: any, val: Date | null) {
+        if (!this.timings) this.timings = {};
+        this.timings.driverArrivedAt = val;
+    });
+
+driverToDriverBookingSchema.virtual("tripStartedAt")
+    .get(function (this: any) {
+        return this.timings?.tripStartedAt ?? null;
+    })
+    .set(function (this: any, val: Date | null) {
+        if (!this.timings) this.timings = {};
+        this.timings.tripStartedAt = val;
+    });
+
+driverToDriverBookingSchema.virtual("tripCompletedAt")
+    .get(function (this: any) {
+        return this.timings?.tripCompletedAt ?? null;
+    })
+    .set(function (this: any, val: Date | null) {
+        if (!this.timings) this.timings = {};
+        this.timings.tripCompletedAt = val;
+    });
 
 driverToDriverBookingSchema.index({ "pickupLocation.location": "2dsphere" });
 

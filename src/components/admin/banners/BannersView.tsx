@@ -612,7 +612,7 @@ export default function BannersView() {
       </div>
 
       {/* 4. BOTTOM ACTION BAR MATCHING EXACT SCREENSHOT */}
-      <div className="bg-[#f0eee6]/80 rounded-2xl border border-stone-200/80 p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+      {/* <div className="bg-[#f0eee6]/80 rounded-2xl border border-stone-200/80 p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
         <div>
           <h4 className="text-sm font-bold text-slate-900">
             {currentSectionBanners.length} image{currentSectionBanners.length === 1 ? '' : 's'} selected
@@ -640,7 +640,7 @@ export default function BannersView() {
             <span>App Preview</span>
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* 5. APP PHONE SIMULATOR MODAL */}
       {isPreviewOpen && (

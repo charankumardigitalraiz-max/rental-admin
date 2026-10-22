@@ -22,6 +22,9 @@ import {
   RefreshCw,
   AlertCircle,
   Loader2,
+  Radio,
+  CheckCircle2,
+  TrendingUp,
 } from 'lucide-react';
 
 export default function DriverBookingsView() {
@@ -324,33 +327,60 @@ export default function DriverBookingsView() {
     },
   ];
 
+  const statCards = [
+    {
+      label: 'Total Bookings',
+      value: totalBookings,
+      subtext: 'All Time Dispatches',
+      icon: CalendarCheck,
+      iconColor: 'text-primary',
+      valueColor: 'text-slate-900',
+    },
+    {
+      label: 'Active Trips',
+      value: `${activeBookingsCount} Trips`,
+      subtext: 'In Progress & Searching',
+      icon: Radio,
+      iconColor: 'text-blue-600 animate-pulse',
+      valueColor: 'text-blue-600',
+      subtextColor: 'text-blue-600 font-semibold',
+    },
+    {
+      label: 'Completed Trips',
+      value: `${completedBookingsCount} Trips`,
+      subtext: 'Successfully Fulfilled',
+      icon: CheckCircle2,
+      iconColor: 'text-emerald-600',
+      valueColor: 'text-emerald-600',
+      subtextColor: 'text-emerald-600 font-semibold',
+    },
+    {
+      label: 'Total Revenue',
+      value: `₹${totalRevenue.toLocaleString('en-IN')}`,
+      subtext: 'Booking Customer Charges',
+      icon: TrendingUp,
+      iconColor: 'text-emerald-600',
+      valueColor: 'text-emerald-600',
+    },
+  ];
+
   return (
     <div className="space-y-6 pb-8">
       {/* 4 Individual Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card-white p-4 space-y-1">
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">Total Bookings</span>
-          <div className="text-xl font-bold text-slate-900">{totalBookings}</div>
-          <span className="text-[10px] text-slate-400 font-medium">All Time Dispatches</span>
-        </div>
-
-        <div className="card-white p-4 space-y-1">
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-sky-700 block">Active Trips</span>
-          <div className="text-xl font-bold text-sky-700">{activeBookingsCount}</div>
-          <span className="text-[10px] text-sky-600 font-medium">In Progress & Searching</span>
-        </div>
-
-        <div className="card-white p-4 space-y-1">
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-700 block">Completed Trips</span>
-          <div className="text-xl font-bold text-emerald-700">{completedBookingsCount}</div>
-          <span className="text-[10px] text-emerald-600 font-medium">Successfully Fulfilled</span>
-        </div>
-
-        <div className="card-white p-4 space-y-1">
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-primary block">Total Revenue</span>
-          <div className="text-xl font-bold text-primary">₹{totalRevenue.toLocaleString('en-IN')}</div>
-          <span className="text-[10px] text-slate-500 font-medium">Booking Customer Charges</span>
-        </div>
+        {statCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className="card-white p-4 space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10.5px] font-bold uppercase tracking-wider">{stat.label}</span>
+                <Icon className={`w-4 h-4 ${stat.iconColor}`} />
+              </div>
+              <h3 className={`text-xl font-bold mt-1 ${stat.valueColor}`}>{stat.value}</h3>
+              <p className={`text-[10px] mt-0.5 ${stat.subtextColor || 'text-slate-500'}`}>{stat.subtext}</p>
+            </div>
+          );
+        })}
       </div>
 
       <DataTable<DriverBooking>

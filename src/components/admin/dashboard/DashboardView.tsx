@@ -103,7 +103,7 @@ export default function DashboardView() {
       value: activeDriversCount,
       subtext: `${availableDriversCount} Online • ${busyDriversCount} On Trip`,
       icon: Car,
-      iconColor: 'text-primary',
+      iconColor: 'text-amber-600',
       valueColor: 'text-slate-900',
     },
     {

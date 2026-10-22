@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { BannerItem, UserBannerSection } from '@/types';
+import { BannerItem, UserBannerSection, BannerAppType } from '@/types';
 
 const INITIAL_USER_BANNERS: BannerItem[] = [
   // 1. Intro Screen
@@ -99,6 +99,7 @@ const INITIAL_USER_BANNERS: BannerItem[] = [
 
 interface BannerStoreState {
   banners: BannerItem[];
+  activeAppType: BannerAppType;
   activeSection: UserBannerSection;
   isLoading: boolean;
   isUploading: boolean;
@@ -106,15 +107,16 @@ interface BannerStoreState {
   selectedBannerForEdit: BannerItem | null;
   isPreviewOpen: boolean;
 
+  setActiveAppType: (appType: BannerAppType) => void;
   setActiveSection: (section: UserBannerSection) => void;
   openEditModal: (banner: BannerItem) => void;
   closeEditModal: () => void;
   openPreview: () => void;
   closePreview: () => void;
 
-  fetchBanners: (section?: UserBannerSection) => Promise<void>;
-  uploadMultipleImages: (section: UserBannerSection, files: File[]) => Promise<{ success: boolean; count: number }>;
-  addSingleBannerUrl: (section: UserBannerSection, imageUrl: string, title?: string, subtitle?: string, actionUrl?: string) => Promise<boolean>;
+  fetchBanners: (appType?: BannerAppType, section?: UserBannerSection) => Promise<void>;
+  uploadMultipleImages: (section: UserBannerSection, files: File[], overrideAppType?: BannerAppType) => Promise<{ success: boolean; count: number }>;
+  addSingleBannerUrl: (section: UserBannerSection, imageUrl: string, title?: string, subtitle?: string, actionUrl?: string, overrideAppType?: BannerAppType) => Promise<boolean>;
   updateBanner: (id: string, data: Partial<BannerItem>) => Promise<boolean>;
   deleteBanner: (id: string) => Promise<boolean>;
   toggleActive: (id: string) => Promise<boolean>;
@@ -123,6 +125,7 @@ interface BannerStoreState {
 
 export const useBannerStore = create<BannerStoreState>((set, get) => ({
   banners: INITIAL_USER_BANNERS,
+  activeAppType: 'user',
   activeSection: 'home_hero',
   isLoading: false,
   isUploading: false,
@@ -130,16 +133,21 @@ export const useBannerStore = create<BannerStoreState>((set, get) => ({
   selectedBannerForEdit: null,
   isPreviewOpen: false,
 
+  setActiveAppType: (appType) => {
+    set({ activeAppType: appType });
+    get().fetchBanners(appType);
+  },
   setActiveSection: (section) => set({ activeSection: section }),
   openEditModal: (banner) => set({ selectedBannerForEdit: banner }),
   closeEditModal: () => set({ selectedBannerForEdit: null }),
   openPreview: () => set({ isPreviewOpen: true }),
   closePreview: () => set({ isPreviewOpen: false }),
 
-  fetchBanners: async () => {
+  fetchBanners: async (overrideAppType) => {
+    const targetAppType = overrideAppType || get().activeAppType || 'user';
     set({ isLoading: true });
     try {
-      const res = await fetch('/api/admin/banners');
+      const res = await fetch(`/api/admin/banners?appType=${targetAppType}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.success && Array.isArray(data.banners)) {
@@ -153,12 +161,14 @@ export const useBannerStore = create<BannerStoreState>((set, get) => ({
   },
 
   // Upload multiple images in one go
-  uploadMultipleImages: async (section, files) => {
+  uploadMultipleImages: async (section, files, overrideAppType) => {
     if (!files || files.length === 0) return { success: false, count: 0 };
     set({ isUploading: true });
 
     try {
+      const currentAppType = overrideAppType || get().activeAppType || 'user';
       const formData = new FormData();
+      formData.append('appType', currentAppType);
       formData.append('section', section);
 
       for (const file of files) {
@@ -188,9 +198,11 @@ export const useBannerStore = create<BannerStoreState>((set, get) => ({
     } catch (err: any) {
       console.error('Error uploading multiple images:', err);
       // Local fallback for offline/dev demonstration
+      const currentAppType = overrideAppType || get().activeAppType || 'user';
       const localCreated: BannerItem[] = files.map((file, idx) => ({
         id: `local-${Date.now()}-${idx}`,
         _id: `local-${Date.now()}-${idx}`,
+        appType: currentAppType,
         section,
         title: '',
         subtitle: '',
@@ -208,13 +220,21 @@ export const useBannerStore = create<BannerStoreState>((set, get) => ({
     }
   },
 
-  addSingleBannerUrl: async (section, imageUrl, title, subtitle, actionUrl) => {
+  addSingleBannerUrl: async (section, imageUrl, title, subtitle, actionUrl, overrideAppType) => {
     set({ isSaving: true });
     try {
+      const currentAppType = overrideAppType || get().activeAppType || 'user';
       const res = await fetch('/api/admin/banners', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ section, imageUrl, title, subtitle, actionUrl }),
+        body: JSON.stringify({
+          appType: currentAppType,
+          section,
+          imageUrl,
+          title,
+          subtitle,
+          actionUrl,
+        }),
       });
 
       if (!res.ok) throw new Error('Failed to create banner');

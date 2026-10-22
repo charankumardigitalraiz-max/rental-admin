@@ -1,8 +1,10 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export type BannerAppType = 'user' | 'driver';
 export type UserBannerSection = 'intro_screen' | 'home_hero' | 'home_middle';
 
 export interface IBanner extends Document {
+  appType: BannerAppType;
   section: UserBannerSection;
   title?: string;
   subtitle?: string;
@@ -16,6 +18,13 @@ export interface IBanner extends Document {
 
 const BannerSchema: Schema = new Schema(
   {
+    appType: {
+      type: String,
+      enum: ['user', 'driver'],
+      default: 'user',
+      required: true,
+      index: true,
+    },
     section: {
       type: String,
       enum: ['intro_screen', 'home_hero', 'home_middle'],
@@ -33,6 +42,8 @@ const BannerSchema: Schema = new Schema(
     timestamps: true,
   }
 );
+
+BannerSchema.index({ appType: 1, section: 1, order: 1 });
 
 // Clear model cache safely so hot reloads never retain stale validation rules
 if (mongoose.models && mongoose.models.Banner) {

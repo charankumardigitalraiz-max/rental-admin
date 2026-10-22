@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const section = searchParams.get('section');
 
-    const query: any = { isActive: true };
+    const query: any = {
+      isActive: true,
+      $or: [{ appType: 'user' }, { appType: { $exists: false } }],
+    };
     if (section && ['intro_screen', 'home_hero', 'home_middle'].includes(section)) {
       query.section = section;
     }

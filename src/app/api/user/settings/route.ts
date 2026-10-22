@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Banner from '@/models/banner';
 
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
@@ -10,7 +11,12 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const section = searchParams.get('section');
 
-        const query: any = { isActive: true };
+        // Strictly query active User App banners (including legacy documents where appType is not set)
+        const query: any = {
+            isActive: true,
+            $or: [{ appType: 'user' }, { appType: { $exists: false } }],
+        };
+
         if (section && ['intro_screen', 'home_hero', 'home_middle'].includes(section)) {
             query.section = section;
         }
@@ -19,6 +25,7 @@ export async function GET(req: NextRequest) {
 
         const formatted = banners.map((b) => ({
             id: b._id.toString(),
+            appType: 'user',
             section: b.section,
             title: b.title || '',
             subtitle: b.subtitle || '',
@@ -27,11 +34,19 @@ export async function GET(req: NextRequest) {
             order: b.order || 1,
         }));
 
-        // If section requested, return array; if all requested, group by section
+        // If specific section requested, return array directly
         if (section) {
-            return NextResponse.json({ success: true, count: formatted.length, banners: formatted });
+            return NextResponse.json({
+                success: true,
+                count: formatted.length,
+                data: {
+                    banners: formatted,
+                },
+                banners: formatted,
+            });
         }
 
+        // Return all active user banners grouped by section (intro_screen, home_hero, home_middle)
         const grouped = {
             intro_screen: formatted.filter((b) => b.section === 'intro_screen'),
             // home_hero: formatted.filter((b) => b.section === 'home_hero'),
@@ -41,9 +56,8 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             success: true,
             data: {
-                banners: grouped
-            }
-
+                banners: grouped,
+            },
         });
     } catch (error: any) {
         console.error('Error fetching user app banners:', error);

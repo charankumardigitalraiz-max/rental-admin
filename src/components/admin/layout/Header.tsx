@@ -112,6 +112,14 @@ export default function Header() {
       title: 'Suspended Account Roster',
       subtitle: 'Blocked or suspended driver profiles requiring administrative review',
     },
+    '/admin/d-to-d-bookings': {
+      title: 'Driver To Driver Bookings',
+      subtitle: 'Monitor and dispatch driver-to-driver assignments, trip transfers, and on-demand fulfillment',
+    },
+    '/admin/drivers/d-to-d-bookings': {
+      title: 'Driver To Driver Bookings',
+      subtitle: 'Monitor and dispatch driver-to-driver assignments, trip transfers, and on-demand fulfillment',
+    },
     '/admin/driver-subscription-plans': {
       title: 'Driver Subscription Plans',
       subtitle: 'Create and configure subscription passes (Basic, Premium, Professional)',
@@ -180,6 +188,10 @@ export default function Header() {
       title: 'User App Banner Management',
       subtitle: 'Upload and organize multiple banner images for Intro Walkthrough, Home Hero, and Home Middle sections',
     },
+    '/admin/driver-banners': {
+      title: 'Driver App Banner Management',
+      subtitle: 'Upload and organize promotional banners for Driver Onboarding, Hero Surge, and Partner Benefits',
+    },
     '/admin/notifications': {
       title: 'Notification Center & Dispatch',
       subtitle: 'Broadcast alerts to Customers, Drivers, and Valet Staff',
@@ -216,10 +228,58 @@ export default function Header() {
         subtitle: 'Customer contact, active bookings, payment history, and refunds',
       };
     }
+    if (pathname.startsWith('/admin/d-to-d-bookings/') || pathname.startsWith('/admin/drivers/d-to-d-bookings/')) {
+      return {
+        title: 'Driver-to-Driver Booking Details',
+        subtitle: 'Peer driver handoff dispatch, source & fulfilling driver assignment, route, and 0% platform fee',
+      };
+    }
     if (pathname.startsWith('/admin/driver-bookings/')) {
       return {
         title: 'Driver Booking Details',
         subtitle: 'Vehicle information, customer info, driver assignment, timeline, and pricing split',
+      };
+    }
+    if (pathname.startsWith('/admin/customer-vehicles/')) {
+      return {
+        title: 'Customer Vehicle Details',
+        subtitle: 'Vehicle specifications, digital authorization, and driver ride history',
+      };
+    }
+    if (pathname.startsWith('/admin/valet-bookings/')) {
+      return {
+        title: 'Valet Booking Details',
+        subtitle: 'Event venue, valet tickets, assigned staff, and parking capacity',
+      };
+    }
+    if (pathname.startsWith('/admin/valet-staff/')) {
+      return {
+        title: 'Valet Staff Profile',
+        subtitle: 'Staff credentials, event shifts, duty performance, and valet logs',
+      };
+    }
+    if (pathname.startsWith('/admin/transactions/')) {
+      return {
+        title: 'Transaction Details',
+        subtitle: 'Payment gateway status, settlement audit, customer and driver breakdown',
+      };
+    }
+    if (pathname.startsWith('/admin/wallet/')) {
+      return {
+        title: 'User Wallet Details',
+        subtitle: 'User savings balance, ledger history, top-up transactions, and adjustments',
+      };
+    }
+    if (pathname.startsWith('/admin/damage-claims/')) {
+      return {
+        title: 'Vehicle Damage Claim Details',
+        subtitle: 'Pre-trip vs post-trip comparison, repair quotes, and incident review',
+      };
+    }
+    if (pathname.startsWith('/admin/disputes/')) {
+      return {
+        title: 'Dispute Case Details',
+        subtitle: 'Support ticket escalation, user statement, driver report, and resolution',
       };
     }
     return {
@@ -314,8 +374,8 @@ export default function Header() {
                     >
                       <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${n.read
-                            ? 'bg-slate-100 text-slate-500'
-                            : 'bg-primary-light text-primary border border-primary/20'
+                          ? 'bg-slate-100 text-slate-500'
+                          : 'bg-primary-light text-primary border border-primary/20'
                           }`}
                       >
                         <Bell className="w-3.5 h-3.5" />

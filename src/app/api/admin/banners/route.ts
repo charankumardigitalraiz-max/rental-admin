@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
-import Banner, { UserBannerSection } from '@/models/banner';
+import Banner, { UserBannerSection, BannerAppType } from '@/models/banner';
 import { uploadFile } from '@/lib/uploadFile';
 
 export const dynamic = 'force-dynamic';
@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 const DEFAULT_USER_BANNERS = [
   // 1. Intro Screen (Onboarding walkthrough slides)
   {
+    appType: 'user' as BannerAppType,
     section: 'intro_screen' as UserBannerSection,
     title: '',
     subtitle: '',
@@ -17,6 +18,7 @@ const DEFAULT_USER_BANNERS = [
     isActive: true,
   },
   {
+    appType: 'user' as BannerAppType,
     section: 'intro_screen' as UserBannerSection,
     title: '',
     subtitle: '',
@@ -26,6 +28,7 @@ const DEFAULT_USER_BANNERS = [
     isActive: true,
   },
   {
+    appType: 'user' as BannerAppType,
     section: 'intro_screen' as UserBannerSection,
     title: '',
     subtitle: '',
@@ -37,6 +40,7 @@ const DEFAULT_USER_BANNERS = [
 
   // 2. Home Screen - Hero Section (Top Carousel)
   {
+    appType: 'user' as BannerAppType,
     section: 'home_hero' as UserBannerSection,
     title: '',
     subtitle: '',
@@ -46,6 +50,7 @@ const DEFAULT_USER_BANNERS = [
     isActive: true,
   },
   {
+    appType: 'user' as BannerAppType,
     section: 'home_hero' as UserBannerSection,
     title: '',
     subtitle: '',
@@ -55,6 +60,7 @@ const DEFAULT_USER_BANNERS = [
     isActive: true,
   },
   {
+    appType: 'user' as BannerAppType,
     section: 'home_hero' as UserBannerSection,
     title: '',
     subtitle: '',
@@ -66,6 +72,7 @@ const DEFAULT_USER_BANNERS = [
 
   // 3. Home Screen - Middle Section (Mid-Feed Promo)
   {
+    appType: 'user' as BannerAppType,
     section: 'home_middle' as UserBannerSection,
     title: '',
     subtitle: '',
@@ -75,6 +82,7 @@ const DEFAULT_USER_BANNERS = [
     isActive: true,
   },
   {
+    appType: 'user' as BannerAppType,
     section: 'home_middle' as UserBannerSection,
     title: '',
     subtitle: '',
@@ -85,45 +93,100 @@ const DEFAULT_USER_BANNERS = [
   },
 ];
 
-// GET: Fetch banners (filter by section: 'intro_screen' | 'home_hero' | 'home_middle')
+const DEFAULT_DRIVER_BANNERS = [
+  // 1. Intro Screen
+  {
+    appType: 'driver' as BannerAppType,
+    section: 'intro_screen' as UserBannerSection,
+    title: 'Drive & Earn On Your Terms',
+    subtitle: 'Flexible hours, instant daily payouts, and verified rental trips.',
+    imageUrl: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1200&q=80',
+    actionUrl: '/driver-onboarding',
+    order: 1,
+    isActive: true,
+  },
+  {
+    appType: 'driver' as BannerAppType,
+    section: 'intro_screen' as UserBannerSection,
+    title: 'Zero Commission First Month',
+    subtitle: 'Keep 100% of your earnings when you join our elite driver partner team.',
+    imageUrl: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=1200&q=80',
+    actionUrl: '/driver-benefits',
+    order: 2,
+    isActive: true,
+  },
+  // 2. Home Hero
+  {
+    appType: 'driver' as BannerAppType,
+    section: 'home_hero' as UserBannerSection,
+    title: 'Weekend Surge Bonuses Live',
+    subtitle: 'Earn up to 2.5x per kilometer during prime business hours.',
+    imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
+    actionUrl: '/driver-incentives',
+    order: 1,
+    isActive: true,
+  },
+  // 3. Home Middle
+  {
+    appType: 'driver' as BannerAppType,
+    section: 'home_middle' as UserBannerSection,
+    title: 'Comprehensive Driver Insurance & Safety',
+    subtitle: 'Complete 24x7 roadside assistance and passenger coverage on all trips.',
+    imageUrl: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1200&q=80',
+    actionUrl: '/driver-safety',
+    order: 1,
+    isActive: true,
+  },
+];
+
+type BannerFilter = Record<string, any>;
+
+function getAppTypeFilter(appType: BannerAppType): BannerFilter {
+  return appType === 'user'
+    ? { $or: [{ appType: 'user' }, { appType: { $exists: false } }] }
+    : { appType: 'driver' };
+}
+
+// GET: Fetch banners (filter by appType: 'user' | 'driver' and section: 'intro_screen' | 'home_hero' | 'home_middle')
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const section = searchParams.get('section');
+  const rawAppType = searchParams.get('appType');
+  const appType: BannerAppType = rawAppType === 'driver' ? 'driver' : 'user';
 
   try {
     await connectToDatabase();
 
-    // Clean up any old unassociated non-user banners from previous setups
-    await Banner.deleteMany({
-      $or: [
-        { section: { $exists: false } },
-        { section: { $nin: ['intro_screen', 'home_hero', 'home_middle'] } },
-      ],
-    });
+    const seedTarget = appType === 'driver' ? DEFAULT_DRIVER_BANNERS : DEFAULT_USER_BANNERS;
 
-    const count = await Banner.countDocuments({
+    const countFilter: BannerFilter = {
+      ...getAppTypeFilter(appType),
       section: { $in: ['intro_screen', 'home_hero', 'home_middle'] },
-    });
+    };
+
+    const count = await Banner.countDocuments(countFilter);
+
     if (count === 0) {
       try {
-        await Banner.insertMany(DEFAULT_USER_BANNERS);
+        await Banner.insertMany(seedTarget);
       } catch (seedErr) {
         console.warn('Banner seed error:', seedErr);
       }
     }
 
-    const query: any = {};
-    if (section && ['intro_screen', 'home_hero', 'home_middle'].includes(section)) {
-      query.section = section;
-    } else {
-      query.section = { $in: ['intro_screen', 'home_hero', 'home_middle'] };
-    }
+    const query: any = {
+      ...getAppTypeFilter(appType),
+      ...(section && ['intro_screen', 'home_hero', 'home_middle'].includes(section)
+        ? { section }
+        : { section: { $in: ['intro_screen', 'home_hero', 'home_middle'] } }),
+    };
 
     const banners = await Banner.find(query).sort({ section: 1, order: 1, createdAt: -1 });
 
     const formatted = banners.map((b: any) => ({
       id: b._id.toString(),
       _id: b._id.toString(),
+      appType: b.appType || 'user',
       section: b.section,
       title: b.title || '',
       subtitle: b.subtitle || '',
@@ -137,14 +200,15 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, banners: formatted });
   } catch (error: any) {
-    console.error('Error fetching user app banners:', error);
+    console.error('Error fetching banners:', error);
+    const defaults = appType === 'driver' ? DEFAULT_DRIVER_BANNERS : DEFAULT_USER_BANNERS;
     const filteredDefaults = section
-      ? DEFAULT_USER_BANNERS.filter((b) => b.section === section)
-      : DEFAULT_USER_BANNERS;
+      ? defaults.filter((b) => b.section === section)
+      : defaults;
     const fallback = filteredDefaults.map((b, idx) => ({
       ...b,
-      id: `fallback-${b.section}-${idx + 1}`,
-      _id: `fallback-${b.section}-${idx + 1}`,
+      id: `fallback-${b.appType}-${b.section}-${idx + 1}`,
+      _id: `fallback-${b.appType}-${b.section}-${idx + 1}`,
     }));
     return NextResponse.json({ success: true, banners: fallback, isFallback: true });
   }
@@ -160,6 +224,9 @@ export async function POST(req: NextRequest) {
     // Check if multipart form data (multiple file uploads)
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
+      const rawAppType = formData.get('appType') as string;
+      const appType: BannerAppType = rawAppType === 'driver' ? 'driver' : 'user';
+
       const rawSection = formData.get('section') as string;
       const section: UserBannerSection = (['intro_screen', 'home_hero', 'home_middle'].includes(rawSection)
         ? rawSection
@@ -175,8 +242,11 @@ export async function POST(req: NextRequest) {
       const actionUrl = (formData.get('actionUrl') as string) || '';
       const directUrl = formData.get('imageUrl') as string;
 
-      // Current max order in this section
-      const existingCount = await Banner.countDocuments({ section });
+      // Current max order in this section & appType
+      const existingCount = await Banner.countDocuments({
+        ...getAppTypeFilter(appType),
+        section,
+      });
       let currentOrder = existingCount + 1;
 
       const createdBanners: any[] = [];
@@ -197,6 +267,7 @@ export async function POST(req: NextRequest) {
           const fileUrl = await uploadFile(file);
           if (fileUrl) {
             const newBanner: any = await Banner.create({
+              appType,
               section,
               title: title || '',
               subtitle: subtitle || '',
@@ -209,6 +280,7 @@ export async function POST(req: NextRequest) {
             createdBanners.push({
               id: newBanner._id.toString(),
               _id: newBanner._id.toString(),
+              appType: newBanner.appType || 'user',
               section: newBanner.section,
               title: newBanner.title || '',
               subtitle: newBanner.subtitle || '',
@@ -223,6 +295,7 @@ export async function POST(req: NextRequest) {
       } else if (directUrl) {
         // Direct image URL
         const newBanner: any = await Banner.create({
+          appType,
           section,
           title: title || '',
           subtitle: subtitle || '',
@@ -235,6 +308,7 @@ export async function POST(req: NextRequest) {
         createdBanners.push({
           id: newBanner._id.toString(),
           _id: newBanner._id.toString(),
+          appType: newBanner.appType || 'user',
           section: newBanner.section,
           title: newBanner.title || '',
           subtitle: newBanner.subtitle || '',
@@ -260,6 +334,7 @@ export async function POST(req: NextRequest) {
 
     // JSON Body Payload
     const body = await req.json();
+    const appType: BannerAppType = body.appType === 'driver' ? 'driver' : 'user';
     const rawSection = body.section;
     const section: UserBannerSection = (['intro_screen', 'home_hero', 'home_middle'].includes(rawSection)
       ? rawSection
@@ -271,8 +346,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Image URL is required.' }, { status: 400 });
     }
 
-    const count = await Banner.countDocuments({ section });
+    const count = await Banner.countDocuments({
+      ...getAppTypeFilter(appType),
+      section,
+    });
     const newBanner: any = await Banner.create({
+      appType,
       section,
       title: title || '',
       subtitle: subtitle || '',
@@ -287,6 +366,7 @@ export async function POST(req: NextRequest) {
       banner: {
         id: newBanner._id.toString(),
         _id: newBanner._id.toString(),
+        appType: newBanner.appType || 'user',
         section: newBanner.section,
         title: newBanner.title || '',
         subtitle: newBanner.subtitle || '',

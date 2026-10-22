@@ -170,6 +170,7 @@ export default function Sidebar() {
           icon: CalendarCheck,
           badge: pendingDriverBookings > 0 ? pendingDriverBookings : undefined,
         },
+        { href: '/admin/d-to-d-bookings', label: 'Driver To Driver Bookings', icon: CalendarCheck },
         { href: '/admin/drivers', label: 'Driver Management', icon: Car, id: 'drivers' },
         { href: '/admin/driver-subscriptions', label: 'Subscribed Drivers', icon: Award },
       ],
@@ -217,6 +218,7 @@ export default function Sidebar() {
       groupTitle: 'MARKETING & PROMOTIONS',
       items: [
         { href: '/admin/banners', label: 'User App Banners', icon: ImageIcon },
+        { href: '/admin/driver-banners', label: 'Driver App Banners', icon: Car },
         { href: '/admin/notifications', label: 'Push Notifications', icon: Bell },
       ],
     },

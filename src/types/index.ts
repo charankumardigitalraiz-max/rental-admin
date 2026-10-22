@@ -664,11 +664,13 @@ export interface DamageClaim {
   createdAt: string;
 }
 
+export type BannerAppType = 'user' | 'driver';
 export type UserBannerSection = 'intro_screen' | 'home_hero' | 'home_middle';
 
 export interface BannerItem {
   id: string;
   _id?: string;
+  appType?: BannerAppType;
   section: UserBannerSection;
   title?: string;
   subtitle?: string;

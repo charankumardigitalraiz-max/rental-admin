@@ -19,8 +19,9 @@ import {
   Sparkles,
   LayoutGrid,
   Layers,
+  Ruler,
 } from 'lucide-react';
-import { BannerItem, UserBannerSection } from '@/types';
+import { BannerItem, UserBannerSection, BannerAppType } from '@/types';
 import { useBannerStore } from '@/store/useBannerStore';
 import { useToast } from '@/context/ToastContext';
 
@@ -61,8 +62,7 @@ export default function BannersView() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Active dropdown menu for queue item
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
 
   // Delete modal state
   const [bannerToDelete, setBannerToDelete] = useState<BannerItem | null>(null);
@@ -78,7 +78,7 @@ export default function BannersView() {
   const [simSlide, setSimSlide] = useState(0);
 
   useEffect(() => {
-    fetchBanners();
+    fetchBanners('user');
   }, [fetchBanners]);
 
   useEffect(() => {
@@ -92,25 +92,19 @@ export default function BannersView() {
     }
   }, [selectedBannerForEdit]);
 
-  // Close dropdown menu on click outside
-  useEffect(() => {
-    const handleOutside = () => setOpenMenuId(null);
-    if (openMenuId) {
-      document.addEventListener('click', handleOutside);
-      return () => document.removeEventListener('click', handleOutside);
-    }
-  }, [openMenuId]);
+  // Filter banners strictly for User App
+  const currentAppBanners = banners.filter((b) => !b.appType || b.appType === 'user');
 
   // Counts
-  const introBanners = banners
+  const introBanners = currentAppBanners
     .filter((b) => b.section === 'intro_screen')
     .sort((a, b) => a.order - b.order);
 
-  const heroBanners = banners
+  const heroBanners = currentAppBanners
     .filter((b) => b.section === 'home_hero')
     .sort((a, b) => a.order - b.order);
 
-  const middleBanners = banners
+  const middleBanners = currentAppBanners
     .filter((b) => b.section === 'home_middle')
     .sort((a, b) => a.order - b.order);
 
@@ -137,7 +131,7 @@ export default function BannersView() {
       return;
     }
 
-    const { success, count } = await uploadMultipleImages(activeSection, filesArray);
+    const { success, count } = await uploadMultipleImages(activeSection, filesArray, 'user');
     if (success) {
       toast.success(
         'Upload Complete',
@@ -179,7 +173,8 @@ export default function BannersView() {
       urlForm.imageUrl.trim(),
       urlForm.title.trim(),
       urlForm.subtitle.trim(),
-      urlForm.actionUrl.trim()
+      urlForm.actionUrl.trim(),
+      'user'
     );
 
     if (ok) {
@@ -198,449 +193,384 @@ export default function BannersView() {
     setBannerToDelete(null);
   };
 
-  // Section titles and subtitles matching reference
+  // Section titles, subtitles, and exact dimensions requested
   const sectionMeta = {
     intro_screen: {
-      title: 'Section hero',
-      subtitle: 'User app intro / onboarding walkthrough',
+      title: 'Intro Onboarding',
+      subtitle: 'User app intro / onboarding walkthrough screen',
       desc: 'Intro onboarding screen',
+      sizeSpec: 'Width: 1000 px · Height: 667 px',
+      shortSize: '1000 × 667 px',
+      ratio: '3:2 / Landscape',
     },
     home_hero: {
-      title: 'Section hero',
-      subtitle: 'Homepage / editorial top carousel',
+      title: 'Home Hero Carousel',
+      subtitle: 'Homepage / editorial top carousel banner',
       desc: 'Home hero top carousel',
+      sizeSpec: 'Width: 717 px · Height: 297 px',
+      shortSize: '717 × 297 px',
+      ratio: '~2.4:1 / Wide banner',
     },
     home_middle: {
-      title: 'Position banners',
+      title: 'Home Middle Promo Banner',
       subtitle: 'Homepage / middle promotional strip',
       desc: 'Home middle promo strip',
+      sizeSpec: '300 × 300 px (up to 360 × 360 px)',
+      shortSize: '300 × 300 px',
+      ratio: '1:1 / Square',
     },
   }[activeSection];
 
   return (
-    <div className="p-4 md:p-8 space-y-4 max-w-7xl mx-auto font-sans">
-      {/* 1. TOP HEADER: "Creative library" + "All placements synced" badge */}
-      {/* <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-normal text-slate-900 tracking-tight font-serif">
-            Creative library
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">Keep every placement ready for launch.</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="bg-[#e6f4ea] text-[#137333] border border-[#ceead6] px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-2xs">
-            <CheckCircle2 className="w-4 h-4 text-[#137333]" />
-            <span>All placements synced</span>
-          </div>
-
-          <button
-            onClick={() => fetchBanners()}
-            className="p-2 text-slate-500 hover:text-slate-800 bg-white border border-stone-200 rounded-full transition-colors cursor-pointer shadow-2xs"
-            title="Refresh / Sync"
-          >
-            <RotateCcw className={`w-4 h-4 ${isLoading ? 'animate-spin text-emerald-700' : ''}`} />
-          </button>
-        </div>
-      </div> */}
-
-      {/* 2. MODERN SEGMENTED TABS & CONTROLS */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-        {/* Main Segmented Pill Tabs */}
-        <div className="inline-flex items-center bg-stone-100/90 p-1.5 rounded-2xl border border-stone-200/80 shadow-inner gap-1">
-          {/* Tab 1: Intro Screen Banners */}
-          <button
-            type="button"
-            onClick={() => setActiveMainTab('intro')}
-            className={`group flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${activeMainTab === 'intro'
-              ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/[0.06]'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/50'
-              }`}
-          >
-            <Smartphone
-              className={`w-4 h-4 transition-colors ${activeMainTab === 'intro' ? 'text-emerald-700' : 'text-slate-400 group-hover:text-slate-600'
-                }`}
-            />
-            <span>Intro banner</span>
-            <span
-              className={`px-2 py-0.5 text-[11px] font-bold rounded-full font-mono transition-colors ${activeMainTab === 'intro'
-                ? 'bg-slate-900 text-white shadow-2xs'
-                : 'bg-stone-200/80 text-slate-600'
-                }`}
-            >
-              {introBanners.length < 10 ? `0${introBanners.length}` : introBanners.length}
-            </span>
-          </button>
-
-          {/* Tab 2: Home Screen Banners */}
-          <button
-            type="button"
-            onClick={() => setActiveMainTab('home')}
-            className={`group flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${activeMainTab === 'home'
-              ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/[0.06]'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/50'
-              }`}
-          >
-            <LayoutGrid
-              className={`w-4 h-4 transition-colors ${activeMainTab === 'home' ? 'text-emerald-700' : 'text-slate-400 group-hover:text-slate-600'
-                }`}
-            />
-            <span>Home banners</span>
-            <span
-              className={`px-2 py-0.5 text-[11px] font-bold rounded-full font-mono transition-colors ${activeMainTab === 'home'
-                ? 'bg-slate-900 text-white shadow-2xs'
-                : 'bg-stone-200/80 text-slate-600'
-                }`}
-            >
-              {heroBanners.length + middleBanners.length < 10
-                ? `0${heroBanners.length + middleBanners.length}`
-                : heroBanners.length + middleBanners.length}
-            </span>
-          </button>
-        </div>
-
-        {/* Action Controls & Sub-tabs */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Sub-position selector when Home Screen tab is active */}
-          {activeMainTab === 'home' && (
-            <div className="inline-flex items-center bg-stone-100/90 p-1 rounded-xl border border-stone-200/80 shadow-2xs text-xs font-medium gap-1 animate-in fade-in duration-200">
+    <div className="space-y-4 max-w-7xl mx-auto font-sans">
+      {/* SINGLE UNIFIED CARD FOR ENTIRE SCREEN */}
+      <div className="card-white overflow-hidden shadow-2xs">
+        {/* 1. CARD HEADER: SEGMENTED TABS */}
+        <div className="p-4 sm:p-5 border-b border-stone-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-white">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Section Segmented Tabs */}
+            <div className="inline-flex items-center bg-stone-100/90 p-1.5 rounded-2xl border border-stone-200/80 shadow-inner gap-1">
+              {/* Tab 1: Intro Screen Banners */}
               <button
                 type="button"
-                onClick={() => setHomeSubTab('home_hero')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${homeSubTab === 'home_hero'
-                  ? 'bg-[#0b2920] text-white font-semibold shadow-xs'
+                onClick={() => setActiveMainTab('intro')}
+                className={`group flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${activeMainTab === 'intro'
+                  ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/[0.06]'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/50'
                   }`}
               >
-                <Layers className="w-3.5 h-3.5 opacity-80" />
-                <span>Top Hero</span>
+                <Smartphone
+                  className={`w-4 h-4 transition-colors ${activeMainTab === 'intro' ? 'text-emerald-700' : 'text-slate-400 group-hover:text-slate-600'
+                    }`}
+                />
+                <span>Intro banner</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-semibold ${homeSubTab === 'home_hero' ? 'bg-white/20 text-white' : 'bg-stone-200 text-slate-600'
+                  className={`px-2 py-0.5 text-[11px] font-bold rounded-full font-mono transition-colors ${activeMainTab === 'intro'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'bg-stone-200/80 text-slate-600'
                     }`}
                 >
-                  {heroBanners.length}
+                  {introBanners.length < 10 ? `0${introBanners.length}` : introBanners.length}
                 </span>
               </button>
+
+              {/* Tab 2: Home Screen Banners */}
               <button
                 type="button"
-                onClick={() => setHomeSubTab('home_middle')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${homeSubTab === 'home_middle'
-                  ? 'bg-[#0b2920] text-white font-semibold shadow-xs'
+                onClick={() => setActiveMainTab('home')}
+                className={`group flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${activeMainTab === 'home'
+                  ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/[0.06]'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/50'
                   }`}
               >
-                <Sparkles className="w-3.5 h-3.5 opacity-80" />
-                <span>Middle Feed</span>
+                <LayoutGrid
+                  className={`w-4 h-4 transition-colors ${activeMainTab === 'home' ? 'text-emerald-700' : 'text-slate-400 group-hover:text-slate-600'
+                    }`}
+                />
+                <span>Home banners</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-semibold ${homeSubTab === 'home_middle' ? 'bg-white/20 text-white' : 'bg-stone-200 text-slate-600'
+                  className={`px-2 py-0.5 text-[11px] font-bold rounded-full font-mono transition-colors ${activeMainTab === 'home'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'bg-stone-200/80 text-slate-600'
                     }`}
                 >
-                  {middleBanners.length}
+                  {heroBanners.length + middleBanners.length < 10
+                    ? `0${heroBanners.length + middleBanners.length}`
+                    : heroBanners.length + middleBanners.length}
                 </span>
               </button>
             </div>
-          )}
-
-          {/* Quick Sync Button */}
-          {/* <button
-            type="button"
-            onClick={() => fetchBanners()}
-            className="p-2 text-slate-500 hover:text-slate-900 bg-white hover:bg-stone-50 border border-stone-200/80 rounded-xl transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 text-xs font-medium"
-            title="Refresh and sync banners"
-          >
-            <RotateCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-emerald-700' : ''}`} />
-            <span className="hidden sm:inline text-slate-600">Sync</span>
-          </button> */}
-        </div>
-      </div>
-
-      {/* 3. TWO-COLUMN MAIN CONTENT: LEFT (UPLOAD DROPZONE) & RIGHT (QUEUE) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* LEFT COLUMN: SECTION HERO & UPLOAD DROPZONE (7 Cols) */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-stone-200/80 p-6 md:p-8 flex flex-col justify-between shadow-xs">
-          <div>
-            <div className="flex items-center justify-between pb-3">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                  {sectionMeta.title}
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">{sectionMeta.subtitle}</p>
-              </div>
-
-              <button
-                onClick={() => setIsUrlModalOpen(true)}
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-stone-50 hover:bg-stone-100 border border-stone-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
-                <span>Add via URL</span>
-              </button>
-            </div>
-
-            {/* Hidden Input strictly for images */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              multiple
-              accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
-              onChange={(e) => handleFiles(e.target.files)}
-              className="hidden"
-            />
-
-            {/* LARGE DASHED DROP AREA EXACTLY MATCHING DESIGN */}
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragOver(true);
-              }}
-              onDragLeave={() => setIsDragOver(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-10 md:p-14 text-center cursor-pointer transition-all my-4 flex flex-col items-center justify-center ${isDragOver
-                ? 'border-emerald-600 bg-emerald-50/50 scale-[1.01]'
-                : 'border-stone-200 bg-stone-50/30 hover:bg-emerald-50/20 hover:border-emerald-700/60'
-                }`}
-            >
-              {/* Cloud Upload Icon Circle */}
-              <div className="w-16 h-16 rounded-full bg-white border border-stone-200 flex items-center justify-center text-slate-800 shadow-2xs mb-4">
-                <UploadCloud className="w-7 h-7 text-slate-700 stroke-[1.5]" />
-              </div>
-
-              <h3 className="text-base font-bold text-slate-900">
-                Drop your images here
-              </h3>
-              <p className="text-xs text-slate-400 mt-1 mb-5">
-                or choose files from your computer
-              </p>
-
-              {/* Solid Dark Green Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-                disabled={isUploading}
-                className="bg-[#0b2920] hover:bg-[#064233] text-white text-xs md:text-sm font-semibold px-6 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer flex items-center gap-2 disabled:opacity-60"
-              >
-                {isUploading ? (
-                  <>
-                    <RotateCcw className="w-4 h-4 animate-spin" />
-                    <span>Uploading images...</span>
-                  </>
-                ) : (
-                  <span>Select images</span>
-                )}
-              </button>
-
-              <span className="text-[11px] text-slate-400 mt-5 font-mono tracking-wide">
-                JPG · PNG · WEBP · GIF · 10 MB max
-              </span>
-            </div>
           </div>
 
-          <div className="text-[11px] text-slate-400 pt-2 border-t border-stone-100 flex items-center justify-between">
-            <span>Target placement: <strong>{sectionMeta.desc}</strong></span>
-            <span>Batch upload enabled</span>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: QUEUE LIST EXACTLY MATCHING DESIGN (5 Cols) */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-stone-200/80 p-6 shadow-xs flex flex-col">
-          <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
-            <h2 className="text-base font-bold text-slate-900">
-              Queue <span className="text-slate-400 font-medium">({currentSectionBanners.length})</span>
-            </h2>
-            <span className="text-xs text-slate-400">Ready for dispatch</span>
-          </div>
-
-          {/* Queue Items List */}
-          <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1 flex-1">
-            {currentSectionBanners.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
-                <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-slate-400 mb-2">
-                  <UploadCloud className="w-5 h-5" />
-                </div>
-                <span>No images in queue for this section.</span>
-                <span className="text-[11px] text-slate-400 mt-0.5">Use the upload box on the left to add slides.</span>
-              </div>
-            ) : (
-              currentSectionBanners.map((banner, index) => {
-                const isFirst = index === 0;
-                const isLast = index === currentSectionBanners.length - 1;
-                const filename =
-                  banner.imageUrl.split('/').pop() || banner.title || `image-${banner.order}.jpg`;
-
-                return (
-                  <div
-                    key={banner.id || banner._id}
-                    className="bg-white rounded-xl p-3 border border-stone-200/80 hover:border-stone-300 transition-all flex items-center gap-3.5 relative shadow-2xs group"
+          {/* Action Controls & Sub-tabs */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Sub-position selector when Home Screen tab is active */}
+            {activeMainTab === 'home' && (
+              <div className="inline-flex items-center bg-stone-100/90 p-1 rounded-xl border border-stone-200/80 shadow-2xs text-xs font-medium gap-1 animate-in fade-in duration-200">
+                <button
+                  type="button"
+                  onClick={() => setHomeSubTab('home_hero')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${homeSubTab === 'home_hero'
+                    ? 'bg-[#0b2920] text-white font-semibold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/50'
+                    }`}
+                >
+                  <Layers className="w-3.5 h-3.5 opacity-80" />
+                  <span>Top Hero</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-semibold ${homeSubTab === 'home_hero' ? 'bg-white/20 text-white' : 'bg-stone-200 text-slate-600'
+                      }`}
                   >
-                    {/* Thumbnail Matching Exact Proportions */}
-                    <img
-                      src={banner.imageUrl}
-                      alt={banner.title || filename}
-                      className="w-32 sm:w-36 h-20 rounded-xl object-cover border border-stone-200/80 shrink-0 bg-slate-900"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80';
-                      }}
-                    />
+                    {heroBanners.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHomeSubTab('home_middle')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${homeSubTab === 'home_middle'
+                    ? 'bg-[#0b2920] text-white font-semibold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-stone-200/50'
+                    }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 opacity-80" />
+                  <span>Middle Feed</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-semibold ${homeSubTab === 'home_middle' ? 'bg-white/20 text-white' : 'bg-stone-200 text-slate-600'
+                      }`}
+                  >
+                    {middleBanners.length}
+                  </span>
+                </button>
+              </div>
+            )}
 
-                    {/* Metadata */}
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-sm font-bold text-slate-900 truncate">
-                        Slide #{banner.order}
-                      </h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5 truncate font-mono">
-                        {banner.actionUrl ? `Action: ${banner.actionUrl}` : filename}
-                      </p>
+            {/* Quick Sync Button */}
+            <button
+              type="button"
+              onClick={() => fetchBanners('user')}
+              className="p-1.5 text-slate-500 hover:text-slate-900 bg-stone-50 hover:bg-stone-100 border border-stone-200/90 rounded-lg transition-colors cursor-pointer"
+              title="Refresh / Sync"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-primary' : ''}`} />
+            </button>
+          </div>
+        </div>
 
-                      {/* Ready / Live Badge */}
-                      <div className="mt-1.5 flex items-center gap-1.5">
-                        {banner.isActive ? (
-                          <span className="bg-[#e6f4ea] text-[#137333] text-[10.5px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
-                            <CheckCircle2 className="w-3 h-3 text-[#137333]" />
-                            <span>Ready</span>
-                          </span>
-                        ) : (
-                          <span className="bg-stone-100 text-slate-500 text-[10.5px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
-                            <XCircle className="w-3 h-3 text-slate-400" />
-                            <span>Hidden</span>
-                          </span>
-                        )}
+        {/* Dimensions Quick Reference Guide Bar */}
+        {/* <div className="bg-stone-50/80 border-b border-stone-200/80 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div className="flex items-center gap-1.5 font-bold text-slate-700">
+            <Ruler className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Placement Dimensions:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            
+            <button
+              type="button"
+              onClick={() => setActiveMainTab('intro')}
+              className={`px-3 py-1 rounded-lg border text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeSection === 'intro_screen'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold shadow-2xs ring-1 ring-emerald-200'
+                  : 'bg-white border-stone-200 text-slate-600 hover:bg-stone-100 hover:text-slate-900'
+              }`}
+            >
+              <span className="font-semibold text-slate-800">Intro Page:</span>
+              <span className="font-mono font-bold text-emerald-700">Width: 1000 px · Height: 667 px</span>
+            </button>
+
+           
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMainTab('home');
+                setHomeSubTab('home_hero');
+              }}
+              className={`px-3 py-1 rounded-lg border text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeSection === 'home_hero'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold shadow-2xs ring-1 ring-emerald-200'
+                  : 'bg-white border-stone-200 text-slate-600 hover:bg-stone-100 hover:text-slate-900'
+              }`}
+            >
+              <span className="font-semibold text-slate-800">Home Hero:</span>
+              <span className="font-mono font-bold text-emerald-700">Width: 717 px · Height: 297 px</span>
+            </button>
+
+       
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMainTab('home');
+                setHomeSubTab('home_middle');
+              }}
+              className={`px-3 py-1 rounded-lg border text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeSection === 'home_middle'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold shadow-2xs ring-1 ring-emerald-200'
+                  : 'bg-white border-stone-200 text-slate-600 hover:bg-stone-100 hover:text-slate-900'
+              }`}
+            >
+              <span className="font-semibold text-slate-800">Home Middle:</span>
+              <span className="font-mono font-bold text-emerald-700">300 × 300 px (up to 360 × 360 px)</span>
+            </button>
+          </div>
+        </div> */}
+
+        {/* 2. CARD BODY: TWO-COLUMN MAIN CONTENT: LEFT (UPLOAD DROPZONE) & RIGHT (QUEUE) */}
+        <div className="p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          {/* LEFT COLUMN: UPLOAD DROPZONE (7 Cols) */}
+          <div className="lg:col-span-7 flex flex-col justify-between">
+            <div>
+              {/* Hidden Input strictly for images */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                multiple
+                accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
+                onChange={(e) => handleFiles(e.target.files)}
+                className="hidden"
+              />
+
+              {/* LARGE DASHED DROP AREA EXACTLY MATCHING DESIGN */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all my-3 flex flex-col items-center justify-center ${isDragOver
+                  ? 'border-emerald-600 bg-emerald-50/50 scale-[1.01]'
+                  : 'border-stone-200 bg-stone-50/30 hover:bg-emerald-50/20 hover:border-emerald-700/60'
+                  }`}
+              >
+                {/* Cloud Upload Icon Circle */}
+                <div className="w-14 h-14 rounded-full bg-white border border-stone-200 flex items-center justify-center text-slate-800 shadow-2xs mb-3">
+                  <UploadCloud className="w-6 h-6 text-slate-700 stroke-[1.5]" />
+                </div>
+
+                {/* Required Size Pill */}
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold mb-3 shadow-2xs">
+                  <Ruler className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Required Size: <strong className="font-mono text-emerald-900">{sectionMeta.sizeSpec}</strong></span>
+                </div>
+
+                <h3 className="text-base font-bold text-slate-900">
+                  Drop your images here
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 mb-4">
+                  or choose files from your computer
+                </p>
+
+                {/* Solid Dark Green Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  disabled={isUploading}
+                  className="bg-[#0b2920] hover:bg-[#064233] text-white text-xs md:text-sm font-semibold px-6 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                >
+                  {isUploading ? (
+                    <>
+                      <RotateCcw className="w-4 h-4 animate-spin" />
+                      <span>Uploading images...</span>
+                    </>
+                  ) : (
+                    <span>Select images</span>
+                  )}
+                </button>
+
+                <div className="mt-4 flex flex-col items-center gap-0.5">
+                  <span className="text-xs font-bold text-slate-700 font-mono">
+                    📐 {sectionMeta.sizeSpec}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-mono tracking-wide">
+                    JPG · PNG · WEBP · GIF · Max 10 MB
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-slate-500 pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2 mt-2">
+              <span>Target placement: <strong>{sectionMeta.desc}</strong></span>
+              <span className="font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                📐 {sectionMeta.sizeSpec}
+              </span>
+              <span className="font-medium text-emerald-700">Batch upload enabled</span>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: QUEUE LIST (5 Cols) */}
+          <div className="lg:col-span-5 flex flex-col border-t lg:border-t-0 lg:border-l border-stone-100 pt-5 lg:pt-0 lg:pl-6">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>Queue</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-slate-600 font-mono">
+                  {currentSectionBanners.length}
+                </span>
+              </h3>
+              <span className="text-xs text-slate-400">Ready for dispatch</span>
+            </div>
+
+            {/* Queue Items List (Max 3 visible at once, rest scrollable) */}
+            <div className="space-y-3 overflow-y-auto max-h-[348px] pr-1.5 flex-1 [scrollbar-width:thin]">
+              {currentSectionBanners.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-slate-400 mb-2">
+                    <UploadCloud className="w-5 h-5" />
+                  </div>
+                  <span>No images in queue for this section.</span>
+                  <span className="text-[11px] text-slate-400 mt-0.5">Use the upload box on the left to add slides.</span>
+                </div>
+              ) : (
+                currentSectionBanners.map((banner, index) => {
+                  const isFirst = index === 0;
+                  const isLast = index === currentSectionBanners.length - 1;
+                  const filename =
+                    banner.imageUrl.split('/').pop() || banner.title || `image-${banner.order}.jpg`;
+
+                  return (
+                    <div
+                      key={banner.id || banner._id}
+                      className="bg-white rounded-xl p-3 border border-stone-200/80 hover:border-stone-300 transition-all flex items-center gap-3.5 relative shadow-2xs group"
+                    >
+                      {/* Thumbnail Matching Exact Proportions */}
+                      <img
+                        src={banner.imageUrl}
+                        alt={banner.title || filename}
+                        className="w-32 sm:w-36 h-20 rounded-xl object-cover border border-stone-200/80 shrink-0 bg-slate-900"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80';
+                        }}
+                      />
+
+                      {/* Metadata */}
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-bold text-slate-900 truncate">
+                          Slide #{banner.order}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5 truncate font-mono">
+                          {banner.actionUrl ? `Action: ${banner.actionUrl}` : filename}
+                        </p>
+
+                        {/* Ready / Live Badge */}
+                        <div className="mt-1.5 flex items-center gap-1.5">
+                          {banner.isActive ? (
+                            <span className="bg-[#e6f4ea] text-[#137333] text-[10.5px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                              <CheckCircle2 className="w-3 h-3 text-[#137333]" />
+                              <span>Ready</span>
+                            </span>
+                          ) : (
+                            <span className="bg-stone-100 text-slate-500 text-[10.5px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                              <XCircle className="w-3 h-3 text-slate-400" />
+                              <span>Hidden</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Three Dots Menu Button */}
-                    <div className="relative">
+                      {/* Direct Delete Button */}
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setOpenMenuId(openMenuId === banner.id ? null : banner.id);
+                          setBannerToDelete(banner);
                         }}
-                        className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
-                        title="Actions"
+                        className="p-2 text-rose-500 hover:text-rose-700 bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0 border border-transparent hover:border-rose-100"
+                        title="Delete image"
                       >
-                        <MoreHorizontal className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
-
-                      {/* Dropdown Menu */}
-                      {openMenuId === banner.id && (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-stone-200 py-1.5 z-30 text-xs font-semibold text-slate-700 animate-in fade-in zoom-in-95 duration-150"
-                        >
-                          <button
-                            onClick={() => {
-                              openEditModal(banner);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full text-left px-3.5 py-1.5 hover:bg-stone-100 flex items-center gap-2 cursor-pointer"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-slate-500" />
-                            <span>Edit action link</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              moveOrder(banner.id || banner._id!, 'up');
-                              setOpenMenuId(null);
-                            }}
-                            disabled={isFirst}
-                            className={`w-full text-left px-3.5 py-1.5 hover:bg-stone-100 flex items-center gap-2 cursor-pointer ${isFirst ? 'opacity-40 cursor-not-allowed' : ''
-                              }`}
-                          >
-                            <ArrowUp className="w-3.5 h-3.5 text-slate-500" />
-                            <span>Move up in sequence</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              moveOrder(banner.id || banner._id!, 'down');
-                              setOpenMenuId(null);
-                            }}
-                            disabled={isLast}
-                            className={`w-full text-left px-3.5 py-1.5 hover:bg-stone-100 flex items-center gap-2 cursor-pointer ${isLast ? 'opacity-40 cursor-not-allowed' : ''
-                              }`}
-                          >
-                            <ArrowDown className="w-3.5 h-3.5 text-slate-500" />
-                            <span>Move down in sequence</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              toggleActive(banner.id || banner._id!);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full text-left px-3.5 py-1.5 hover:bg-stone-100 flex items-center gap-2 cursor-pointer"
-                          >
-                            {banner.isActive ? (
-                              <>
-                                <XCircle className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Hide from app</span>
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Activate in app</span>
-                              </>
-                            )}
-                          </button>
-
-                          <div className="my-1 border-t border-stone-100" />
-
-                          <button
-                            onClick={() => {
-                              setBannerToDelete(banner);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full text-left px-3.5 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                            <span>Delete image</span>
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* 4. BOTTOM ACTION BAR MATCHING EXACT SCREENSHOT */}
-      {/* <div className="bg-[#f0eee6]/80 rounded-2xl border border-stone-200/80 p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
-        <div>
-          <h4 className="text-sm font-bold text-slate-900">
-            {currentSectionBanners.length} image{currentSectionBanners.length === 1 ? '' : 's'} selected
-          </h4>
-          <p className="text-xs text-slate-500">
-            Ready to publish to your {sectionMeta.desc.toLowerCase()}.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => {
-              toast.success('Saved as Live', 'Current banner placement is active.');
-            }}
-            className="bg-[#0b2920] hover:bg-[#064233] text-white text-xs md:text-sm font-semibold px-6 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer"
-          >
-            Publish to section
-          </button>
-
-          <button
-            onClick={openPreview}
-            className="bg-white hover:bg-stone-50 border border-stone-300 text-slate-700 text-xs md:text-sm font-semibold px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <Smartphone className="w-4 h-4 text-slate-500" />
-            <span>App Preview</span>
-          </button>
-        </div>
-      </div> */}
 
       {/* 5. APP PHONE SIMULATOR MODAL */}
       {isPreviewOpen && (
@@ -865,6 +795,11 @@ export default function BannersView() {
             </div>
 
             <form onSubmit={handleAddUrlSubmit} className="mt-4 space-y-3.5">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-xs text-emerald-800 flex items-center justify-between">
+                <span className="font-semibold">Target Size:</span>
+                <span className="font-mono font-bold">{sectionMeta.sizeSpec}</span>
+              </div>
+
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700">Image Direct URL *</label>
                 <input
@@ -912,27 +847,56 @@ export default function BannersView() {
 
       {/* 8. DELETE CONFIRMATION DIALOG */}
       {bannerToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-stone-200">
-            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3">
-              <Trash2 className="w-6 h-6" />
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-stone-200 animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center mx-auto mb-3">
+              <Trash2 className="w-5 h-5" />
             </div>
-            <h4 className="text-base font-bold text-slate-900">Delete Banner Image?</h4>
-            <p className="text-xs text-slate-500 mt-1 mb-5">
+
+            <h3 className="text-base font-bold text-slate-900">
+              Delete Banner
+            </h3>
+
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
               Are you sure you want to remove this banner image? It will no longer appear in the User mobile app.
             </p>
-            <div className="flex items-center justify-center gap-2.5">
+
+            {/* Banner Quick Item Preview */}
+            <div className="my-4 p-3 bg-stone-50 border border-stone-200/80 rounded-xl flex items-center gap-3 text-left">
+              <img
+                src={bannerToDelete.imageUrl}
+                alt=""
+                className="w-14 h-11 rounded-lg object-cover border border-stone-200 shrink-0 bg-slate-900"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80';
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-slate-900 truncate">
+                  Slide #{bannerToDelete.order}
+                </p>
+                <p className="text-[11px] text-slate-500 font-mono truncate mt-0.5">
+                  {bannerToDelete.actionUrl ? bannerToDelete.actionUrl : (bannerToDelete.imageUrl.split('/').pop() || 'banner-image.jpg')}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-1">
               <button
+                type="button"
                 onClick={() => setBannerToDelete(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                className="flex-1 py-2.5 px-4 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer"
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
-                Yes, Delete Image
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Yes, Delete</span>
               </button>
             </div>
           </div>

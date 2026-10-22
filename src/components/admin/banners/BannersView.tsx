@@ -132,7 +132,7 @@ export default function BannersView() {
     if (nonImages.length > 0) {
       toast.error(
         'Images Only Allowed',
-        `File "${nonImages[0].name}" is not an image. Only PNG, JPG, JPEG, and WEBP formats are accepted.`
+        `File "${nonImages[0].name}" is not an image. Only PNG, JPG, JPEG, WEBP, and GIF formats are accepted.`
       );
       return;
     }
@@ -381,7 +381,7 @@ export default function BannersView() {
               type="file"
               ref={fileInputRef}
               multiple
-              accept="image/png, image/jpeg, image/jpg, image/webp"
+              accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
               onChange={(e) => handleFiles(e.target.files)}
               className="hidden"
             />
@@ -433,7 +433,7 @@ export default function BannersView() {
               </button>
 
               <span className="text-[11px] text-slate-400 mt-5 font-mono tracking-wide">
-                JPG · PNG · WEBP · 10 MB max
+                JPG · PNG · WEBP · GIF · 10 MB max
               </span>
             </div>
           </div>

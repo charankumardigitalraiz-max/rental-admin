@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
           // STRICT CHECK: ONLY IMAGES ALLOWED
           if (!file.type.startsWith('image/')) {
             return NextResponse.json(
-              { success: false, error: `Invalid file "${file.name}". Only image files (PNG, JPG, JPEG, WEBP) are accepted.` },
+              { success: false, error: `Invalid file "${file.name}". Only image files (PNG, JPG, JPEG, WEBP, GIF) are accepted.` },
               { status: 400 }
             );
           }

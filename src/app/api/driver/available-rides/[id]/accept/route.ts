@@ -107,7 +107,7 @@ export async function POST(
     emitRideTaken(updatedBooking.bookingId, updatedBooking._id.toString());
 
     // ⚡ 2. Notify the customer and driver listening in the booking room
-    emitBookingUpdate(updatedBooking.bookingId, "booking:status_update", {
+    emitBookingUpdate(updatedBooking.bookingId, "ride:new_available", {
       bookingId: updatedBooking.bookingId,
       bookingStatus: "driver_assigned",
       driver: {

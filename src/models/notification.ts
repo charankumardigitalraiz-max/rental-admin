@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface NotificationInterface extends Document {
   title: string;
   message: string;
-  targetAudience: 'All' | 'Drivers' | 'Customers' | 'Valet Staff' | 'Custom';
+  targetAudience: 'All' | 'Drivers' | 'Customers' | 'Valet Staff' | 'Admin' | 'Custom';
   targetType: 'topic' | 'token' | 'user' | 'broadcast';
   topic?: string;
   targetTokens?: string[];
@@ -27,7 +27,7 @@ const notificationSchema: Schema = new Schema(
     message: { type: String, required: true },
     targetAudience: {
       type: String,
-      enum: ['All', 'Drivers', 'Customers', 'Valet Staff', 'Custom'],
+      enum: ['All', 'Drivers', 'Customers', 'Valet Staff', 'Admin', 'Custom'],
       default: 'All',
       required: true,
     },

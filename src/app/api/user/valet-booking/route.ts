@@ -3,7 +3,9 @@ import connectToDatabase from "@/lib/mongodb";
 import ValetBooking from "@/models/valetBooking";
 import DriverPricing from "@/models/driverPricing";
 import Customer from "@/models/customer";
+import Admin from "@/models/admin";
 import { verifyUser } from "@/lib/auth";
+import { dispatchNotification } from "@/lib/notifications";
 
 /**
  * POST /api/user/valet-booking
@@ -111,6 +113,24 @@ export async function POST(req: NextRequest) {
       paymentMethod: paymentMethod || "online",
       status: "new_request",
     });
+
+    // Send push notification to Admin
+    dispatchNotification({
+      title: `New Valet Booking Request #${newBooking.bookingId || "New"}`,
+      message: `Event "${eventName}" on ${new Date(eventDate).toLocaleDateString()} (${startTime || "18:00"} - ${endTime || "22:00"}). Requested staff: ${numPerson}. Tap to review and assign staff.`,
+      targetAudience: "Admin",
+      type: "Booking",
+      data: {
+        bookingId: String(newBooking._id),
+        bookingCode: String(newBooking.bookingId || ""),
+        eventName: String(eventName),
+        serviceType: "valet_parking",
+        personCount: String(numPerson),
+        hours: String(numHours),
+        url: `/admin/valet-parking?bookingId=${newBooking._id}`,
+      },
+      sentBy: "Customer Booking Engine",
+    }).catch((err) => console.warn("[ValetBooking] Admin push notification warning:", err?.message));
 
     return NextResponse.json(
       {

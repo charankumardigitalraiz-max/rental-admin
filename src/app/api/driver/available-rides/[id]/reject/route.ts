@@ -74,21 +74,17 @@ export async function POST(
       rejectTime,
     };
 
-    // Atomically push driver rejection record
+    // Atomically push driver rejection record and always set bookingStatus to rejected
     const updateOps: any = {
       $push: { rejectedDrivers: rejectEntry },
       $set: {
+        bookingStatus: "rejected",
+        driverId: null,
         cancelledBy: "driver",
         cancellationReason: reason,
         cancelledAt: rejectTime,
       },
     };
-
-    // If this driver was previously assigned, unassign them
-    if (booking.driverId && booking.driverId.toString() === driver._id.toString()) {
-      updateOps.$set.driverId = null;
-      updateOps.$set.bookingStatus = "rejected";
-    }
 
     const updatedBooking = await DriverBooking.findByIdAndUpdate(
       booking._id,
@@ -112,7 +108,7 @@ export async function POST(
     });
 
     // ⚡ Notify listening clients in the booking room
-    emitBookingUpdate(booking.bookingId, "booking:driver_rejected", {
+    emitBookingUpdate(booking.bookingId, "ride:new_available", {
       bookingId: booking.bookingId,
       driverId: driver._id.toString(),
       driverName: `${driver.firstName || ""} ${driver.lastName || ""}`.trim(),
@@ -121,40 +117,40 @@ export async function POST(
       rejectedDrivers: formattedRejectedDrivers,
     });
 
-    // 🔔 Send Push Notification if assigned driver rejected
-    if (booking.driverId && booking.driverId.toString() === driver._id.toString()) {
-      try {
-        const customer = await Customer.findById(booking.userId);
-        const driverName = `${driver.firstName || ""} ${driver.lastName || ""}`.trim() || "Driver";
+    // 🔔 Send Push Notification to Customer and Admin on rejection
+    try {
+      const customer = await Customer.findById(booking.userId);
+      const driverName = `${driver.firstName || ""} ${driver.lastName || ""}`.trim() || "Driver";
 
+      if (customer?.fcmToken) {
         await dispatchNotification({
           title: "Ride Update ⚠️",
           message: `Your driver has declined ride ${booking.bookingId}. We are looking for another driver.`,
           targetAudience: "Customers",
-          token: customer?.fcmToken || undefined,
+          token: customer.fcmToken,
           type: "Alert",
           data: {
             bookingId: booking.bookingId,
-            bookingStatus: updatedBooking?.bookingStatus || "rejected",
+            bookingStatus: "rejected",
           },
         });
-
-        // 🔔 Send Push Notification to Admin
-        await dispatchNotification({
-          title: "Driver Declined Ride ⚠️",
-          message: `${driverName} declined booking ${booking.bookingId}. Reason: ${reason}`,
-          targetAudience: "All",
-          topic: "admin",
-          type: "Alert",
-          data: {
-            bookingId: booking.bookingId,
-            driverId: driver._id.toString(),
-            reason,
-          },
-        });
-      } catch (notifErr: any) {
-        console.warn("Could not dispatch push notification on reject:", notifErr?.message);
       }
+
+      // 🔔 Send Push Notification to Admin
+      await dispatchNotification({
+        title: "Driver Declined Ride ⚠️",
+        message: `${driverName} declined booking ${booking.bookingId}. Reason: ${reason}`,
+        targetAudience: "All",
+        topic: "admin",
+        type: "Alert",
+        data: {
+          bookingId: booking.bookingId,
+          driverId: driver._id.toString(),
+          reason,
+        },
+      });
+    } catch (notifErr: any) {
+      console.warn("Could not dispatch push notification on reject:", notifErr?.message);
     }
 
     return NextResponse.json(

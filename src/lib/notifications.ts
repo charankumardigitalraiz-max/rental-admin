@@ -2,6 +2,7 @@ import connectToDatabase from '@/lib/mongodb';
 import Notification, { NotificationInterface } from '@/models/notification';
 import Driver from '@/models/driver';
 import Customer from '@/models/customer';
+import Admin from '@/models/admin';
 import {
   sendPushNotification,
   sendTopicNotification,
@@ -12,7 +13,7 @@ import {
 export interface DispatchNotificationOptions {
   title: string;
   message: string;
-  targetAudience: 'All' | 'Drivers' | 'Customers' | 'Valet Staff' | 'Custom';
+  targetAudience: 'All' | 'Drivers' | 'Customers' | 'Valet Staff' | 'Admin' | 'Custom';
   targetType?: 'topic' | 'token' | 'user' | 'broadcast';
   topic?: string;
   token?: string;
@@ -84,6 +85,7 @@ export async function dispatchNotification(options: DispatchNotificationOptions)
         if (audience === 'Drivers') topic = 'drivers';
         else if (audience === 'Customers') topic = 'customers';
         else if (audience === 'Valet Staff') topic = 'valet_staff';
+        else if (audience === 'Admin') topic = 'admin';
         else topic = 'all';
       }
 
@@ -95,9 +97,14 @@ export async function dispatchNotification(options: DispatchNotificationOptions)
       } else if (audience === 'Customers') {
         const customersWithToken = await Customer.find({ fcmToken: { $exists: true, $ne: '' } }).select('fcmToken');
         dbTokens = customersWithToken.map((c) => c.fcmToken).filter(Boolean) as string[];
+      } else if (audience === 'Admin') {
+        const adminsWithToken = await Admin.find({ fcmToken: { $exists: true, $ne: '' } }).select('fcmToken');
+        dbTokens = adminsWithToken.map((a) => a.fcmToken).filter(Boolean) as string[];
       }
 
       // Send to topic (Firebase FCM Topic Broadcast)
+      // Since devices are automatically subscribed to their audience topic on login/token registration,
+      // topic broadcast delivers to all devices in one shot without sending duplicates.
       fcmMessageId = await sendTopicNotification({
         topic,
         title,
@@ -110,27 +117,7 @@ export async function dispatchNotification(options: DispatchNotificationOptions)
         },
       });
 
-      // If there were direct tokens found, also send to those who might not be subscribed to topic yet
-      if (dbTokens.length > 0) {
-        try {
-          const directRes = await sendMulticastNotification({
-            tokens: dbTokens,
-            title,
-            body: message,
-            imageUrl: options.imageUrl,
-            data: options.data,
-          });
-          successCount = directRes.successCount;
-          failureCount = directRes.failureCount;
-        } catch (mErr: any) {
-          console.warn('[dispatchNotification] Multicast fallback warning:', mErr.message);
-        }
-      }
-
-      // For topic broadcast, at least 1 message dispatch is registered
-      if (successCount === 0) {
-        successCount = 1;
-      }
+      successCount = dbTokens.length > 0 ? dbTokens.length : 1;
     }
   } catch (err: any) {
     status = 'failed';

@@ -86,7 +86,7 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
                 <div
                   className={`rounded-xl flex items-center justify-center text-white shadow-md transition-all duration-500 ${isScrolled
                     ? 'w-8 h-8 sm:w-7.5 sm:h-7.5 bg-gradient-to-br from-[#d4af37] via-[#b4966c] to-[#7e6542] ring-1 ring-[#c5a880]/40'
-                    : 'w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-[#023526] to-[#012218] ring-2 ring-[#023526]/20'
+                    : 'w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-[#023526] to-[#02281d] ring-2 ring-[#023526]/20'
                     }`}
                 >
                   <Crown
@@ -191,6 +191,16 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
               >
                 FAQs
               </a>
+              {/* <Link
+                href="/contact-us"
+                onClick={() => setScrolledMenuOpen(false)}
+                className={`px-3.5 py-1.5 rounded-full transition-all duration-200 ${isScrolled
+                  ? 'hover:text-white hover:bg-white/10'
+                  : 'hover:text-[#023526] hover:bg-white hover:shadow-2xs font-bold text-[#023526]'
+                  }`}
+              >
+                Support
+              </Link> */}
             </nav>
           )}
 
@@ -232,7 +242,7 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
                   ? 'px-3 py-1.5 rounded-full bg-gradient-to-r from-[#d4af37] via-[#f5e6b3] to-[#b4966c] text-[#011d15] text-[11px] font-extrabold'
                   : isScrolled
                     ? 'px-4 py-2 rounded-[11px] bg-gradient-to-r from-[#d4af37] via-[#f5e6b3] to-[#b4966c] text-[#011d15] font-extrabold'
-                    : 'px-4 py-2 rounded-[11px] bg-gradient-to-r from-[#023526] to-[#012218] text-white font-extrabold'
+                    : 'px-4 py-2 rounded-[11px] bg-gradient-to-r from-[#023526] to-[#02281d] text-white font-extrabold'
                   }`}
               >
                 <Car className={`w-3.5 h-3.5 ${isScrolled ? 'text-[#011d15]' : 'text-[#c5a880]'}`} />
@@ -312,6 +322,13 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
             >
               Frequently Asked Questions
             </a>
+            <Link
+              href="/contact-us"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#023526] bg-emerald-50/70 border border-emerald-200/60 hover:bg-emerald-100"
+            >
+              Contact Us & 24/7 Support Hub
+            </Link>
 
             {/* Mobile Booking CTA Button */}
             <div className="pt-3 border-t border-slate-200/40 flex flex-col gap-2">
@@ -320,7 +337,7 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
                   setMobileMenuOpen(false);
                   onOpenBooking('local');
                 }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#023526] to-[#012218] text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#023526] to-[#02281d] text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2"
               >
                 <Car className="w-4 h-4 text-[#c5a880]" />
                 <span>Book Driver Now</span>

@@ -15,7 +15,7 @@ export default function TestimonialsSection() {
             <Star className="w-4 h-4 text-[#c5a880] fill-[#c5a880]" />
             <span>4.9★ Average Rating Across 10,000+ Bookings</span>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-3xl sm:text-5xl font-bold text-slate-900 tracking-tight">
             Loved by Individuals &{' '}
             <span className="bg-gradient-to-r from-[#023526] via-[#c5a880] to-[#023526] bg-clip-text text-transparent">
               Luxury Venues

@@ -373,8 +373,9 @@ export default function PrivacyPolicyPage() {
             {/* SECTION 6: Rights & Contact */}
             <section
               id="rights"
-              className="bg-gradient-to-br from-[#023526] to-[#012218] text-white rounded-md p-6 sm:p-8 shadow-2xl relative overflow-hidden"
+              className="bg-gradient-to-b from-[#023526] via-[#02281d] to-[#011c14] text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-[#c5a880]/30 relative overflow-hidden"
             >
+              <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#c5a880]/60 to-transparent pointer-events-none" />
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#c5a880]/10 rounded-bl-full pointer-events-none" />
 
               <div className="flex items-center gap-3.5 mb-5 pb-4 border-b border-white/10 relative z-10">

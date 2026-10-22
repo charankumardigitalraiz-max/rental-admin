@@ -30,6 +30,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   X,
+  Image as ImageIcon,
+  Bell,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -209,6 +211,13 @@ export default function Sidebar() {
           badge: openSupportTicketsCount > 0 ? openSupportTicketsCount : undefined,
         },
         { href: '/admin/reviews', label: 'Reviews & Ratings', icon: Star },
+      ],
+    },
+    {
+      groupTitle: 'MARKETING & PROMOTIONS',
+      items: [
+        { href: '/admin/banners', label: 'User App Banners', icon: ImageIcon },
+        { href: '/admin/notifications', label: 'Push Notifications', icon: Bell },
       ],
     },
     {

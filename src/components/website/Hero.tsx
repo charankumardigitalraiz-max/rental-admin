@@ -48,7 +48,7 @@ export default function Hero({ onOpenBooking }: HeroProps) {
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 onClick={() => onOpenBooking('local')}
-                className="px-6 py-3.5 bg-[#023526] hover:bg-[#012218] text-white font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer group"
+                className="px-6 py-3.5 bg-[#023526] hover:bg-[#034432] text-white font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer group"
               >
                 <Car className="w-4 h-4 text-[#c5a880]" />
                 <span>Book Driver Now</span>
@@ -57,7 +57,7 @@ export default function Hero({ onOpenBooking }: HeroProps) {
 
               <button
                 onClick={() => onOpenBooking('valet')}
-                className="px-5 py-3.5 bg-stone-100 hover:bg-stone-200 text-slate-900 font-bold text-xs rounded-xl border border-stone-200 transition-all flex items-center gap-2 cursor-pointer"
+                className="px-5 py-3.5 bg-emerald-50 hover:bg-emerald-100/80 text-[#023526] font-bold text-xs rounded-xl border border-emerald-200/80 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Crown className="w-4 h-4 text-[#023526]" />
                 <span>Event Valet Quote</span>

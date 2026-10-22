@@ -116,12 +116,16 @@ export default function SafetyVerification() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
           {/* Left Column: Command Center Spotlight Card */}
-          <div className="lg:col-span-5 bg-gradient-to-b from-[#023526] via-[#01261b] to-[#011a12] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#c5a880]/30 flex flex-col justify-between text-left relative overflow-hidden group">
-            
-            {/* Ambient Background Glow */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#c5a880]/10 rounded-full filter blur-3xl pointer-events-none"></div>
+          <div className="lg:col-span-5 bg-gradient-to-b from-[#023526] via-[#02281d] to-[#011c14] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#c5a880]/35 flex flex-col justify-between text-left relative overflow-hidden group">
+            {/* Top Shimmer Line */}
+            <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#c5a880]/60 to-transparent pointer-events-none" />
 
-            <div>
+            {/* Decorative Subtle Background Rings */}
+            <div className="absolute -top-24 -right-24 w-60 h-60 rounded-full border border-[#c5a880]/15 pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-52 h-52 rounded-full border border-emerald-400/10 pointer-events-none" />
+            <div className="absolute top-0 right-1/4 w-64 h-64 bg-[#035940]/30 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10">
               {/* Header Status Bar */}
               <div className="flex items-center justify-between gap-2 mb-6 pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
@@ -306,7 +310,7 @@ export default function SafetyVerification() {
 
               <button
                 onClick={() => setShowPolicyModal(false)}
-                className="w-full py-3 bg-[#023526] hover:bg-[#012218] text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer"
+                className="w-full py-3 bg-[#023526] hover:bg-[#034432] text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
               >
                 Close Safety Guide
               </button>

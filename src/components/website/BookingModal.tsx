@@ -65,8 +65,10 @@ export default function BookingModal({ isOpen, onClose, serviceType = 'local', i
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#023526] text-white rounded-3xl border border-[#c5a880]/40 max-w-xl w-full p-6 sm:p-8 relative custom-shadow text-left my-8">
-        
+      <div className="bg-gradient-to-b from-[#023526] via-[#02281d] to-[#011c14] text-white rounded-3xl border border-[#c5a880]/40 max-w-xl w-full p-6 sm:p-8 relative custom-shadow text-left my-8 overflow-hidden">
+        {/* Top Shimmer Line */}
+        <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#c5a880]/60 to-transparent pointer-events-none" />
+
         {/* Close Button */}
         <button
           onClick={handleReset}

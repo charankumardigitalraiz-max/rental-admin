@@ -81,11 +81,11 @@ export default function FAQSection() {
           </p>
         </div>
 
-        {/* 2-Column Grid Layout: Image on Left, FAQs on Right */}
+        {/* 2-Column Grid Layout: Image on Left (Desktop only), FAQs on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          
-          {/* Left Side: Illustrative Visual Card */}
-          <div className="lg:col-span-5 sticky top-24">
+
+          {/* Left Side: Illustrative Visual Card (Hidden on Mobile/Tablet, visible on Desktop) */}
+          <div className="hidden lg:block lg:col-span-5 sticky top-24">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-stone-200/80 group">
               <img
                 src="/professional_chauffeur_driver.png"
@@ -107,10 +107,10 @@ export default function FAQSection() {
           </div>
 
           {/* Right Side: Filters, Search, and FAQs Accordion */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="w-full lg:col-span-7 space-y-5 sm:space-y-6">
 
             {/* Horizontal Category Filter Pills */}
-            <div className="flex flex-wrap items-center justify-start gap-2">
+            {/* <div className="flex flex-wrap items-center justify-start gap-2">
               {categories.map((cat) => {
                 const count = cat === 'All' ? faqsList.length : faqsList.filter((f) => f.category === cat).length;
                 const isSelected = activeCategory === cat;
@@ -119,8 +119,8 @@ export default function FAQSection() {
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${isSelected
-                        ? 'bg-[#023526] text-white shadow-sm'
-                        : 'bg-stone-50 text-slate-700 hover:bg-stone-100 border border-stone-200/80'
+                      ? 'bg-[#023526] text-white shadow-sm'
+                      : 'bg-stone-50 text-slate-700 hover:bg-stone-100 border border-stone-200/80'
                       }`}
                   >
                     <span>{cat}</span>
@@ -133,10 +133,10 @@ export default function FAQSection() {
                   </button>
                 );
               })}
-            </div>
+            </div> */}
 
             {/* Search Input */}
-            <div className="relative w-full">
+            {/* <div className="relative w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
               <input
                 type="text"
@@ -153,7 +153,7 @@ export default function FAQSection() {
                   <X className="w-4 h-4" />
                 </button>
               )}
-            </div>
+            </div> */}
 
             {/* Accordion Items List */}
             {filteredFaqs.length > 0 ? (
@@ -164,19 +164,19 @@ export default function FAQSection() {
                     <div
                       key={idx}
                       className={`bg-white rounded-2xl border transition-all overflow-hidden ${isOpen
-                          ? 'border-[#023526] ring-2 ring-[#023526]/10 shadow-md'
-                          : 'border-stone-200/90 hover:border-stone-300 shadow-2xs'
+                        ? 'border-[#023526] ring-2 ring-[#023526]/10 shadow-md'
+                        : 'border-stone-200/90 hover:border-stone-300 shadow-2xs'
                         }`}
                     >
                       <button
                         onClick={() => toggle(idx)}
-                        className="w-full px-5 py-4 flex items-center justify-between text-left font-bold text-xs sm:text-sm text-slate-900 hover:text-[#023526] focus:outline-none cursor-pointer gap-4"
+                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 flex items-center justify-between text-left font-bold text-xs sm:text-sm text-slate-900 hover:text-[#023526] focus:outline-none cursor-pointer gap-3 sm:gap-4"
                       >
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shrink-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2.5">
+                          {/* <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shrink-0 w-max">
                             {faq.category}
-                          </span>
-                          <span>{faq.question}</span>
+                          </span> */}
+                          <span className="leading-snug">{faq.question}</span>
                         </div>
                         <ChevronDown
                           className={`w-4 h-4 text-[#023526] shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''
@@ -185,7 +185,7 @@ export default function FAQSection() {
                       </button>
 
                       {isOpen && (
-                        <div className="px-5 pb-4.5 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-stone-100 pt-3 font-normal">
+                        <div className="px-4 sm:px-5 pb-4 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-stone-100 pt-3 font-normal">
                           {faq.answer}
                         </div>
                       )}

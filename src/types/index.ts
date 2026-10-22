@@ -40,6 +40,7 @@ export type ActiveTab =
   | 'wallet'
   | 'admin-users'
   | 'roles-permissions'
+  | 'banners'
   | 'settings';
 
 export interface SupportTicket {
@@ -662,3 +663,23 @@ export interface DamageClaim {
   status: 'Open' | 'Under Review' | 'Approved' | 'Rejected' | 'Settled';
   createdAt: string;
 }
+
+export type UserBannerSection = 'intro_screen' | 'home_hero' | 'home_middle';
+
+export interface BannerItem {
+  id: string;
+  _id?: string;
+  section: UserBannerSection;
+  title?: string;
+  subtitle?: string;
+  imageUrl: string;
+  actionUrl?: string;
+  order: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type BannerSection = UserBannerSection;
+
+

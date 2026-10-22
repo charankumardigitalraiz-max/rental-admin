@@ -176,6 +176,10 @@ export default function Header() {
       title: 'Reviews & Ratings Moderation',
       subtitle: 'Customer ratings and feedback for Drivers and Valet Staff',
     },
+    '/admin/banners': {
+      title: 'User App Banner Management',
+      subtitle: 'Upload and organize multiple banner images for Intro Walkthrough, Home Hero, and Home Middle sections',
+    },
     '/admin/notifications': {
       title: 'Notification Center & Dispatch',
       subtitle: 'Broadcast alerts to Customers, Drivers, and Valet Staff',

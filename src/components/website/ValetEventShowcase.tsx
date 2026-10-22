@@ -78,7 +78,7 @@ export default function ValetEventShowcase({ onOpenBooking }: ValetEventShowcase
             <div className="pt-1">
               <button
                 onClick={() => onOpenBooking('valet')}
-                className="bg-[#023526] hover:bg-[#01261b] text-white font-extrabold text-xs px-6 py-3.5 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer group"
+                className="bg-[#023526] hover:bg-[#034432] text-white font-extrabold text-xs px-6 py-3.5 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer group"
               >
                 <span>Request Custom Event Quote</span>
                 <ArrowRight className="w-4 h-4 text-[#c5a880] group-hover:translate-x-1 transition-transform" />
@@ -91,8 +91,13 @@ export default function ValetEventShowcase({ onOpenBooking }: ValetEventShowcase
             <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-lg border border-stone-200/90 text-left space-y-4 flex flex-col justify-between h-full">
 
               {/* Top Stats Metric Header */}
-              <div className="bg-gradient-to-br from-[#023526] via-[#01261b] to-[#011a12] rounded-2xl p-5 text-white border border-[#c5a880]/30 shadow-xs relative overflow-hidden">
-                <div className="flex items-center justify-between pb-3 border-b border-white/15">
+              <div className="bg-gradient-to-b from-[#023526] via-[#02281d] to-[#011c14] rounded-2xl p-5 text-white border border-[#c5a880]/35 shadow-xs relative overflow-hidden">
+                {/* Top Shimmer Line */}
+                <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#c5a880]/60 to-transparent pointer-events-none" />
+                <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full border border-[#c5a880]/15 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-36 h-36 bg-[#035940]/30 rounded-full blur-2xl pointer-events-none" />
+
+                <div className="flex items-center justify-between pb-3 border-b border-white/15 relative z-10">
                   <div>
                     <span className="text-[10px] font-extrabold text-[#c5a880] uppercase tracking-widest block">
                       Turnkey Valet Excellence
